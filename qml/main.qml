@@ -9,6 +9,7 @@ Window {
     height: 480
     title: qsTr("Hello World")
     color: "black"
+    visibility: "Maximized"
 
     MediaPlayer {
         id: player
