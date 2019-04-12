@@ -1,6 +1,7 @@
 import QtQuick 2.9
 import QtQuick.Window 2.2
 import QtMultimedia 5.0
+import Main 1.0
 
 Window {
     visible: true
@@ -19,6 +20,13 @@ Window {
         id: videoOutput
         source: player
         anchors.fill: parent
+    }
+
+    VideoHUD {
+        y: videoOutput.contentRect.y
+        x: videoOutput.contentRect.x
+        width: videoOutput.contentRect.width
+        height: videoOutput.contentRect.height
     }
 
     SeekControl {
