@@ -61,7 +61,7 @@ void VideoHUD::drawTextMeasurement(QPainter *painter, const QPointF& pos, const 
     const QString& unit, const QString& name)
 {
     QSizeF tmpsz;
-    QSizeF shadowsz(1, 1);
+    QSizeF shadowsz(2, 2);
 
     painter->setPen(Qt::white);
 
