@@ -23,6 +23,13 @@ Window {
         anchors.fill: parent
     }
 
+    Orientation {
+        y: 0
+        x: 0
+        width: parent.width
+        height: parent.height
+    }
+
     VideoHUD {
         y: videoOutput.contentRect.y
         x: videoOutput.contentRect.x
