@@ -61,15 +61,8 @@ static const GLfloat axes_endpts[][3] = {
 };
 
 static void rotateVertex(const QQuaternion& q, GLfloat dst[3], const GLfloat src[3]) {
-    QQuaternion qn =
-        QQuaternion()
-        //* QQuaternion::fromAxisAndAngle(0.0f, 1.0f, 1.0f, 45)
-        * q
-        //* QQuaternion::fromAxisAndAngle(0.0f, 1.0f, 0.0f, -90)
-    ;
-
     QVector3D vin(-src[2], src[0], -src[1]);
-    QVector3D vout = qn.rotatedVector(vin);
+    QVector3D vout = q.rotatedVector(vin);
 
     dst[0] = vout.y();
     dst[1] = -vout.z();
