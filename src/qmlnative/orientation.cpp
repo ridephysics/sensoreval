@@ -4,12 +4,14 @@
 #include <QtGui/QOpenGLContext>
 
 #include <GL/glu.h>
+#include <math.h>
+#include <QtMath>
 
 #define ARRAY_SIZE(a)                               \
   ((sizeof(a) / sizeof(*(a))) /                     \
   static_cast<size_t>(!(sizeof(a) % sizeof(*(a)))))
 
-static const GLdouble cam_pos[] = {0.2, 0.2, -1};
+static const GLdouble cam_pos[] = {0.2, 0.2, 0};
 static const GLdouble cam_target[] = {0, 0, -1};
 static const GLdouble cam_up[] = {0, 1, 0};
 
@@ -21,12 +23,12 @@ static const GLfloat color_white[] = {1, 1, 1};
 
 static GLfloat delta = 0.01;
 static const GLfloat vertices[][3] = {
-    { 0,   -0.2,  delta },
-    { 0,    0.2,  delta },
-    { 0.6,  0,    delta },
-    { 0,   -0.2, -delta },
-    { 0,    0.2, -delta },
-    { 0.6,  0,   -delta },
+    { -0.2,  delta, 0 },
+    {  0.2,  delta, 0 },
+    {  0,    delta, -0.6 },
+    { -0.2, -delta, 0 },
+    {  0.2, -delta, 0 },
+    {  0,   -delta, -0.6 },
 };
 static const GLfloat* vertex_colors[] = {
     color_red,
@@ -58,18 +60,25 @@ static const GLfloat axes_endpts[][3] = {
     { 0,  0,  1 },
 };
 
-static void rotateVertex(QQuaternion q, GLfloat dst[3], const GLfloat src[3]) {
-    QVector3D vin(src[0], src[1], src[2]);
+static void rotateVertex(const QQuaternion& q, GLfloat dst[3], const GLfloat src[3]) {
+    QQuaternion qn =
+        QQuaternion()
+        //* QQuaternion::fromAxisAndAngle(0.0f, 1.0f, 1.0f, 45)
+        * q
+        //* QQuaternion::fromAxisAndAngle(0.0f, 1.0f, 0.0f, -90)
+    ;
 
-    QVector3D vout = q.rotatedVector(vin);
+    QVector3D vin(-src[2], src[0], -src[1]);
+    QVector3D vout = qn.rotatedVector(vin);
 
-    dst[0] = vout.x();
-    dst[1] = vout.y();
-    dst[2] = vout.z();
+    dst[0] = vout.y();
+    dst[1] = -vout.z();
+    dst[2] = -vout.x();
 }
 
 Orientation::Orientation() :
-    m_renderer(nullptr)
+    m_renderer(nullptr),
+    m_quat(1, 0, 0, 0)
 {
     connect(this, &QQuickItem::windowChanged, this, &Orientation::handleWindowChanged);
 }
@@ -89,6 +98,7 @@ void Orientation::sync()
         connect(window(), &QQuickWindow::afterRendering, m_renderer, &OrientationRenderer::paint, Qt::DirectConnection);
     }
     m_renderer->setViewportSize(window()->size() * window()->devicePixelRatio());
+    m_renderer->setQuaternion(m_quat);
     m_renderer->setWindow(window());
 }
 
@@ -98,6 +108,17 @@ void Orientation::cleanup()
         delete m_renderer;
         m_renderer = nullptr;
     }
+}
+
+void Orientation::setQuat(QQuaternion quat) {
+    if (quat == m_quat)
+        return;
+
+    m_quat = quat;
+    emit quatChanged();
+
+    if (window())
+        window()->update();
 }
 
 OrientationRenderer::~OrientationRenderer()
@@ -124,7 +145,8 @@ void OrientationRenderer::paint()
     glTranslatef(0, 0, -3);
 
     // general setup
-    glDisable(GL_DEPTH_TEST);
+    glClear(GL_DEPTH_BUFFER_BIT);
+    glEnable(GL_DEPTH_TEST);
 
     // camera position
     glMatrixMode(GL_MODELVIEW);
@@ -158,7 +180,7 @@ void OrientationRenderer::draw_pointer() {
 
     glBegin(GL_TRIANGLES);
     for (size_t i = 0; i < ARRAY_SIZE(vertices); i++) {
-        rotateVertex(quat, tmpvertex, vertices[i]);
+        rotateVertex(m_quat, tmpvertex, vertices[i]);
 
         glColor3fv(vertex_colors[i]);
         glVertex3fv(tmpvertex);
@@ -168,10 +190,10 @@ void OrientationRenderer::draw_pointer() {
     glBegin(GL_LINES);
     glColor3fv(color_white);
     for (size_t i = 0; i < ARRAY_SIZE(edges); i++) {
-        rotateVertex(quat, tmpvertex, vertices[edges[i][0]]);
+        rotateVertex(m_quat, tmpvertex, vertices[edges[i][0]]);
         glVertex3fv(tmpvertex);
 
-        rotateVertex(quat, tmpvertex, vertices[edges[i][1]]);
+        rotateVertex(m_quat, tmpvertex, vertices[edges[i][1]]);
         glVertex3fv(tmpvertex);
     }
     glEnd();

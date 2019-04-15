@@ -28,6 +28,8 @@ Window {
         x: 0
         width: parent.width
         height: parent.height
+
+        quat: quaternion
     }
 
     VideoHUD {
