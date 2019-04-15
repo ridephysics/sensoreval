@@ -6,7 +6,9 @@ pkg_check_modules(GLU REQUIRED glu)
 
 add_executable(sensoreval
     main.cpp
-    qmlnative/videohud.cpp
+    videohudrenderer.cpp
+    sensordata.cpp
+    qmlnative/qmlvideohud.cpp
     qmlnative/orientation.cpp
     qml.qrc
 )

@@ -1,4 +1,5 @@
-#include "videohud.h"
+#include <videohudrenderer.h>
+#include <cmath>
 
 #define DPI 141.21
 #define SPI DPI
@@ -57,7 +58,7 @@ static QSizeF drawTextShadowed(QPainter *painter, const QPointF& _pos, const QSi
     return QSizeF(br.width(), br.height());
 }
 
-void VideoHUD::drawTextMeasurement(QPainter *painter, const QPointF& pos, const QString &value,
+void VideoHUDRenderer::drawTextMeasurement(QPainter *painter, const QPointF& pos, const QString &value,
     const QString& unit, const QString& name)
 {
     QSizeF tmpsz;
@@ -75,22 +76,30 @@ void VideoHUD::drawTextMeasurement(QPainter *painter, const QPointF& pos, const 
     drawTextShadowed(painter, QPointF(pos.x(), pos.y()), shadowsz, name, RIGHT|TOP);
 }
 
-VideoHUD::VideoHUD(QQuickItem *parent)
-    : QQuickPaintedItem(parent)
-    , font_big_bold("Roboto", dp2px(SPI, 20))
-    , font_small_bold("Roboto", dp2px(SPI, 10))
-    , font_small("Roboto", dp2px(SPI, 12))
-{
-    font_big_bold.setBold(true);
-    font_small_bold.setBold(true);
-}
-
-void VideoHUD::paint(QPainter *painter)
-{
+void VideoHUDRenderer::paintData(QPainter *painter, const SensorData& sd) {
     QRect vp = qrect2dp(DPI, painter->viewport());
 
     painter->setPen(QColor(0xff, 0xff, 0xff, 0xff));
 
-    this->drawTextMeasurement(painter, QPointF(vp.width() - 50, 100), "40.3", "METERS", "ALTITUDE");
-    this->drawTextMeasurement(painter, QPointF(vp.width() - 50, 200), "20.0°", "CELSIUS", "TEMPERATURE");
+    this->drawTextMeasurement(painter, QPointF(vp.width() - 50, 100),
+        QString::number(std::round(sd.pressure_altitude())), "METERS", "ALTITUDE");
+
+    this->drawTextMeasurement(painter, QPointF(vp.width() - 50, 200),
+        QString::number(sd.temperature, 'f', 1) + "°", "CELSIUS", "TEMPERATURE");
+
+    this->drawTextMeasurement(painter, QPointF(vp.width() - 50, 300),
+          QString::number(sd.acceleration.x(), 'f', 1) + "|"
+        + QString::number(sd.acceleration.y(), 'f', 1) + "|"
+        + QString::number(sd.acceleration.z(), 'f', 1)
+        , "g", "ACCELERATION");
+}
+
+VideoHUDRenderer::VideoHUDRenderer() :
+      font_big_bold("Roboto Black", dp2px(SPI, 20))
+    , font_small_bold("Roboto", dp2px(SPI, 12))
+    , font_small("Roboto", dp2px(SPI, 12))
+{
+    //font_big_bold.setBold(true);
+    //font_small_bold.setWeight(99);
+    //font_small.setWeight(0);
 }

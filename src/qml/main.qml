@@ -13,7 +13,7 @@ Window {
 
     MediaPlayer {
         id: player
-        source: videoPath
+        source: main_videoPath
         autoPlay: true
     }
 
@@ -29,7 +29,7 @@ Window {
         width: parent.width
         height: parent.height
 
-        quat: quaternion
+        quat: main_quaternion
     }
 
     VideoHUD {
@@ -37,6 +37,7 @@ Window {
         x: videoOutput.contentRect.x
         width: videoOutput.contentRect.width
         height: videoOutput.contentRect.height
+        sensordata: main_sensordata
     }
 
     SeekControl {

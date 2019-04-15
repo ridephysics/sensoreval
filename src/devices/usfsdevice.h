@@ -25,6 +25,9 @@ private:
     bool m_initialized;
     QTimer m_timer;
 
+    // we have to retain old data because we don't get all data at once
+    SensorData m_sensordata;
+
     struct crossi2c_bus i2cbus;
     struct em7180 em7180;
 

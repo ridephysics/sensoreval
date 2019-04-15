@@ -1,20 +1,14 @@
-#ifndef VIDEOHUD_H
-#define VIDEOHUD_H
+#ifndef VIDEOHUDRENDERER_H
+#define VIDEOHUDRENDERER_H
 
-#include <QtQuick/QQuickPaintedItem>
+#include <sensordata.h>
 #include <QPainter>
 #include <QFont>
-#include <QPointF>
-#include <QString>
 
-class VideoHUD : public QQuickPaintedItem
-{
-    Q_OBJECT
-    
+class VideoHUDRenderer {
 public:
-    VideoHUD(QQuickItem *parent = 0);
-    
-    void paint(QPainter *painter);
+    VideoHUDRenderer();
+    void paintData(QPainter *painter, const SensorData& sd);
 
 private:
     QFont font_big_bold;
@@ -25,4 +19,4 @@ private:
         const QString& unit, const QString& name);
 };
 
-#endif // VIDEOHUD_H
+#endif /* VIDEOHUDRENDERER_H */

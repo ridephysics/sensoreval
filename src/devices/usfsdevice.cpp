@@ -136,7 +136,7 @@ void USFSDevice::timeout() {
     }
 
     if (alg_status) {
-        em7180_print_algorithm_status(alg_status);
+        //em7180_print_algorithm_status(alg_status);
     }
 
     if (sensor_status) {
@@ -153,13 +153,20 @@ void USFSDevice::timeout() {
         return;
     }
 
-    SensorData sd;
+    if (event_status & EM7180_EVENT_ACCEL_RES) {
+        int16_t acc_raw[3];
+
+        em7180_parse_data_accelerometer(&data_raw[EM7180_RAWDATA_OFF_A], acc_raw, NULL);
+
+        float lsb = 32.0f / 65536.0f;
+        m_sensordata.acceleration = QVector3D(acc_raw[0] * lsb, acc_raw[1] * lsb, acc_raw[2] * lsb);
+    }
 
     if (event_status & EM7180_EVENT_QUAT_RES) {
         uint32_t quat_raw[4];
         em7180_parse_data_quaternion(&data_raw[EM7180_RAWDATA_OFF_Q], quat_raw, NULL);
 
-        sd.quat = QQuaternion(
+        m_sensordata.quat = QQuaternion(
             u32_to_f(quat_raw[3]),
             u32_to_f(quat_raw[0]),
             u32_to_f(quat_raw[1]),
@@ -167,5 +174,16 @@ void USFSDevice::timeout() {
         );
     }
 
-    emit onData(sd);
+    if (event_status & EM7180_EVENT_BARO_RES) {
+        int16_t baro;
+        int16_t temp;
+
+        em7180_parse_data_barometer(&data_raw[EM7180_RAWDATA_OFF_B], &baro, NULL);
+        em7180_parse_data_temperature(&data_raw[EM7180_RAWDATA_OFF_T], &temp, NULL);
+
+        m_sensordata.pressure = baro * 0.01f + 1013.25f;
+        m_sensordata.temperature = temp * 0.01f;
+    }
+
+    emit onData(m_sensordata);
 }

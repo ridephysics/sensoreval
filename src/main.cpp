@@ -2,9 +2,17 @@
 #include <QQmlApplicationEngine>
 #include <QQmlContext>
 #include <QFileInfo>
-#include <qmlnative/videohud.h>
+#include <qmlnative/qmlvideohud.h>
 #include <qmlnative/orientation.h>
 #include <devices/usfsdevice.h>
+
+static void set_sensordata(QQmlContext *ctx, const SensorData& sd) {
+    QVariant sd_variant;
+    sd_variant.setValue(sd);
+
+    ctx->setContextProperty("main_quaternion", sd.quat);
+    ctx->setContextProperty("main_sensordata", sd_variant);
+}
 
 int main(int argc, char *argv[])
 {
@@ -17,17 +25,17 @@ int main(int argc, char *argv[])
     QGuiApplication app(argc, argv);
     QQmlApplicationEngine engine;
 
-    engine.rootContext()->setContextProperty("videoPath", QUrl::fromLocalFile(QFileInfo(argv[1]).absoluteFilePath()));
-    engine.rootContext()->setContextProperty("quaternion", QQuaternion(1,0,0,0));
+    qmlRegisterType<QmlVideoHUD>("Main", 1, 0, "VideoHUD");
+    qmlRegisterType<Orientation>("Main", 1, 0, "Orientation");
+
+    engine.rootContext()->setContextProperty("main_videoPath", QUrl::fromLocalFile(QFileInfo(argv[1]).absoluteFilePath()));
+    set_sensordata(engine.rootContext(), SensorData());
 
     USFSDevice dev;
     QObject::connect(&dev, &USFSDevice::onData, [&engine](const SensorData& sd) {
-        engine.rootContext()->setContextProperty("quaternion", sd.quat);
+        set_sensordata(engine.rootContext(), sd);
     });
     dev.start();
-
-    qmlRegisterType<VideoHUD>("Main", 1, 0, "VideoHUD");
-    qmlRegisterType<Orientation>("Main", 1, 0, "Orientation");
 
     engine.load(QUrl(QStringLiteral("qrc:/qml/main.qml")));
     if (engine.rootObjects().isEmpty())
