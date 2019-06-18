@@ -15,5 +15,5 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 include_directories(include)
 
-add_subdirectory(${USFS_DIR} usfs)
+add_subdirectory(${COMPONENTS_DIR}/usfs usfs)
 add_subdirectory(src)
