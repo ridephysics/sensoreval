@@ -25,8 +25,11 @@ class Se(WestCommand):
 
         return parser
 
-    def run_cmd(self, args):
-        p = subprocess.Popen(args, cwd=self.build_dir)
+    def run_cmd(self, args, env={}):
+        newenv = os.environ.copy()
+        newenv.update(env)
+
+        p = subprocess.Popen(args, cwd=self.build_dir, env=newenv)
         p.communicate()
 
         if p.returncode:
@@ -43,7 +46,11 @@ class Se(WestCommand):
             self.source_dir
         ]
 
-        self.run_cmd(args)
+        env = {
+            'CFLAGS': '-fdiagnostics-color=always'
+        }
+
+        self.run_cmd(args, env=env)
 
     def do_run(self, args, unknown_args):
         if args.action == 'clean':
