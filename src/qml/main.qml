@@ -11,44 +11,56 @@ Window {
     color: "black"
     visibility: "Maximized"
 
-    MediaPlayer {
-        id: player
-        source: main_videoPath
-        autoPlay: true
-    }
-
-    VideoOutput {
-        id: videoOutput
-        source: player
+    Item {
         anchors.fill: parent
-    }
+        focus: true
 
-    Orientation {
-        y: 0
-        x: 0
-        width: parent.width
-        height: parent.height
-
-        quat: main_quaternion
-    }
-
-    VideoHUD {
-        y: videoOutput.contentRect.y
-        x: videoOutput.contentRect.x
-        width: videoOutput.contentRect.width
-        height: videoOutput.contentRect.height
-        sensordata: main_sensordata
-    }
-
-    SeekControl {
-        anchors {
-            left: parent.left
-            right: parent.right
-            margins: 10
-            bottom: parent.bottom
+        Keys.onSpacePressed: {
+            if (player.playbackState == MediaPlayer.PausedState)
+                player.play();
+            else
+                player.pause();
         }
-        duration: player.duration
-        playPosition: player.position
-        onSeekPositionChanged: player.seek(seekPosition);
+
+        MediaPlayer {
+            id: player
+            source: main_videoPath
+            autoPlay: true
+        }
+
+        VideoOutput {
+            id: videoOutput
+            source: player
+            anchors.fill: parent
+        }
+
+        Orientation {
+            y: 0
+            x: 0
+            width: parent.width
+            height: parent.height
+
+            quat: main_quaternion
+        }
+
+        VideoHUD {
+            y: videoOutput.contentRect.y
+            x: videoOutput.contentRect.x
+            width: videoOutput.contentRect.width
+            height: videoOutput.contentRect.height
+            sensordata: main_sensordata
+        }
+
+        SeekControl {
+            anchors {
+                left: parent.left
+                right: parent.right
+                margins: 10
+                bottom: parent.bottom
+            }
+            duration: player.duration
+            playPosition: player.position
+            onSeekPositionChanged: player.seek(seekPosition);
+        }
     }
 }
