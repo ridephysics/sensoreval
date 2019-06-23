@@ -2,6 +2,9 @@ cmake_minimum_required(VERSION 3.1)
 
 project(sensoreval LANGUAGES CXX)
 
+add_subdirectory(${EXTERNAL_DIR}/imu_tools imu_tools)
+add_subdirectory(${COMPONENTS_DIR}/usfs usfs)
+
 include(FindPkgConfig)
 find_package(Qt5 COMPONENTS Core Quick REQUIRED)
 find_package(PkgConfig)
@@ -13,6 +16,4 @@ set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 include_directories(include)
-
-add_subdirectory(${COMPONENTS_DIR}/usfs usfs)
 add_subdirectory(src)

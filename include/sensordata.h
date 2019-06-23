@@ -5,16 +5,20 @@
 
 class SensorData {
 public:
-    QQuaternion quat;
+    // unit: g
+    QVector3D accel;
+    // unit: dps
+    QVector3D gyro;
+    // unit: uT
+    QVector3D mag;
 
-    // unit: hPa
-    float pressure;
+    QQuaternion quat;
 
     // unit: degrees celsius
     float temperature;
 
-    // unit: g
-    QVector3D acceleration;
+    // unit: hPa
+    float pressure;
 
     float pressure_altitude_feet() const;
     float pressure_altitude() const;

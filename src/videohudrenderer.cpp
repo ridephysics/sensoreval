@@ -87,9 +87,9 @@ void VideoHUDRenderer::paintData(QPainter *painter, const SensorData& sd) {
         QString::number(sd.temperature, 'f', 1) + "°", "CELSIUS", "TEMPERATURE");
 
     this->drawTextMeasurement(painter, QPointF(vp.width() - 50, 300),
-          QString::number(sd.acceleration.x(), 'f', 1) + "|"
-        + QString::number(sd.acceleration.y(), 'f', 1) + "|"
-        + QString::number(sd.acceleration.z(), 'f', 1)
+          QString::number(sd.accel.x(), 'f', 1) + "|"
+        + QString::number(sd.accel.y(), 'f', 1) + "|"
+        + QString::number(sd.accel.z(), 'f', 1)
         , "g", "ACCELERATION");
 }
 

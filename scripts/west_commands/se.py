@@ -41,6 +41,7 @@ class Se(WestCommand):
         args = [
             'cmake',
             '-G', 'Ninja',
+            '-D', 'EXTERNAL_DIR=' + os.path.join(self.top_dir, 'external'),
             '-D', 'COMPONENTS_DIR=' + os.path.join(self.top_dir, 'components'),
             '-D', 'BMP280_DIR=' + os.path.join(self.top_dir, 'external/bmp280'),
             self.source_dir

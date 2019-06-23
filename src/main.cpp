@@ -4,7 +4,7 @@
 #include <QFileInfo>
 #include <qmlnative/qmlvideohud.h>
 #include <qmlnative/orientation.h>
-#include <devices/usfsdevice.h>
+#include <usfsdevice.h>
 
 static void set_sensordata(QQmlContext *ctx, const SensorData& sd) {
     QVariant sd_variant;
@@ -35,7 +35,6 @@ int main(int argc, char *argv[])
     QObject::connect(&dev, &USFSDevice::onData, [&engine](const SensorData& sd) {
         set_sensordata(engine.rootContext(), sd);
     });
-    dev.start();
 
     engine.load(QUrl(QStringLiteral("qrc:/qml/main.qml")));
     if (engine.rootObjects().isEmpty())
