@@ -49,7 +49,8 @@ class Se(WestCommand):
         ]
 
         env = {
-            'CFLAGS': '-fdiagnostics-color=always'
+            'CFLAGS': '-fdiagnostics-color=always',
+            'CXXFLAGS': '-fdiagnostics-color=always'
         }
 
         self.run_cmd(args, env=env)
