@@ -44,6 +44,7 @@ class Se(WestCommand):
             '-D', 'EXTERNAL_DIR=' + os.path.join(self.top_dir, 'external'),
             '-D', 'COMPONENTS_DIR=' + os.path.join(self.top_dir, 'components'),
             '-D', 'BMP280_DIR=' + os.path.join(self.top_dir, 'external/bmp280'),
+            '-D', 'BUILD_SHARED_LIBS=OFF',
             self.source_dir
         ]
 
