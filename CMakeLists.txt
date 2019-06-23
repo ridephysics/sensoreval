@@ -5,6 +5,13 @@ project(sensoreval LANGUAGES CXX)
 add_subdirectory(${EXTERNAL_DIR}/imu_tools imu_tools)
 add_subdirectory(${COMPONENTS_DIR}/usfs usfs)
 
+add_compile_options(
+    -Wall
+    -Wextra
+    -Wshadow
+    -Werror
+)
+
 include(FindPkgConfig)
 find_package(Qt5 COMPONENTS Core Quick REQUIRED)
 find_package(PkgConfig)
