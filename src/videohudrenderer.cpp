@@ -40,7 +40,6 @@ static QSizeF drawTextShadowed(QPainter *painter, const QPointF& _pos, const QSi
     QFontMetrics fm(painter->font());
     QRect br = fm.boundingRect(text);
     int bw = fm.width(text);
-    int bh = fm.height();
 
     if (zero & TOP)
         pos += QPointF(0, -br.y());
