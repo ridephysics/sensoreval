@@ -2,7 +2,6 @@ cmake_minimum_required(VERSION 3.1)
 
 project(sensoreval LANGUAGES CXX)
 
-set(USFS_DIR "" CACHE STRING "usfs dir")
 include(FindPkgConfig)
 find_package(Qt5 COMPONENTS Core Quick REQUIRED)
 find_package(PkgConfig)
