@@ -62,8 +62,14 @@ class Se(WestCommand):
             return
 
         if args.action == 'build':
+            env = {
+                'DESTDIR': os.path.join(self.build_dir, 'install')
+            }
+
             self.run_cmake()
-            self.run_cmd('ninja')
+            self.run_cmd([
+                'ninja', 'install'
+            ], env=env)
             return
 
         else:
