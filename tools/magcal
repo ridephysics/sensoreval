@@ -1,0 +1,67 @@
+#!/usr/bin/env python3
+
+import sys
+import struct
+from ellipsoid_fit import ellipsoid_fit
+import numpy as np
+
+import matplotlib.pyplot as plt
+
+def load_magdata():
+    magdata = []
+
+    s = struct.Struct('Q9dQ6d')
+
+    while True:
+        data_raw = sys.stdin.buffer.read(s.size)
+        if len(data_raw) == 0:
+            break
+
+        data = s.unpack(data_raw)
+        magdata.append(list(data[7:10]))
+
+    return np.array(magdata)
+
+def plot_magdata(magdata):
+    fig, ax = plt.subplots()
+    ax.scatter(magdata[:,0], magdata[:,1])
+    ax.scatter(magdata[:,0], magdata[:,2])
+    ax.scatter(magdata[:,1], magdata[:,2])
+    plt.show()
+
+def write_calibration(center, TR):
+    s = struct.Struct('3d9d')
+
+    raw = s.pack(
+        center[0], center[1], center[2],
+        TR[0][0], TR[0][1], TR[0][2],
+        TR[1][0], TR[1][1], TR[1][2],
+        TR[2][0], TR[2][1], TR[2][2]
+    )
+
+    sys.stdout.buffer.write(raw)
+
+def main():
+    magdata = load_magdata()
+    center, evecs, radii = ellipsoid_fit(magdata)
+
+    a, b, c = radii
+    r = (a * b * c) ** (1. / 3.)
+    D = np.array([[r/a, 0., 0.], [0., r/b, 0.], [0., 0., r/c]])
+    TR = evecs.dot(D).dot(evecs.T)
+    
+    print('')
+    print('center: ', center)
+    print('radii: ', radii)
+    print('evecs: ', evecs)
+    print('transformation:')
+    print(TR)
+
+    write_calibration(center, TR)
+
+    magdata = magdata - center.T
+    magdata = TR.dot(magdata.T).T
+    plot_magdata(magdata)
+
+if __name__ == '__main__':
+    main()
