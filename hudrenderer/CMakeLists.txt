@@ -5,4 +5,5 @@ add_executable(hudrenderer
 )
 target_link_libraries(hudrenderer
     sensoreval
+    cairo
 )
