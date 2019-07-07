@@ -24,6 +24,7 @@ Window {
 
         MediaPlayer {
             id: player
+            objectName: "player"
             source: main_videoPath
             autoPlay: true
         }
@@ -44,11 +45,12 @@ Window {
         }
 
         VideoHUD {
+            id: hud
+            objectName: "hud"
             y: videoOutput.contentRect.y
             x: videoOutput.contentRect.x
             width: videoOutput.contentRect.width
             height: videoOutput.contentRect.height
-            sensordata: main_sensordata
         }
 
         SeekControl {

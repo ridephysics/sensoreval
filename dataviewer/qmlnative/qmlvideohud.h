@@ -3,31 +3,32 @@
 
 #include <QtQuick/QQuickPaintedItem>
 #include <QPainter>
-#include <QFont>
-#include <QPointF>
-#include <QString>
-#include <sensordata.h>
-#include <videohudrenderer.h>
+#include <QImage>
+
+extern "C" {
+#include <cairo/cairo.h>
+#include <sensoreval.h>
+}
 
 class QmlVideoHUD : public QQuickPaintedItem
 {
     Q_OBJECT
-    Q_PROPERTY(SensorData sensordata READ sensordata WRITE setSensordata NOTIFY sensordataChanged)
 
 public:
     QmlVideoHUD(QQuickItem *parent = 0);
     
     void paint(QPainter *painter);
 
-    SensorData sensordata() const { return m_sensordata; }
-    void setSensordata(SensorData sensordata);
-
-signals:
-    void sensordataChanged();
+    void setSensordata(const struct sensoreval_data *sensordata);
 
 private:
-    SensorData m_sensordata;
-    VideoHUDRenderer m_hudrenderer;
+    const struct sensoreval_data *m_sensordata;
+
+    cairo_surface_t *m_cairo_surface;
+    cairo_t *m_cr;
+    QImage *m_qimg;
+
+    void checkCreateCairo(QPainter *painter);
 };
 
 #endif // QMLVIDEOHUD_H

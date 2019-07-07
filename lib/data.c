@@ -169,3 +169,32 @@ err:
         free(sdarr);
     return -1;
 }
+
+struct sensoreval_data * sensoreval_data_for_time(struct sensoreval_data *sdarr, size_t sdarrsz, uint64_t us) {
+    uint64_t starttime;
+    uint64_t endtime;
+    size_t i;
+
+    if (sdarrsz == 0) {
+        fprintf(stderr, "no data available\n");
+        return NULL;
+    }
+
+    starttime = sdarr[0].time;
+    endtime = sdarr[sdarrsz - 1].time;
+
+    if (us > endtime - starttime) {
+        fprintf(stderr, "time is out of range\n");
+        return NULL;
+    }
+
+    for (i = 1; i < sdarrsz; i++) {
+        struct sensoreval_data *sd = &sdarr[i];
+
+        if (sd->time - starttime > us) {
+            return &sdarr[i - 1];
+        }
+    }
+
+    return NULL;
+}

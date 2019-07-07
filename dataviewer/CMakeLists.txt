@@ -1,7 +1,7 @@
 project(dataviewer LANGUAGES C CXX)
 
 include(FindPkgConfig)
-find_package(Qt5 COMPONENTS Core Quick REQUIRED)
+find_package(Qt5 COMPONENTS Core Quick Multimedia REQUIRED)
 find_package(PkgConfig)
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
@@ -14,9 +14,6 @@ pkg_check_modules(GLU REQUIRED glu)
 
 add_executable(dataviewer
     main.cpp
-    videohudrenderer.cpp
-    sensordata.cpp
-    usfsdevice.cpp
     qmlnative/qmlvideohud.cpp
     qmlnative/orientation.cpp
     qml.qrc
@@ -27,8 +24,10 @@ target_compile_definitions(dataviewer PRIVATE
 target_link_libraries(dataviewer PRIVATE
     Qt5::Core
     Qt5::Quick
+    Qt5::Multimedia
     ${GLU_LIBRARIES}
     cairo
+    sensoreval
 )
 target_include_directories(dataviewer PRIVATE
     ${GLU_INCLUDE_DIRS}

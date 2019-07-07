@@ -44,6 +44,7 @@ static inline void sensoreval_rd_initctx(struct sensoreval_rd_ctx *ctx) {
 double sensoreval_data_altitude(const struct sensoreval_data *sd);
 enum sensoreval_rd_ret sensoreval_load_data_one(struct sensoreval_rd_ctx *ctx, int fd, struct sensoreval_data *psd);
 int sensoreval_load_data(int fd, struct sensoreval_data **psdarr, size_t *psdarrsz);
+struct sensoreval_data * sensoreval_data_for_time(struct sensoreval_data *sdarr, size_t sdarrsz, uint64_t us);
 
 int sensoreval_render(cairo_t *cr, const struct sensoreval_data *sd);
 
