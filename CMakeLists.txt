@@ -14,10 +14,12 @@ add_compile_options(
 )
 
 add_subdirectory(lib)
+add_subdirectory(hudrenderer)
 add_subdirectory(dataviewer)
 
 install(TARGETS
     usfs_calc_quat
     usfs_reader
     dataviewer
+    hudrenderer
 )
