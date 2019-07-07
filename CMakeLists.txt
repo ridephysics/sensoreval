@@ -1,7 +1,8 @@
 cmake_minimum_required(VERSION 3.1)
 
-project(sensoreval LANGUAGES CXX)
+project(sensoreval)
 
+# technically not needed here but we compile all we need from this top level makefile
 add_subdirectory(${EXTERNAL_DIR}/imu_tools imu_tools)
 add_subdirectory(${COMPONENTS_DIR}/usfs usfs)
 
@@ -12,21 +13,11 @@ add_compile_options(
     -Werror
 )
 
-include(FindPkgConfig)
-find_package(Qt5 COMPONENTS Core Quick REQUIRED)
-find_package(PkgConfig)
-
-set(CMAKE_INCLUDE_CURRENT_DIR ON)
-set(CMAKE_AUTOMOC ON)
-set(CMAKE_AUTORCC ON)
-set(CMAKE_CXX_STANDARD 11)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-
-include_directories(include)
-add_subdirectory(src)
+add_subdirectory(lib)
+add_subdirectory(dataviewer)
 
 install(TARGETS
     usfs_calc_quat
     usfs_reader
-    sensoreval
+    dataviewer
 )
