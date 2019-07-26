@@ -51,6 +51,8 @@ int main(int argc, char *argv[])
     qmlRegisterType<Orientation>("Main", 1, 0, "Orientation");
 
     engine.rootContext()->setContextProperty("main_videoPath", QUrl::fromLocalFile(QFileInfo(videopath).absoluteFilePath()));
+    engine.rootContext()->setContextProperty("main_videoStartOffset", 0);
+    engine.rootContext()->setContextProperty("main_videoEndOffset", 0);
     set_sensordata(engine.rootContext(), NULL, NULL);
 
     engine.load(QUrl(QStringLiteral("qrc:/qml/main.qml")));

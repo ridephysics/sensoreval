@@ -18,6 +18,10 @@ Window {
         Keys.onSpacePressed: {
             if (player.playbackState == MediaPlayer.PausedState)
                 player.play();
+            else if (player.playbackState == MediaPlayer.StoppedState) {
+                player.seek(main_videoStartOffset);
+                player.play();
+            }
             else
                 player.pause();
         }
@@ -26,7 +30,22 @@ Window {
             id: player
             objectName: "player"
             source: main_videoPath
-            autoPlay: true
+            autoPlay: false
+
+            Component.onCompleted: {
+                seek(main_videoStartOffset);
+                play();
+            }
+        }
+
+        Connections {
+            target: player
+            onPositionChanged: {
+                if (player.playbackState == MediaPlayer.PlayingState && player.duration > 0 && player.position >= player.duration - main_videoEndOffset) {
+                    player.stop();
+                    player.seek(player.duration - main_videoEndOffset);
+                }
+            }
         }
 
         VideoOutput {
@@ -60,9 +79,9 @@ Window {
                 margins: 10
                 bottom: parent.bottom
             }
-            duration: player.duration
-            playPosition: player.position
-            onSeekPositionChanged: player.seek(seekPosition);
+            duration: player.duration - main_videoStartOffset - main_videoEndOffset
+            playPosition: player.position - main_videoStartOffset
+            onSeekPositionChanged: player.seek(seekPosition + main_videoStartOffset);
         }
     }
 }
