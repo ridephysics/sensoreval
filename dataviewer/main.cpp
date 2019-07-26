@@ -11,11 +11,15 @@
 #include <fcntl.h>
 #include <memory>
 
-static void set_sensordata(QQmlContext *ctx, const struct sensoreval_data *sd) {
+static void set_sensordata(QQmlContext *ctx, QmlVideoHUD *hud, const struct sensoreval_data *sd) {
     QQuaternion q;
 
     if (sd) {
         q = QQuaternion(sd->quat[0], sd->quat[1], sd->quat[2], sd->quat[3]);
+
+        if (hud) {
+            hud->setSensordata(sd);
+        }
     }
 
     ctx->setContextProperty("main_quaternion", q);
@@ -47,7 +51,7 @@ int main(int argc, char *argv[])
     qmlRegisterType<Orientation>("Main", 1, 0, "Orientation");
 
     engine.rootContext()->setContextProperty("main_videoPath", QUrl::fromLocalFile(QFileInfo(videopath).absoluteFilePath()));
-    set_sensordata(engine.rootContext(), NULL);
+    set_sensordata(engine.rootContext(), NULL, NULL);
 
     engine.load(QUrl(QStringLiteral("qrc:/qml/main.qml")));
     if (engine.rootObjects().isEmpty())
@@ -82,8 +86,7 @@ int main(int argc, char *argv[])
             rdret = sensoreval_load_data_one(&rdctx, fd, &_sd);
             switch (rdret) {
             case SENSOREVAL_RD_RET_OK:
-                hud->setSensordata(&_sd);
-                set_sensordata(engine.rootContext(), &_sd);
+                set_sensordata(engine.rootContext(), hud, &_sd);
                 break;
 
             case SENSOREVAL_RD_RET_ERR:
@@ -121,8 +124,7 @@ int main(int argc, char *argv[])
         QObject::connect(timer, &QTimer::timeout, [hud, player, sdarr, sdarrsz, &engine]() {
             struct sensoreval_data *sd = sensoreval_data_for_time(sdarr, sdarrsz, player->position()*1000);
             if (sd) {
-                hud->setSensordata(sd);
-                set_sensordata(engine.rootContext(), sd);
+                set_sensordata(engine.rootContext(), hud, sd);
             }
         });
         timer->start(30);
