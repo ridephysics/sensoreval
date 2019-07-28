@@ -22,6 +22,7 @@ struct sensoreval_data {
 };
 
 double sensoreval_data_altitude(const struct sensoreval_data *sd);
-struct sensoreval_data * sensoreval_data_for_time(struct sensoreval_data *sdarr, size_t sdarrsz, uint64_t us);
+int sensoreval_id_for_time(const struct sensoreval_data *sdarr, size_t sdarrsz,
+    size_t startid, uint64_t us, size_t *pid);
 
 #endif /* SENSOREVAL_DATA_H */

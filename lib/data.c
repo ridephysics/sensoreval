@@ -170,31 +170,42 @@ err:
     return -1;
 }
 
-struct sensoreval_data * sensoreval_data_for_time(struct sensoreval_data *sdarr, size_t sdarrsz, uint64_t us) {
+int sensoreval_id_for_time(const struct sensoreval_data *sdarr, size_t sdarrsz,
+    size_t startid, uint64_t us, size_t *pid)
+{
     uint64_t starttime;
     uint64_t endtime;
     size_t i;
 
     if (sdarrsz == 0) {
         fprintf(stderr, "no data available\n");
-        return NULL;
+        return -1;
     }
+
+    if (startid >= sdarrsz) {
+        fprintf(stderr, "startid exceeds array size\n");
+        return -1;
+    }
+
+    if (startid == 0)
+        startid = 1;
 
     starttime = sdarr[0].time;
     endtime = sdarr[sdarrsz - 1].time;
 
     if (us > endtime - starttime) {
         fprintf(stderr, "time is out of range\n");
-        return NULL;
+        return -1;
     }
 
-    for (i = 1; i < sdarrsz; i++) {
-        struct sensoreval_data *sd = &sdarr[i];
+    for (i = startid; i < sdarrsz; i++) {
+        const struct sensoreval_data *sd = &sdarr[i];
 
         if (sd->time - starttime > us) {
-            return &sdarr[i - 1];
+            *pid = i;
+            return 0;
         }
     }
 
-    return NULL;
+    return -1;
 }

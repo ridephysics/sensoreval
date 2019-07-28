@@ -19,10 +19,10 @@ public:
     
     void paint(QPainter *painter);
 
-    void setSensordata(const struct sensoreval_data *sensordata);
+    void setRenderCtx(const struct sensoreval_render_ctx *ctx);
 
 private:
-    const struct sensoreval_data *m_sensordata;
+    const struct sensoreval_render_ctx *m_renderctx;
 
     cairo_surface_t *m_cairo_surface;
     cairo_t *m_cr;

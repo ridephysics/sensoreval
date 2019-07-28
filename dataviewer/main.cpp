@@ -11,14 +11,16 @@
 #include <fcntl.h>
 #include <memory>
 
-static void set_sensordata(QQmlContext *ctx, QmlVideoHUD *hud, const struct sensoreval_data *sd) {
+static void set_sensordata(QQmlContext *ctx, const struct sensoreval_render_ctx *renderctx)
+{
+    const struct sensoreval_data *sd;
     QQuaternion q;
 
-    if (sd) {
-        q = QQuaternion(sd->quat[0], sd->quat[1], sd->quat[2], sd->quat[3]);
+    if (renderctx) {
+        sd = sensoreval_current_data(renderctx);
 
-        if (hud) {
-            hud->setSensordata(sd);
+        if (sd) {
+            q = QQuaternion(sd->quat[0], sd->quat[1], sd->quat[2], sd->quat[3]);
         }
     }
 
@@ -34,6 +36,7 @@ int main(int argc, char *argv[])
     struct sensoreval_rd_ctx rdctx;
     struct sensoreval_data _sd;
     struct sensoreval_cfg *cfg = NULL;
+    struct sensoreval_render_ctx renderctx;
 
     sensoreval_rd_initctx(&rdctx);
 
@@ -61,7 +64,7 @@ int main(int argc, char *argv[])
     engine.rootContext()->setContextProperty("main_videoPath", QUrl::fromLocalFile(QFileInfo(videopath).absoluteFilePath()));
     engine.rootContext()->setContextProperty("main_videoStartOffset", (double)cfg->video.startoff);
     engine.rootContext()->setContextProperty("main_videoEndOffset", (double)cfg->video.endoff);
-    set_sensordata(engine.rootContext(), NULL, NULL);
+    set_sensordata(engine.rootContext(), NULL);
 
     engine.load(QUrl(QStringLiteral("qrc:/qml/main.qml")));
     if (engine.rootObjects().isEmpty())
@@ -89,14 +92,20 @@ int main(int argc, char *argv[])
         rc = fcntl(notifier->socket(), F_SETFL, rc);
         Q_ASSERT(rc >= 0);
 
+        rc = sensoreval_render_init(&renderctx, cfg, NULL, 0);
+        Q_ASSERT(rc == 0);
+
         auto conn = std::make_shared<QMetaObject::Connection>();
-        *conn = QObject::connect(notifier, &QSocketNotifier::activated, [conn, notifier, &rdctx, &_sd, &engine, hud](int fd) {
+        *conn = QObject::connect(notifier, &QSocketNotifier::activated, [conn, notifier, &rdctx, &_sd, &engine, hud, &renderctx](int fd) {
             enum sensoreval_rd_ret rdret;
 
             rdret = sensoreval_load_data_one(&rdctx, fd, &_sd);
             switch (rdret) {
             case SENSOREVAL_RD_RET_OK:
-                set_sensordata(engine.rootContext(), hud, &_sd);
+                sensoreval_render_set_data(&renderctx, &_sd);
+                hud->update();
+
+                set_sensordata(engine.rootContext(), &renderctx);
                 break;
 
             case SENSOREVAL_RD_RET_ERR:
@@ -131,14 +140,19 @@ int main(int argc, char *argv[])
         }
         fprintf(stderr, "got %zu samples\n", sdarrsz);
 
-        QObject::connect(timer, &QTimer::timeout, [hud, player, sdarr, sdarrsz, &engine]() {
-            struct sensoreval_data *sd = sensoreval_data_for_time(sdarr, sdarrsz, player->position()*1000);
-            if (sd) {
-                set_sensordata(engine.rootContext(), hud, sd);
-            }
+        rc = sensoreval_render_init(&renderctx, cfg, sdarr, sdarrsz);
+        Q_ASSERT(rc == 0);
+
+        QObject::connect(timer, &QTimer::timeout, [hud, &renderctx, player, sdarr, sdarrsz, &engine]() {
+            sensoreval_render_set_ts(&renderctx, player->position()*1000);
+            hud->update();
+
+            set_sensordata(engine.rootContext(), &renderctx);
         });
         timer->start(30);
     }
+
+    hud->setRenderCtx(&renderctx);
 
     return app.exec();
 }
