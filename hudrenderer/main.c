@@ -4,13 +4,28 @@
 #include <stdio.h>
 #include <unistd.h>
 
-int main(void) {
+int main(int argc, char **argv) {
     int rc;
     cairo_status_t cs;
     cairo_surface_t *s;
     cairo_t *cr;
     struct sensoreval_data *sdarr;
     size_t sdarrsz;
+    struct sensoreval_cfg *cfg;
+
+    if (argc != 2) {
+        fprintf(stderr, "Usage: %s CONFIG\n", argv[0]);
+        return -1;
+    }
+    const char *cfgpath = argv[1];
+
+    rc = sensoreval_config_load(cfgpath, &cfg);
+    if (rc) {
+        fprintf(stderr, "can't load config\n");
+        return -1;
+    }
+
+    sensoreval_config_dump(cfg);
 
     rc = sensoreval_load_data(STDIN_FILENO, &sdarr, &sdarrsz);
     if (rc) {
