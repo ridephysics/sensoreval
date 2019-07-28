@@ -199,7 +199,7 @@ int sensoreval_id_for_time(const struct sensoreval_data *sdarr, size_t sdarrsz,
     endtime = sdarr[sdarrsz - 1].time;
 
     if (us > endtime - starttime) {
-        fprintf(stderr, "time is out of range\n");
+        fprintf(stderr, "time %"PRIu64" is out of range\n", us);
         return -1;
     }
 
