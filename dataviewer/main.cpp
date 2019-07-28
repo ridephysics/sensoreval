@@ -33,15 +33,23 @@ int main(int argc, char *argv[])
     QSocketNotifier *notifier = nullptr;
     struct sensoreval_rd_ctx rdctx;
     struct sensoreval_data _sd;
+    struct sensoreval_cfg *cfg = NULL;
 
     sensoreval_rd_initctx(&rdctx);
 
-    if (argc != 3) {
-        fprintf(stderr, "Usage: %s FILE LIVE\n", argv[0]);
+    if (argc < 3 || argc > 4) {
+        fprintf(stderr, "Usage: %s FILE LIVE [CONFIG]\n", argv[0]);
         return -1;
     }
     const char *videopath = argv[1];
     bool islive = !!atoi(argv[2]);
+    const char *cfgpath = argc >= 4 ? argv[3] : NULL;
+
+    rc = sensoreval_config_load(cfgpath, &cfg);
+    if (rc) {
+        fprintf(stderr, "can't load config\n");
+        return -1;
+    }
 
     QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
     QGuiApplication app(argc, argv);
@@ -51,8 +59,8 @@ int main(int argc, char *argv[])
     qmlRegisterType<Orientation>("Main", 1, 0, "Orientation");
 
     engine.rootContext()->setContextProperty("main_videoPath", QUrl::fromLocalFile(QFileInfo(videopath).absoluteFilePath()));
-    engine.rootContext()->setContextProperty("main_videoStartOffset", 0);
-    engine.rootContext()->setContextProperty("main_videoEndOffset", 0);
+    engine.rootContext()->setContextProperty("main_videoStartOffset", (double)cfg->video.startoff);
+    engine.rootContext()->setContextProperty("main_videoEndOffset", (double)cfg->video.endoff);
     set_sensordata(engine.rootContext(), NULL, NULL);
 
     engine.load(QUrl(QStringLiteral("qrc:/qml/main.qml")));
