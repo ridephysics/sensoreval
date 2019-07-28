@@ -142,8 +142,8 @@ int main(int argc, char *argv[])
         rc = sensoreval_render_init(&renderctx, cfg, sdarr, sdarrsz);
         Q_ASSERT(rc == 0);
 
-        QObject::connect(timer, &QTimer::timeout, [hud, &renderctx, player, sdarr, sdarrsz, &engine]() {
-            sensoreval_render_set_ts(&renderctx, player->position()*1000);
+        QObject::connect(timer, &QTimer::timeout, [hud, &renderctx, player, sdarr, sdarrsz, &engine, cfg]() {
+            sensoreval_render_set_ts(&renderctx, player->position()*1000 + cfg->data.startoff);
             hud->update();
 
             set_sensordata(engine.rootContext(), &renderctx);
