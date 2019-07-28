@@ -33,7 +33,6 @@ int main(int argc, char **argv) {
         fprintf(stderr, "can't load sensordata\n");
         return -1;
     }
-    fprintf(stderr, "got %zu samples\n", sdarrsz);
 
     rc = sensoreval_render_init(&renderctx, cfg, sdarr, sdarrsz);
     if (rc) {
