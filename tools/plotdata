@@ -1,0 +1,62 @@
+#!/usr/bin/env python3
+
+import sys
+import struct
+import numpy as np
+
+import matplotlib.pyplot as plt
+
+class IMUData:
+    def __init__(self, time, accel, gyro, mag, temp, baro):
+        self.time = time
+        self.accel = accel
+        self.gyro = gyro
+        self.mag = mag
+        self.temp = temp
+        self.baro = baro
+
+def load_data():
+    time = []
+    accel = []
+    gyro = []
+    mag = []
+    temp = []
+    baro = []
+
+    s = struct.Struct('Q9dQ6d')
+
+    while True:
+        data_raw = sys.stdin.buffer.read(s.size)
+        if len(data_raw) == 0:
+            break
+
+        data = s.unpack(data_raw)
+
+        time.append(data[0])
+        accel.append(list(data[1:4]))
+        gyro.append(list(data[4:7]))
+        mag.append(list(data[7:10]))
+        temp.append(data[11])
+        baro.append(data[12])
+
+    return IMUData(
+        np.array(time),
+        np.array(accel),
+        np.array(gyro),
+        np.array(mag),
+        np.array(temp),
+        np.array(baro),
+    )
+
+def main():
+    data = load_data()
+
+    fig, (ax1, ax2) = plt.subplots(2, sharex=True)
+    fig.suptitle('data')
+    ax1.plot(data.time, data.accel)
+    ax2.plot(data.time, data.baro)
+
+    plt.show()
+
+if __name__ == '__main__':
+    main()
