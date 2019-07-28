@@ -4,6 +4,8 @@ add_library(sensoreval
     data.c
     render.c
     config.c
+
+    hudmodehandlers/booster.c
 )
 target_include_directories(sensoreval PUBLIC
     include

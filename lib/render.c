@@ -3,6 +3,15 @@
 #include <stdio.h>
 #include <string.h>
 
+static struct sensoreval_hud_mode_handler *mode2handler(enum sensoreval_hud_mode mode) {
+    switch (mode) {
+    case SENSOREVAL_HUD_MODE_BOOSTER:
+        return &sensoreval_hud_handler_booster;
+    default:
+        return NULL;
+    }
+}
+
 #define DPI 141.21
 #define SPI DPI
 
@@ -18,6 +27,8 @@ int sensoreval_render_init(struct sensoreval_render_ctx *ctx,
     const struct sensoreval_cfg *cfg,
     const struct sensoreval_data *sdarr, size_t sdarrsz)
 {
+    int rc;
+
     memset(ctx, 0, sizeof(*ctx));
 
     if (!cfg)
@@ -31,6 +42,13 @@ int sensoreval_render_init(struct sensoreval_render_ctx *ctx,
     ctx->sdarr = sdarr;
     ctx->sdarrsz = sdarrsz;
     ctx->datasrc = SENSOREVAL_RENDER_DATASRC_NONE;
+
+    ctx->handler = mode2handler(cfg->hud.mode);
+
+    rc = ctx->handler->init(ctx);
+    if (rc) {
+        return -1;
+    }
 
     return 0;
 }
@@ -99,6 +117,18 @@ int sensoreval_render(const struct sensoreval_render_ctx *ctx, cairo_t *cr) {
     cairo_set_operator (cr, CAIRO_OPERATOR_SOURCE);
     cairo_paint (cr);
     cairo_restore (cr);
+
+    if (ctx->handler && ctx->handler->render_content) {
+        rc = ctx->handler->render_content(ctx, cr);
+        if (rc)
+            return rc;
+    }
+
+    if (ctx->handler && ctx->handler->render_overlay) {
+        rc = ctx->handler->render_overlay(ctx, cr);
+        if (rc)
+            return rc;
+    }
 
     cairo_select_font_face (cr, "Sans", CAIRO_FONT_SLANT_NORMAL, CAIRO_FONT_WEIGHT_BOLD);
     cairo_set_font_size (cr, dp2px(SPI, 90));
