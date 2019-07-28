@@ -162,6 +162,11 @@ int sensoreval_load_data(int fd, struct sensoreval_data **psdarr, size_t *psdarr
     *psdarr = sdarr;
     *psdarrsz = sdarrpos;
 
+    fprintf(stderr, "got %zu samples, start=%"PRIu64" end=%"PRIu64" duration=%fs\n", sdarrpos,
+        sdarr[0].time, sdarr[sdarrpos-1].time,
+        (sdarr[sdarrpos-1].time - sdarr[0].time) / 1000000.0
+    );
+
     return 0;
 
 err:
