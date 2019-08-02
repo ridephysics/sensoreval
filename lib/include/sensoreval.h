@@ -10,5 +10,6 @@
 #include <sensoreval/readdata.h>
 #include <sensoreval/render.h>
 #include <sensoreval/math.h>
+#include <sensoreval/plot.h>
 
 #endif /* SENSOREVAL_H */
