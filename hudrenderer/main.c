@@ -28,7 +28,7 @@ int main(int argc, char **argv) {
 
     sensoreval_config_dump(cfg);
 
-    rc = sensoreval_load_data(STDIN_FILENO, &sdarr, &sdarrsz);
+    rc = sensoreval_load_data(cfg, STDIN_FILENO, &sdarr, &sdarrsz);
     if (rc) {
         fprintf(stderr, "can't load sensordata\n");
         return -1;

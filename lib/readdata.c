@@ -19,6 +19,11 @@
     rdoff += __dstsz; \
 })
 
+void sensoreval_rd_initctx(struct sensoreval_rd_ctx *ctx, struct sensoreval_cfg *cfg) {
+    memset(ctx, 0, sizeof(*ctx));
+    ctx->cfg = cfg;
+}
+
 enum sensoreval_rd_ret sensoreval_load_data_one(struct sensoreval_rd_ctx *ctx, int fd, struct sensoreval_data *psd) {
     ssize_t nbytes;
     size_t rdoff = 0;
@@ -87,7 +92,7 @@ again:
     return SENSOREVAL_RD_RET_OK;
 }
 
-int sensoreval_load_data(int fd, struct sensoreval_data **psdarr, size_t *psdarrsz) {
+int sensoreval_load_data(struct sensoreval_cfg *cfg, int fd, struct sensoreval_data **psdarr, size_t *psdarrsz) {
     enum sensoreval_rd_ret rdret;
     struct sensoreval_rd_ctx ctx;
     struct sensoreval_data *sdarr = NULL;
@@ -95,7 +100,7 @@ int sensoreval_load_data(int fd, struct sensoreval_data **psdarr, size_t *psdarr
     size_t sdarrpos = 0;
     bool keep_going = true;
 
-    sensoreval_rd_initctx(&ctx);
+    sensoreval_rd_initctx(&ctx, cfg);
 
     while (keep_going) {
         bool ok = false;

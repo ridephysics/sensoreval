@@ -38,8 +38,6 @@ int main(int argc, char *argv[])
     struct sensoreval_cfg *cfg = NULL;
     struct sensoreval_render_ctx renderctx;
 
-    sensoreval_rd_initctx(&rdctx);
-
     if (argc < 3 || argc > 4) {
         fprintf(stderr, "Usage: %s FILE LIVE [CONFIG]\n", argv[0]);
         return -1;
@@ -53,6 +51,8 @@ int main(int argc, char *argv[])
         fprintf(stderr, "can't load config\n");
         return -1;
     }
+
+    sensoreval_rd_initctx(&rdctx, cfg);
 
     QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
     QGuiApplication app(argc, argv);
@@ -133,7 +133,7 @@ int main(int argc, char *argv[])
 
         timer = new QTimer();
 
-        rc = sensoreval_load_data(STDIN_FILENO, &sdarr, &sdarrsz);
+        rc = sensoreval_load_data(cfg, STDIN_FILENO, &sdarr, &sdarrsz);
         if (rc) {
             fprintf(stderr, "can't load sensordata\n");
             return -1;
