@@ -14,7 +14,6 @@ double sensoreval_data_altitude(const struct sensoreval_data *sd) {
 int sensoreval_id_for_time(const struct sensoreval_data *sdarr, size_t sdarrsz,
     size_t startid, uint64_t us, size_t *pid)
 {
-    uint64_t starttime;
     uint64_t endtime;
     size_t i;
 
@@ -31,10 +30,9 @@ int sensoreval_id_for_time(const struct sensoreval_data *sdarr, size_t sdarrsz,
     if (startid == 0)
         startid = 1;
 
-    starttime = sdarr[0].time;
     endtime = sdarr[sdarrsz - 1].time;
 
-    if (us > endtime - starttime) {
+    if (us > endtime) {
         fprintf(stderr, "time %"PRIu64" is out of range\n", us);
         return -1;
     }
@@ -42,7 +40,7 @@ int sensoreval_id_for_time(const struct sensoreval_data *sdarr, size_t sdarrsz,
     for (i = startid; i < sdarrsz; i++) {
         const struct sensoreval_data *sd = &sdarr[i];
 
-        if (sd->time - starttime > us) {
+        if (sd->time > us) {
             *pid = i;
             return 0;
         }

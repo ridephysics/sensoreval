@@ -107,7 +107,7 @@ int sensoreval_load_data(struct sensoreval_cfg *cfg, int fd, struct sensoreval_d
     size_t sdarrsz = 0;
     size_t sdarrpos = 0;
     bool keep_going = true;
-    double starttime = 0;
+    uint64_t starttime = 0;
     bool got_starttime = false;
 
     sensoreval_rd_initctx(&ctx, cfg);
@@ -163,17 +163,26 @@ int sensoreval_load_data(struct sensoreval_cfg *cfg, int fd, struct sensoreval_d
         if (!ok)
             continue;
 
-        // skip samples which come before our start offset
-        if (sdarrpos) {
-            assert(got_starttime);
-            if (sdarr[sdarrpos].time - starttime < cfg->data.startoff) {
-                sdarrpos = 0;
+        if (got_starttime) {
+            // skip samples which come before our start offset
+            if (sdarr[sdarrpos].time < starttime + cfg->data.startoff) {
+                assert(sdarrpos == 0);
                 continue;
             }
+
+            // convert to relative time
+            sdarr[sdarrpos].time -= starttime + cfg->data.startoff;
+            assert(sdarrpos == 0 || sdarr[sdarrpos].time >= sdarr[sdarrpos - 1].time);
         }
-        else if(!got_starttime) {
+        else {
+            assert(sdarrpos==0);
+
             starttime = sdarr[0].time;
+            sdarr[0].time = 0;
             got_starttime = true;
+
+            // just skip the first sample
+            continue;
         }
 
         sdarrpos++;
