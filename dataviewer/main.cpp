@@ -143,7 +143,7 @@ int main(int argc, char *argv[])
         Q_ASSERT(rc == 0);
 
         QObject::connect(timer, &QTimer::timeout, [hud, &renderctx, player, sdarr, sdarrsz, &engine, cfg]() {
-            sensoreval_render_set_ts(&renderctx, player->position()*1000 + cfg->data.startoff);
+            sensoreval_render_set_ts(&renderctx, player->position() * 1000);
             hud->update();
 
             set_sensordata(engine.rootContext(), &renderctx);
