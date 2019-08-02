@@ -18,6 +18,7 @@ struct sensoreval_cfg {
 
     struct {
         uint64_t startoff;
+        double imu_orientation[4];
     } data;
 
     struct {

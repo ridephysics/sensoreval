@@ -8,6 +8,16 @@
 
 #define typeof_member(s, m) typeof( ((s*)NULL)->m )
 
+#define CYAML_FIELD_FLOAT_ARRAY( \
+		_key, _flags, _type, _index) \
+{ \
+	.key = _key, \
+	.value = { \
+		CYAML_VALUE_FLOAT(((_flags) & (~CYAML_FLAG_POINTER)), _type), \
+	}, \
+	.data_offset = (sizeof(_type) * (_index)) \
+}
+
 static const cyaml_strval_t hud_mode_strings[] = {
     { "normal",   SENSOREVAL_HUD_MODE_NORMAL },
     { "booster",   SENSOREVAL_HUD_MODE_BOOSTER },
@@ -23,8 +33,19 @@ static const cyaml_schema_field_t video_fields_schema[] = {
     CYAML_FIELD_END
 };
 
+static const cyaml_schema_field_t quaternion_fields_schema[] = {
+    CYAML_FIELD_FLOAT_ARRAY("w", CYAML_FLAG_DEFAULT, double, 0),
+    CYAML_FIELD_FLOAT_ARRAY("x", CYAML_FLAG_DEFAULT, double, 1),
+    CYAML_FIELD_FLOAT_ARRAY("y", CYAML_FLAG_DEFAULT, double, 2),
+    CYAML_FIELD_FLOAT_ARRAY("z", CYAML_FLAG_DEFAULT, double, 3),
+    CYAML_FIELD_END
+};
+
+
 static const cyaml_schema_field_t data_fields_schema[] = {
     CYAML_FIELD_UINT("startoff", CYAML_FLAG_DEFAULT, typeof_member(struct sensoreval_cfg, data), startoff),
+    CYAML_FIELD_MAPPING("imu_orientation", CYAML_FLAG_OPTIONAL,
+        typeof_member(struct sensoreval_cfg, data), imu_orientation, quaternion_fields_schema),
     CYAML_FIELD_END
 };
 
@@ -92,6 +113,12 @@ int sensoreval_config_load(const char *path, struct sensoreval_cfg **cfg) {
         return -1;
     }
 
+    if (!(*cfg)->data.imu_orientation[0] && !(*cfg)->data.imu_orientation[1]
+        && !(*cfg)->data.imu_orientation[2] && !(*cfg)->data.imu_orientation[3])
+    {
+        (*cfg)->data.imu_orientation[0] = 1;
+    }
+
     return 0;
 }
 
@@ -102,6 +129,11 @@ void sensoreval_config_dump(const struct sensoreval_cfg *cfg) {
 
     fprintf(stderr, "data:\n");
     fprintf(stderr, "\tstartoff: %"PRIu64"\n", cfg->data.startoff);
+    fprintf(stderr, "\timu_orientation:\n");
+    fprintf(stderr, "\t\tw: %f\n", cfg->data.imu_orientation[0]);
+    fprintf(stderr, "\t\tx: %f\n", cfg->data.imu_orientation[1]);
+    fprintf(stderr, "\t\ty: %f\n", cfg->data.imu_orientation[2]);
+    fprintf(stderr, "\t\tz: %f\n", cfg->data.imu_orientation[3]);
 
     fprintf(stderr, "hud:\n");
     fprintf(stderr, "\tmode: %"PRId64"\n", (int64_t)cfg->hud.mode);
