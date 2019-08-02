@@ -2,6 +2,7 @@ project(libsensoreval)
 
 add_library(sensoreval
     data.c
+    readdata.c
     render.c
     config.c
 
