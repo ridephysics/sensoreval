@@ -7,9 +7,12 @@
 #include <QSocketNotifier>
 #include <qmlnative/qmlvideohud.h>
 #include <qmlnative/orientation.h>
+#include <memory>
+
+extern "C" {
 #include <unistd.h>
 #include <fcntl.h>
-#include <memory>
+}
 
 static void set_sensordata(QQmlContext *ctx, const struct sensoreval_render_ctx *renderctx)
 {
