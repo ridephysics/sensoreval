@@ -30,6 +30,7 @@ enum sensoreval_rd_ret sensoreval_load_data_one(struct sensoreval_rd_ctx *ctx, i
     double d;
     uint64_t t_bmp;
     size_t i;
+    double qinv[4];
 
 again:
     nbytes = read(fd, ctx->buf + ctx->bufpos, sizeof(ctx->buf) - ctx->bufpos);
@@ -88,6 +89,13 @@ again:
     psd->quat[3] = d;
 
     assert(rdoff == sizeof(ctx->buf));
+
+    // account for IMU orientation
+    quat_inverse(qinv, ctx->cfg->data.imu_orientation);
+    quat_mul(psd->quat, psd->quat, ctx->cfg->data.imu_orientation);
+    quat_rotated_vec3(psd->accel, qinv, psd->accel);
+    quat_rotated_vec3(psd->gyro, qinv, psd->gyro);
+    quat_rotated_vec3(psd->mag, qinv, psd->mag);
 
     return SENSOREVAL_RD_RET_OK;
 }
