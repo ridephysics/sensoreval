@@ -111,7 +111,7 @@ final:
     return ret;
 }
 
-static int axis_plot(PyObject *axis, PyObject *data) {
+static int axis_plot(PyObject *axis, PyObject *time, PyObject *data) {
     int ret = -1;
     int rc;
     PyObject *plot = NULL;
@@ -124,15 +124,21 @@ static int axis_plot(PyObject *axis, PyObject *data) {
         goto final;
     }
 
-    args = PyTuple_New(1);
+    args = PyTuple_New(2);
     if (!args) {
         fprintf(stderr, "can't create argument tuple\n");
         goto final;
     }
 
-    rc = PyTuple_SetItem(args, 0, data);
+    rc = PyTuple_SetItem(args, 0, time);
     if (rc < 0) {
         fprintf(stderr, "can't set arg 0: %d\n", rc);
+        goto final;
+    }
+
+    rc = PyTuple_SetItem(args, 1, data);
+    if (rc < 0) {
+        fprintf(stderr, "can't set arg 1: %d\n", rc);
         goto final;
     }
 
@@ -156,6 +162,46 @@ final:
     return ret;
 }
 
+static PyObject* np_array(PyObject *np, PyObject *list) {
+    int rc;
+    PyObject *array = NULL;
+    PyObject *args = NULL;
+    PyObject *pyret = NULL;
+
+    array = PyObject_GetAttrString(np, "array");
+    if (!array || !PyCallable_Check(array)) {
+        fprintf(stderr, "can't find array\n");
+        goto final;
+    }
+
+    args = PyTuple_New(1);
+    if (!args) {
+        fprintf(stderr, "can't create argument tuple\n");
+        goto final;
+    }
+
+    rc = PyTuple_SetItem(args, 0, list);
+    if (rc < 0) {
+        fprintf(stderr, "can't set arg 0: %d\n", rc);
+        goto final;
+    }
+
+    pyret = PyObject_CallObject(array, args);
+    if (!pyret) {
+        fprintf(stderr, "np.array failed\n");
+        PyErr_Print();
+        goto final;
+    }
+
+final:
+    if (args)
+        Py_DECREF(args);
+    if (array)
+        Py_DECREF(array);
+
+    return pyret;
+}
+
 int sensoreval_plot(size_t nplots, sensoreval_plot_getdata_t getdata, void *ctx) {
     int rc;
     int ret = -1;
@@ -166,6 +212,7 @@ int sensoreval_plot(size_t nplots, sensoreval_plot_getdata_t getdata, void *ctx)
     PyObject *subplots_ret = NULL;
     PyObject *timearr = NULL;
     PyObject *axes = NULL;
+    PyObject *tmp = NULL;
 
     program = Py_DecodeLocale("python", NULL);
     if (!program) {
@@ -202,6 +249,15 @@ int sensoreval_plot(size_t nplots, sensoreval_plot_getdata_t getdata, void *ctx)
         goto finalize;
     }
 
+    tmp = np_array(np, timearr);
+    if (!tmp) {
+        fprintf(stderr, "can't get time np.array\n");
+        goto finalize;
+    }
+    Py_DECREF(timearr);
+    timearr = tmp;
+    tmp = NULL;
+
     axes = PyTuple_GetItem(subplots_ret, 1);
     if (!axes) {
         fprintf(stderr, "can't get axes\n");
@@ -218,6 +274,17 @@ int sensoreval_plot(size_t nplots, sensoreval_plot_getdata_t getdata, void *ctx)
             goto finalize;
         }
 
+        tmp = np_array(np, data);
+        if (!tmp) {
+            fprintf(stderr, "can't get time np.array\n");
+            PyErr_Print();
+            Py_DECREF(data);
+            goto finalize;
+        }
+        Py_DECREF(data);
+        data = tmp;
+        tmp = NULL;
+
         if (nplots > 1) {
             axis = PySequence_GetItem(axes, i);
             if (!axis) {
@@ -231,7 +298,7 @@ int sensoreval_plot(size_t nplots, sensoreval_plot_getdata_t getdata, void *ctx)
             axis = axes;
         }
 
-        rc = axis_plot(axis, data);
+        rc = axis_plot(axis, timearr, data);
         Py_DECREF(data);
         if (nplots > 1)
             Py_DECREF(axis);
@@ -250,6 +317,8 @@ int sensoreval_plot(size_t nplots, sensoreval_plot_getdata_t getdata, void *ctx)
     ret = 0;
 
 finalize:
+    if (tmp)
+        Py_DECREF(tmp);
     if (timearr)
         Py_DECREF(timearr);
     if (subplots_ret)
