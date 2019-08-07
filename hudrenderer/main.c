@@ -1,5 +1,4 @@
 #include <cairo/cairo.h>
-#include <assert.h>
 #include <sensoreval.h>
 #include <stdio.h>
 #include <unistd.h>
@@ -41,21 +40,37 @@ int main(int argc, char **argv) {
     }
 
     s = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, 2720, 1520);
-    assert(s);
+    if (!s) {
+        fprintf(stderr, "cairo_image_surface_create failed\n");
+        return -1;
+    }
 
     cr = cairo_create(s);
-    assert(cr);
+    if (!cr) {
+        fprintf(stderr, "cairo_create failed\n");
+        return -1;
+    }
     cairo_set_antialias(cr, CAIRO_ANTIALIAS_BEST);
 
     rc = sensoreval_render_set_ts(&renderctx, 0);
-    assert(!rc);
+    if (rc) {
+        fprintf(stderr, "sensoreval_render_set_ts failed\n");
+        return -1;
+    }
 
     rc = sensoreval_render(&renderctx, cr);
-    assert(!rc);
+    if (rc) {
+        fprintf(stderr, "sensoreval_render failed\n");
+        return -1;
+    }
 
     cairo_surface_flush(s);
+
     cs = cairo_surface_write_to_png(s, "/tmp/out.png");
-    assert(cs==CAIRO_STATUS_SUCCESS);
+    if (cs != CAIRO_STATUS_SUCCESS) {
+        fprintf(stderr, "cairo_surface_write_to_png failed\n");
+        return -1;
+    }
 
     return 0;
 }
