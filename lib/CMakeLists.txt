@@ -8,6 +8,7 @@ add_library(sensoreval
     render.c
     config.c
     plot.c
+    math.c
 
     hudmodehandlers/booster.c
 )
@@ -16,6 +17,7 @@ target_include_directories(sensoreval PUBLIC
     ${PYTHON_INCLUDE_DIRS}
 )
 target_link_libraries(sensoreval
+    pcg
     cairo
     m
     cyaml
