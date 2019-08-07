@@ -1,5 +1,4 @@
 #include <sensoreval.h>
-#include <assert.h>
 #include <string.h>
 #include <stdio.h>
 #include <errno.h>
@@ -88,7 +87,7 @@ again:
     rdvalue(&d);
     psd->quat[3] = d;
 
-    assert(rdoff == sizeof(ctx->buf));
+    sensoreval_assert_se(rdoff == sizeof(ctx->buf));
 
     // account for IMU orientation
     quat_inverse(qinv, ctx->cfg->data.imu_orientation);
@@ -166,16 +165,16 @@ int sensoreval_load_data(struct sensoreval_cfg *cfg, int fd, struct sensoreval_d
         if (got_starttime) {
             // skip samples which come before our start offset
             if (sdarr[sdarrpos].time < starttime + cfg->data.startoff) {
-                assert(sdarrpos == 0);
+                sensoreval_assert_se(sdarrpos == 0);
                 continue;
             }
 
             // convert to relative time
             sdarr[sdarrpos].time -= starttime + cfg->data.startoff;
-            assert(sdarrpos == 0 || sdarr[sdarrpos].time >= sdarr[sdarrpos - 1].time);
+            sensoreval_assert_se(sdarrpos == 0 || sdarr[sdarrpos].time >= sdarr[sdarrpos - 1].time);
         }
         else {
-            assert(sdarrpos==0);
+            sensoreval_assert_se(sdarrpos==0);
 
             starttime = sdarr[0].time;
             sdarr[0].time = 0;
