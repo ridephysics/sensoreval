@@ -25,4 +25,7 @@ double sensoreval_data_altitude(const struct sensoreval_data *sd);
 int sensoreval_id_for_time(const struct sensoreval_data *sdarr, size_t sdarrsz,
     size_t startid, uint64_t us, size_t *pid);
 
+int sensoreval_data_downscale(const struct sensoreval_data *sdarr, size_t sdarrsz, uint64_t timeframe,
+    struct sensoreval_data **plores, size_t *ploressz);
+
 #endif /* SENSOREVAL_DATA_H */
