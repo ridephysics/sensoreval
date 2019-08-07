@@ -13,6 +13,32 @@ add_compile_options(
     -Werror
 )
 
+add_library(pcg
+    ${EXTERNAL_DIR}/pcg-c/src/pcg-advance-8.c
+    ${EXTERNAL_DIR}/pcg-c/src/pcg-advance-16.c
+    ${EXTERNAL_DIR}/pcg-c/src/pcg-advance-32.c
+    ${EXTERNAL_DIR}/pcg-c/src/pcg-advance-64.c
+    ${EXTERNAL_DIR}/pcg-c/src/pcg-advance-128.c
+
+    ${EXTERNAL_DIR}/pcg-c/src/pcg-output-8.c
+    ${EXTERNAL_DIR}/pcg-c/src/pcg-output-16.c
+    ${EXTERNAL_DIR}/pcg-c/src/pcg-output-32.c
+    ${EXTERNAL_DIR}/pcg-c/src/pcg-output-64.c
+    ${EXTERNAL_DIR}/pcg-c/src/pcg-output-128.c
+
+    ${EXTERNAL_DIR}/pcg-c/src/pcg-rngs-8.c
+    ${EXTERNAL_DIR}/pcg-c/src/pcg-rngs-16.c
+    ${EXTERNAL_DIR}/pcg-c/src/pcg-rngs-32.c
+    ${EXTERNAL_DIR}/pcg-c/src/pcg-rngs-64.c
+    ${EXTERNAL_DIR}/pcg-c/src/pcg-rngs-128.c
+
+    ${EXTERNAL_DIR}/pcg-c/src/pcg-global-32.c
+    ${EXTERNAL_DIR}/pcg-c/src/pcg-global-64.c
+)
+target_include_directories(pcg PUBLIC
+    ${EXTERNAL_DIR}/pcg-c/include
+)
+
 add_subdirectory(lib)
 add_subdirectory(hudrenderer)
 add_subdirectory(dataviewer)
