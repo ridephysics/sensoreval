@@ -6,13 +6,26 @@
 #include <stdbool.h>
 #include <pcg_variants.h>
 
-#define SRCVAL(i, j) (*((double*)(arr + (i) * arrisz + voff + (j) * sizeof(double))))
+#define XVAL(i) (*((uint64_t*)(arr + (i) * arrisz + xoff)))
+#define YVAL(i) ({ \
+    double *__py = (double*) (arr + (i) * arrisz + yoff); \
+    double __sum = 0; \
+    double __ret; \
+    if (ynum > 1) { \
+        for (size_t __i = 0; __i < ynum; __i++) \
+            __sum += pow(__py[__i], 2); \
+        __ret = sqrt(__sum); \
+    } \
+    else { \
+        __ret = __py[0]; \
+    } \
+    __ret; \
+})
 #define LMSVAL(k, i) LMS[N * ((k) - 1) + ((i) - 1)]
-int ampd(const void *arr, size_t arrsz, size_t arrisz,
-    size_t voff, size_t vsz, bool peak, int8_t *result)
-{
-    size_t j;
 
+int ampd(const void *arr, size_t arrsz, size_t arrisz,
+    size_t yoff, size_t ynum, bool peak, int8_t *result)
+{
     size_t i;
     size_t k;
     size_t k2;
@@ -23,7 +36,7 @@ int ampd(const void *arr, size_t arrsz, size_t arrisz,
     double g_at_l;
     pcg32_random_t rng;
 
-    if (!arr || !arrsz || !arrisz || !vsz || !result)
+    if (!arr || !arrsz || !arrisz || !ynum || !result)
         return -1;
 
     pcg32_srandom_r(&rng, 0, 0);
@@ -44,30 +57,9 @@ int ampd(const void *arr, size_t arrsz, size_t arrisz,
 
     for (k=1; k<=L; k++) {
         for (i=k+2; i<=N-k+1; i++) {
-            double xim1;
-            double ximkm1;
-            double xipkm1;
-
-            if (vsz > 1) {
-                xim1 = 0;
-                ximkm1 = 0;
-                xipkm1 = 0;
-
-                for (j=0; j<vsz; j++) {
-                    xim1 += pow(SRCVAL(i-1, j), 2);
-                    ximkm1 += pow(SRCVAL(i-k-1, j), 2);
-                    xipkm1 += pow(SRCVAL(i+k-1, j), 2);
-                }
-
-                xim1 = sqrt(xim1);
-                ximkm1 = sqrt(ximkm1);
-                xipkm1 = sqrt(xipkm1);
-            }
-            else {
-                xim1 = SRCVAL(i-1, 0);
-                ximkm1 = SRCVAL(i-k-1, 0);
-                xipkm1 = SRCVAL(i+k-1, 0);
-            }
+            double xim1 = YVAL(i-1);
+            double ximkm1 = YVAL(i-k-1);
+            double xipkm1 = YVAL(i+k-1);
 
             if (peak) {
                 if ((xim1 > ximkm1) & (xim1 > xipkm1))

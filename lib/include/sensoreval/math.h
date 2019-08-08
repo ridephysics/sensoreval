@@ -276,10 +276,10 @@ static inline void quat_from_axis_and_angle(double dst[4], const double axis[3],
     quat_normalized(dst, dst);
 }
 
-int ampd(const void *arr, size_t arrsz, size_t arrisz,
-    size_t voff, size_t vsz, bool peak, int8_t *result);
 
-#define AMPD(arr, arrsz, member, vsz, peak, result) ampd((arr), (arrsz), sizeof(*(arr)), \
-    offsetof(typeof(*(arr)), member), (vsz), (peak), (result))
+int ampd(const void *arr, size_t arrsz, size_t arrisz,
+    size_t voff, size_t vnum, bool peak, int8_t *result);
+#define AMPD(arr, arrsz, member, vnum, peak, result) ampd((arr), (arrsz), sizeof(*(arr)), \
+    offsetof(typeof(*(arr)), member), (vnum), (peak), (result))
 
 #endif /* SENSOREVAL_MATH_H */
