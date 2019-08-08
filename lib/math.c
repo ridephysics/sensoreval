@@ -97,13 +97,14 @@ int ampd(const void *arr, size_t arrsz, size_t arrisz,
     // detect peaks
     for (i=1; i<=N; i++) {
         double sum_outer = 0;
+        double sum_column = 0;
+
+        for (k2=1; k2<=l; k2++) {
+            sum_column += LMSVAL(k2, i);
+        }
 
         for (k=1; k<=l; k++) {
             double tmp;
-            double sum_column = 0;
-            for (k2=1; k2<=l; k2++) {
-                sum_column += LMSVAL(k2, i);
-            }
 
             tmp = LMSVAL(k, i) - (1.0/l) * sum_column;
             tmp = pow(tmp, 2);
