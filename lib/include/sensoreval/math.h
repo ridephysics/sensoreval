@@ -276,10 +276,31 @@ static inline void quat_from_axis_and_angle(double dst[4], const double axis[3],
     quat_normalized(dst, dst);
 }
 
+double mean(const double *data, size_t len);
+double stddev(const double *data, size_t len);
 
 int ampd(const void *arr, size_t arrsz, size_t arrisz,
     size_t voff, size_t vnum, bool peak, int8_t *result);
 #define AMPD(arr, arrsz, member, vnum, peak, result) ampd((arr), (arrsz), sizeof(*(arr)), \
     offsetof(typeof(*(arr)), member), (vnum), (peak), (result))
+
+int lls(const void *arr, size_t arrsz, size_t arrisz,
+    size_t xoff, size_t yoff, size_t ynum, double *a, double *b);
+#define LLS(arr, arrsz, xmem, ymem, ynum, a, b) lls((arr), (arrsz), sizeof(*(arr)), \
+    offsetof(typeof(*(arr)), xmem), offsetof(typeof(*(arr)), ymem), (ynum), (a), (b))
+
+int thresholding(const void *arr, size_t arrsz, size_t arrisz,
+    size_t yoff, size_t ynum, int8_t *_signals,
+    size_t lag, double threshold, double influence);
+#define THRESHOLDING(arr, arrsz, ymem, ynum, signals, lag, threshold, influence) \
+    thresholding((arr), (arrsz), sizeof(*(arr)), \
+    offsetof(typeof(*(arr)), ymem), (ynum), (signals), (lag), (threshold), (influence))
+
+int pt_momentum(const void *arr, size_t arrsz, size_t arrisz,
+    size_t xoff, size_t yoff, size_t ynum, int8_t *pt, double friction, double initial_min_momentum);
+#define PT_MOMENTUM(arr, arrsz, xmem, ymem, ynum, pt, friction, imm) \
+    pt_momentum((arr), (arrsz), sizeof(*(arr)), \
+    offsetof(typeof(*(arr)), xmem), offsetof(typeof(*(arr)), ymem), (ynum), \
+    (pt), (friction), (imm))
 
 #endif /* SENSOREVAL_MATH_H */
