@@ -127,6 +127,16 @@ int sensoreval_data_downscale(const struct sensoreval_data *sdarr, size_t sdarrs
             d->temperature = dprev->temperature;
             d->pressure = dprev->pressure;
         }
+        else {
+            for (k=0; k<3; k++) {
+                d->accel[k] = sdarr[0].accel[k];
+                d->gyro[k] = sdarr[0].gyro[k];
+                d->mag[k] = sdarr[0].mag[k];
+            }
+
+            d->temperature = sdarr[0].temperature;
+            d->pressure = sdarr[0].pressure;
+        }
     }
 
     *plores = lores;
