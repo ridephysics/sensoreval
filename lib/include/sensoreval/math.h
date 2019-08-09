@@ -149,7 +149,7 @@ static inline void quat_div_num(double dst[4], double q[4], double divisor) {
     dst[0] = q[0] / divisor;
     dst[1] = q[1] / divisor;
     dst[2] = q[2] / divisor;
-    dst[3] = q[4] / divisor;
+    dst[3] = q[3] / divisor;
 }
 
 static inline void quat_normalized(double dst[4], double q[4]) {
