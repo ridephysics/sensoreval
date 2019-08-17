@@ -3,13 +3,17 @@
 #include <stdio.h>
 #include <string.h>
 
+#define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
+
+static const struct sensoreval_hud_mode_handler *modemap[] = {
+    [SENSOREVAL_HUD_MODE_BOOSTER] = &sensoreval_hud_handler_booster,
+};
+
 static const struct sensoreval_hud_mode_handler *mode2handler(enum sensoreval_hud_mode mode) {
-    switch (mode) {
-    case SENSOREVAL_HUD_MODE_BOOSTER:
-        return &sensoreval_hud_handler_booster;
-    default:
+    if (mode >= ARRAY_SIZE(modemap))
         return NULL;
-    }
+
+    return modemap[mode];
 }
 
 #define DPI 141.21
