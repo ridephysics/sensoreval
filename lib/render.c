@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include <string.h>
 
-static struct sensoreval_hud_mode_handler *mode2handler(enum sensoreval_hud_mode mode) {
+static const struct sensoreval_hud_mode_handler *mode2handler(enum sensoreval_hud_mode mode) {
     switch (mode) {
     case SENSOREVAL_HUD_MODE_BOOSTER:
         return &sensoreval_hud_handler_booster;
