@@ -47,5 +47,6 @@ struct sensoreval_hud_mode_handler {
 };
 
 extern const struct sensoreval_hud_mode_handler sensoreval_hud_handler_booster;
+extern const struct sensoreval_hud_mode_handler sensoreval_hud_handler_swingboat;
 
 #endif /* SENSOREVAL_RENDER_H */

@@ -7,6 +7,7 @@
 
 static const struct sensoreval_hud_mode_handler *modemap[] = {
     [SENSOREVAL_HUD_MODE_BOOSTER] = &sensoreval_hud_handler_booster,
+    [SENSOREVAL_HUD_MODE_SWINGBOAT] = &sensoreval_hud_handler_swingboat,
 };
 
 static const struct sensoreval_hud_mode_handler *mode2handler(enum sensoreval_hud_mode mode) {

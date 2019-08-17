@@ -11,6 +11,7 @@ add_library(sensoreval
     math.c
 
     hudmodehandlers/booster.c
+    hudmodehandlers/swingboat.c
 )
 target_include_directories(sensoreval PUBLIC
     include

@@ -4,6 +4,7 @@
 enum sensoreval_hud_mode {
     SENSOREVAL_HUD_MODE_NORMAL = 0,
     SENSOREVAL_HUD_MODE_BOOSTER,
+    SENSOREVAL_HUD_MODE_SWINGBOAT,
 };
 
 enum sensoreval_orientation_mode {
