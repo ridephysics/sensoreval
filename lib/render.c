@@ -107,6 +107,8 @@ int sensoreval_render(const struct sensoreval_render_ctx *ctx, cairo_t *cr) {
     }
 
     cairo_save (cr);
+
+    cairo_save (cr);
     cairo_set_source_rgba (cr, 0, 0, 0, 0);
     cairo_set_operator (cr, CAIRO_OPERATOR_SOURCE);
     cairo_paint (cr);
@@ -114,15 +116,20 @@ int sensoreval_render(const struct sensoreval_render_ctx *ctx, cairo_t *cr) {
 
     if (ctx->handler && ctx->handler->render_content) {
         rc = ctx->handler->render_content(ctx, cr);
-        if (rc)
+        if (rc) {
+            cairo_restore (cr);
             return rc;
+        }
     }
 
     if (ctx->handler && ctx->handler->render_overlay) {
         rc = ctx->handler->render_overlay(ctx, cr);
-        if (rc)
+        if (rc) {
+            cairo_restore (cr);
             return rc;
+        }
     }
 
+    cairo_restore (cr);
     return 0;
 }
