@@ -280,6 +280,18 @@ static inline void quat_from_axis_and_angle(double dst[4], const double axis[3],
     quat_normalized(dst, dst);
 }
 
+static inline double tri_opp2adj(double opp, double angle) {
+    return opp / tan(angle);
+}
+
+static inline double tri_hyp2opp(double hyp, double angle) {
+    return sin(angle) * hyp;
+}
+
+static inline double tri_hyp2adj(double hyp, double angle) {
+    return cos(angle) * hyp;
+}
+
 double mean(const double *data, size_t len);
 double stddev(const double *data, size_t len);
 
