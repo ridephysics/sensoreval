@@ -17,17 +17,6 @@ static const struct sensoreval_hud_mode_handler *mode2handler(enum sensoreval_hu
     return modemap[mode];
 }
 
-#define DPI 141.21
-#define SPI DPI
-
-static inline double dp2px(double dpi, double dp) {
-    return dp * (dpi / 160.0);
-}
-
-static inline double px2dp(double dpi, double px) {
-    return px / (dpi / 160.0);
-}
-
 int sensoreval_render_init(struct sensoreval_render_ctx *ctx,
     const struct sensoreval_cfg *cfg,
     const struct sensoreval_data *sdarr, size_t sdarrsz)
@@ -107,8 +96,6 @@ const struct sensoreval_data *sensoreval_current_data(const struct sensoreval_re
 
 int sensoreval_render(const struct sensoreval_render_ctx *ctx, cairo_t *cr) {
     int rc;
-    char txtbuf[50];
-    cairo_text_extents_t extents;
     const struct sensoreval_data *sd;
 
     sd = sensoreval_current_data(ctx);
@@ -134,21 +121,6 @@ int sensoreval_render(const struct sensoreval_render_ctx *ctx, cairo_t *cr) {
         if (rc)
             return rc;
     }
-
-    cairo_select_font_face (cr, "Sans", CAIRO_FONT_SLANT_NORMAL, CAIRO_FONT_WEIGHT_BOLD);
-    cairo_set_font_size (cr, dp2px(SPI, 90));
-
-    rc = snprintf(txtbuf, sizeof(txtbuf), "%d m", (int)sensoreval_data_altitude(sd));
-    if (rc < 0 || (size_t)rc >= sizeof(txtbuf))
-        return -1;
-    cairo_text_extents (cr, txtbuf, &extents);
-    cairo_move_to (cr, 0, extents.height);
-    cairo_text_path (cr, txtbuf);
-    cairo_set_source_rgb (cr, 1, 1, 1);
-    cairo_fill_preserve (cr);
-    cairo_set_source_rgb (cr, 0, 0, 0);
-    cairo_set_line_width (cr, dp2px(SPI, 2));
-    cairo_stroke (cr);
 
     return 0;
 }
