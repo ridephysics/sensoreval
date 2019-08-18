@@ -39,9 +39,11 @@ int sensoreval_render_init(struct sensoreval_render_ctx *ctx,
 
     ctx->handler = mode2handler(cfg->hud.mode);
 
-    rc = ctx->handler->init(ctx);
-    if (rc) {
-        return -1;
+    if (ctx->handler && ctx->handler->init) {
+        rc = ctx->handler->init(ctx);
+        if (rc) {
+            return -1;
+        }
     }
 
     return 0;
