@@ -21,10 +21,17 @@
 static const cyaml_strval_t hud_mode_strings[] = {
     { "normal",   SENSOREVAL_HUD_MODE_NORMAL },
     { "booster",   SENSOREVAL_HUD_MODE_BOOSTER },
+    { "swingboat",   SENSOREVAL_HUD_MODE_SWINGBOAT },
 };
 
 static const cyaml_strval_t orientation_mode_strings[] = {
     { "normal",   SENSOREVAL_ORIENTATION_MODE_NORMAL },
+};
+
+static const cyaml_strval_t swingboat_pos_strings[] = {
+    { "back",   SENSOREVAL_SWINGBOAT_POS_BACK },
+    { "middle",   SENSOREVAL_SWINGBOAT_POS_MIDDLE },
+    { "front",   SENSOREVAL_SWINGBOAT_POS_FRONT },
 };
 
 static const cyaml_schema_field_t video_fields_schema[] = {
@@ -55,6 +62,12 @@ static const cyaml_schema_field_t booster_fields_schema[] = {
     CYAML_FIELD_END
 };
 
+static const cyaml_schema_field_t swingboat_fields_schema[] = {
+    CYAML_FIELD_ENUM("position", CYAML_FLAG_DEFAULT, typeof_member(struct sensoreval_cfg, hud.u.swingboat),
+        position, swingboat_pos_strings, CYAML_ARRAY_LEN(swingboat_pos_strings)),
+    CYAML_FIELD_END
+};
+
 static const cyaml_schema_field_t hud_fields_schema[] = {
     CYAML_FIELD_ENUM("mode", CYAML_FLAG_DEFAULT, typeof_member(struct sensoreval_cfg, hud),
         mode, hud_mode_strings, CYAML_ARRAY_LEN(hud_mode_strings)),
@@ -63,6 +76,8 @@ static const cyaml_schema_field_t hud_fields_schema[] = {
 
     CYAML_FIELD_MAPPING("booster", CYAML_FLAG_OPTIONAL,
         typeof_member(struct sensoreval_cfg, hud), u.booster, booster_fields_schema),
+    CYAML_FIELD_MAPPING("swingboat", CYAML_FLAG_OPTIONAL,
+        typeof_member(struct sensoreval_cfg, hud), u.swingboat, swingboat_fields_schema),
     CYAML_FIELD_END
 };
 
@@ -143,6 +158,11 @@ void sensoreval_config_dump(const struct sensoreval_cfg *cfg) {
     case SENSOREVAL_HUD_MODE_BOOSTER:
         fprintf(stderr, "\tbooster:\n");
         fprintf(stderr, "\t\tradius: %f\n", cfg->hud.u.booster.radius);
+        break;
+
+    case SENSOREVAL_HUD_MODE_SWINGBOAT:
+        fprintf(stderr, "\tswingboat:\n");
+        fprintf(stderr, "\t\tposition: %d\n", cfg->hud.u.swingboat.position);
         break;
 
     default:

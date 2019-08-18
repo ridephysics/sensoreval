@@ -11,6 +11,12 @@ enum sensoreval_orientation_mode {
     SENSOREVAL_ORIENTATION_MODE_NORMAL = 0,
 };
 
+enum sensoreval_swingboat_pos {
+    SENSOREVAL_SWINGBOAT_POS_BACK,
+    SENSOREVAL_SWINGBOAT_POS_MIDDLE,
+    SENSOREVAL_SWINGBOAT_POS_FRONT,
+};
+
 struct sensoreval_cfg {
     struct {
         uint64_t startoff;
@@ -34,6 +40,10 @@ struct sensoreval_cfg {
             struct {
                 double radius;
             } inversion;
+
+            struct {
+                enum sensoreval_swingboat_pos position;
+            } swingboat;
         } u;
     } hud;
 
