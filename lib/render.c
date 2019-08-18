@@ -37,6 +37,9 @@ int sensoreval_render_init(struct sensoreval_render_ctx *ctx,
     ctx->sdarrsz = sdarrsz;
     ctx->datasrc = SENSOREVAL_RENDER_DATASRC_NONE;
 
+    ctx->dpi = 141.21;
+    ctx->spi = ctx->dpi;
+
     ctx->handler = mode2handler(cfg->hud.mode);
 
     if (ctx->handler && ctx->handler->init) {

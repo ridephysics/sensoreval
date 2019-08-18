@@ -17,6 +17,9 @@ struct sensoreval_render_ctx {
     const struct sensoreval_hud_mode_handler *handler;
     void *handlerctx;
 
+    double dpi;
+    double spi;
+
     enum sensoreval_render_datasrc datasrc;
     union {
         struct {
