@@ -8,11 +8,15 @@ struct pdata {
     double ppm;
 
     struct sensordata_swingboat *sdarr;
+
+    struct sensoreval_data *lores;
+    size_t lores_sz;
 };
 
 static int hud_init(struct sensoreval_render_ctx *ctx) {
     struct pdata *pdata;
     size_t i;
+    int rc;
 
     pdata = calloc(1, sizeof(*pdata));
     if (!pdata)
@@ -21,6 +25,15 @@ static int hud_init(struct sensoreval_render_ctx *ctx) {
     pdata->sdarr = calloc(ctx->sdarrsz, sizeof(*(pdata->sdarr)));
     if (!pdata->sdarr) {
         free(pdata);
+        return -1;
+    }
+
+    // downscale so we can draw smoother graphs
+    rc = sensoreval_data_downscale(ctx->sdarr, ctx->sdarrsz, 1000000.0 / 30.0,
+        &pdata->lores, &pdata->lores_sz);
+    if (rc) {
+        free(pdata);
+        free(pdata->sdarr);
         return -1;
     }
 
@@ -181,9 +194,101 @@ static int hud_render_content(const struct sensoreval_render_ctx *ctx, cairo_t *
     return 0;
 }
 
+static int draw_graph(const struct sensoreval_render_ctx *ctx, cairo_t *cr,
+    size_t graph_width, size_t graph_height,
+    uint64_t dt)
+{
+    struct pdata *pdata = ctx->handlerctx;
+    size_t sdid;
+    size_t dataoff;
+    cairo_pattern_t *pat;
+    int rc;
+    double maxval = 3.0;
+    double redval = 5.0;
+
+    if (ctx->datasrc != SENSOREVAL_RENDER_DATASRC_ARR) {
+        return -1;
+    }
+    sdid = ctx->u.arr.id;
+
+    rc = sensoreval_id_for_time(pdata->lores, pdata->lores_sz,
+        0, ctx->sdarr[sdid].time, &sdid);
+    if (rc) {
+        return -1;
+    }
+    const struct sensoreval_data *sdnow = &pdata->lores[sdid];
+
+    cairo_save(cr);
+    cairo_rectangle(cr, 0, 0, graph_width, graph_height);
+    cairo_clip(cr);
+
+    // graph-line style
+    cairo_set_line_width(cr, 6.0);
+    pat = cairo_pattern_create_linear(0, graph_height - (graph_height / maxval * redval), 0, graph_height);
+    cairo_pattern_add_color_stop_rgb(pat, 0.0, 1, 0, 0);
+    cairo_pattern_add_color_stop_rgb(pat, 0.5, 1, 1, 0);
+    cairo_pattern_add_color_stop_rgb(pat, 1.0, 0, 1, 0);
+    cairo_set_source(cr, pat);
+
+    uint64_t tstart = sdnow->time - dt;
+    for (dataoff = sdid; dataoff>0; dataoff--) {
+        const struct sensoreval_data *sd = &pdata->lores[dataoff];
+        if (sd->time < tstart)
+            break;
+
+        double x = graph_width - ((((double)graph_width) / dt * (sdnow->time - sd->time)));
+        double y = ((double)graph_height) - (graph_height / maxval * vec3_len(sd->accel));
+
+        if (dataoff == sdid)
+            cairo_move_to(cr, x, y);
+        else
+            cairo_line_to(cr, x, y);
+    }
+
+    cairo_stroke(cr);
+    cairo_pattern_destroy(pat);
+    cairo_restore(cr);
+
+    // border
+    cairo_set_source_rgba_u32(cr, 0x000000ff);
+    cairo_set_line_width(cr, 3.0);
+    cairo_move_to(cr, 0, 0);
+    cairo_line_to(cr, 0, graph_height);
+    cairo_line_to(cr, graph_width, graph_height);
+    cairo_stroke(cr);
+
+    return 0;
+}
+
 static int hud_render_overlay(const struct sensoreval_render_ctx *ctx, cairo_t *cr) {
-    (void)(ctx);
-    (void)(cr);
+    PangoFontDescription *font;
+    const struct sensoreval_data *sd;
+    size_t w;
+
+    sd = sensoreval_current_data(ctx);
+    if (!sd) {
+        return -1;
+    }
+
+    font = pango_font_description_new();
+    pango_font_description_set_family_static(font, "Archivo Black");
+    pango_font_description_set_absolute_size(font, sp2px(100 * PANGO_SCALE));
+
+    cairo_save(cr);
+    cairo_translate(cr, dp2px(10), dp2px(10));
+
+    sensoreval_render_font(cr, font, &w, NULL, "%.1fG", vec3_len(sd->accel));
+
+    cairo_save(cr);
+    cairo_translate(cr, w, 0);
+    cairo_scale(cr, ctx->spi/160.0, ctx->spi/160.0);
+    cairo_translate(cr, 10, 0);
+    draw_graph(ctx, cr, 200, 100, 10000000);
+    cairo_restore(cr);
+
+    cairo_restore(cr);
+
+    pango_font_description_free(font);
     return 0;
 }
 
