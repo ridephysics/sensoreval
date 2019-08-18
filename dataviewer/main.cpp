@@ -54,6 +54,7 @@ int main(int argc, char *argv[])
         fprintf(stderr, "can't load config\n");
         return -1;
     }
+    sensoreval_config_dump(cfg);
 
     sensoreval_rd_initctx(&rdctx, cfg);
 
