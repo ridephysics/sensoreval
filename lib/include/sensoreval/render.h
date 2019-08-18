@@ -49,4 +49,30 @@ struct sensoreval_hud_mode_handler {
 extern const struct sensoreval_hud_mode_handler sensoreval_hud_handler_booster;
 extern const struct sensoreval_hud_mode_handler sensoreval_hud_handler_swingboat;
 
+static inline void cairo_surface_sz_user(cairo_t *cr, double *pw, double *ph) {
+    cairo_surface_t *surface = cairo_get_target(cr);
+    double sw = (double)cairo_image_surface_get_width(surface);
+    double sh = (double)cairo_image_surface_get_height(surface);
+
+    cairo_device_to_user_distance(cr, &sw, &sh);
+
+    *pw = sw;
+    *ph = sh;
+}
+
+static inline void cairo_set_source_rgba_u32(cairo_t *cr, uint32_t rgba) {
+    uint8_t r = (rgba >> 24) & 0xff;
+    uint8_t g = (rgba >> 16) & 0xff;
+    uint8_t b = (rgba >> 8) & 0xff;
+    uint8_t a = (rgba >> 0) & 0xff;
+
+    double rf = 1.0 / 255.0 * r;
+    double gf = 1.0 / 255.0 * g;
+    double bf = 1.0 / 255.0 * b;
+    double af = 1.0 / 255.0 * a;
+
+    cairo_set_source_rgba(cr, rf, gf, bf, af);
+}
+
+
 #endif /* SENSOREVAL_RENDER_H */
