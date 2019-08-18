@@ -80,4 +80,9 @@ static inline void cairo_set_source_rgba_u32(cairo_t *cr, uint32_t rgba) {
 #define dp2px(dp) ((dp) * (ctx->dpi / 160.0))
 #define sp2px(dp) ((dp) * (ctx->spi / 160.0))
 
+int sensoreval_render_font(cairo_t *cr, PangoFontDescription *font,
+    size_t *pw, size_t *ph,
+    const char *fmt, ...)
+    __attribute__((format(printf, 5, 6)));
+
 #endif /* SENSOREVAL_RENDER_H */

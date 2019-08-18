@@ -2,6 +2,7 @@
 #define SENSOREVAL_H
 
 #include <cairo/cairo.h>
+#include <pango/pangocairo.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <stdlib.h>

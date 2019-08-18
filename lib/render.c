@@ -137,3 +137,48 @@ int sensoreval_render(const struct sensoreval_render_ctx *ctx, cairo_t *cr) {
     cairo_restore (cr);
     return 0;
 }
+
+int sensoreval_render_font(cairo_t *cr, PangoFontDescription *font, size_t *pw, size_t *ph,
+    const char *fmt, ...)
+{
+    char buf[100];
+    int rc;
+    PangoLayout *layout;
+    int w;
+    int h;
+
+    va_list args;
+    va_start(args, fmt);
+    rc = vsnprintf(buf, sizeof(buf), fmt, args);
+    va_end (args);
+    if (rc < 0 || (size_t)rc >= sizeof(buf)) {
+        return -1;
+    }
+
+    layout = pango_cairo_create_layout(cr);
+    if (!layout) {
+        return -1;
+    }
+
+    pango_layout_set_font_description(layout, font);
+    pango_layout_set_text(layout, buf, -1);
+
+    cairo_set_source_rgba_u32(cr, 0xffffffff);
+    pango_cairo_update_layout(cr, layout);
+    pango_cairo_show_layout(cr, layout);
+
+    cairo_set_line_width(cr, 1.0);
+    cairo_set_source_rgba_u32(cr, 0x000000ff);
+    pango_cairo_layout_path(cr, layout);
+    cairo_stroke(cr);
+
+    pango_layout_get_pixel_size(layout, &w, &h);
+    if (pw)
+        *pw = (size_t)w;
+    if (ph)
+        *ph = (size_t)h;
+
+    g_object_unref(layout);
+
+    return 0;
+}
