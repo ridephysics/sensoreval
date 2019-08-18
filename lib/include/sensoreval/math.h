@@ -92,6 +92,10 @@ static inline void vec3_normalized(double dst[3], const double v[3])
     }
 }
 
+static inline double vec3_angle(const double a[3], const double b[3]) {
+    return acos(vec3_dotproduct(a, b) / (vec3_len(a) * vec3_len(b)));
+}
+
 static inline void quat_mul(double dst[4], const double q1[4], const double q2[4]) {
     double yy = (q1[0] - q1[2]) * (q2[0] + q2[3]);
     double zz = (q1[0] + q1[2]) * (q2[0] - q2[3]);
