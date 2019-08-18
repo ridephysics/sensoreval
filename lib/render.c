@@ -111,6 +111,7 @@ int sensoreval_render(const struct sensoreval_render_ctx *ctx, cairo_t *cr) {
 
     cairo_save (cr);
 
+    // clear
     cairo_save (cr);
     cairo_set_source_rgba (cr, 0, 0, 0, 0);
     cairo_set_operator (cr, CAIRO_OPERATOR_SOURCE);
