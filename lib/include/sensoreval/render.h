@@ -77,5 +77,7 @@ static inline void cairo_set_source_rgba_u32(cairo_t *cr, uint32_t rgba) {
     cairo_set_source_rgba(cr, rf, gf, bf, af);
 }
 
+#define dp2px(dp) ((dp) * (ctx->dpi / 160.0))
+#define sp2px(dp) ((dp) * (ctx->spi / 160.0))
 
 #endif /* SENSOREVAL_RENDER_H */
