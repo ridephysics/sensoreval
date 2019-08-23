@@ -1,6 +1,15 @@
 use sensoreval::*;
 
 fn main() {
+    let mut args = std::env::args();
+    if args.len() != 2 {
+        println!("Usage: {:?} CONFIG", args.nth(0));
+        std::process::exit(1);
+    }
+    let cfgname = args.nth(1).unwrap();
+    let cfg = config::load(cfgname).unwrap();
+    println!("config: {:#?}", cfg);
+
     let mut x = Vec::new();
     let mut y_accel = Vec::new();
     let mut y_pressure = Vec::new();

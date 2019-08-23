@@ -1,34 +1,7 @@
+use crate::error::*;
+
 use nalgebra::geometry::Quaternion;
 use std::mem;
-
-#[derive(Debug)]
-pub struct Error {
-    pub repr: ErrorRepr,
-}
-
-#[derive(Debug)]
-pub enum ErrorRepr {
-    Io(std::io::Error),
-    BinCode(bincode::Error),
-}
-
-impl From<bincode::Error> for Error {
-    #[inline]
-    fn from(e: bincode::Error) -> Error {
-        Error {
-            repr: ErrorRepr::BinCode(e),
-        }
-    }
-}
-
-impl From<std::io::Error> for Error {
-    #[inline]
-    fn from(e: std::io::Error) -> Error {
-        Error {
-            repr: ErrorRepr::Io(e),
-        }
-    }
-}
 
 #[derive(Debug)]
 pub struct Data {
