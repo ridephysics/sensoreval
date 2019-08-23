@@ -1,0 +1,11 @@
+[package]
+name = "sensoreval"
+version = "0.1.0"
+authors = ["Michael Zimmermann <sigmaepsilon92@gmail.com>"]
+edition = "2018"
+
+[dependencies]
+serde = "1.0.99"
+serde-pickle = "0.5.0"
+nalgebra = "0.18.0"
+bincode = "1.1.4"
