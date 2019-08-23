@@ -3,8 +3,7 @@ use crate::error::*;
 use serde_derive::Deserialize;
 use std::io::Read;
 
-#[derive(Deserialize)]
-#[derive(Debug)]
+#[derive(Deserialize, Debug)]
 pub struct Video {
     startoff: u64,
     endoff: u64,
@@ -19,8 +18,7 @@ impl Default for Video {
     }
 }
 
-#[derive(Deserialize)]
-#[derive(Debug)]
+#[derive(Deserialize, Debug)]
 pub struct Data {
     startoff: u64,
     imu_orientation: [f64; 4],
@@ -35,14 +33,12 @@ impl Default for Data {
     }
 }
 
-#[derive(Deserialize)]
-#[derive(Debug)]
+#[derive(Deserialize, Debug)]
 pub enum OrientationMode {
     Normal,
 }
 
-#[derive(Deserialize)]
-#[derive(Debug)]
+#[derive(Deserialize, Debug)]
 pub struct Orientation {
     mode: OrientationMode,
 }
@@ -55,15 +51,13 @@ impl Default for Orientation {
     }
 }
 
-#[derive(Deserialize)]
-#[derive(Debug)]
+#[derive(Deserialize, Debug)]
 pub enum HudMode {
     Generic,
     SwingBoat,
 }
 
-#[derive(Deserialize)]
-#[derive(Debug)]
+#[derive(Deserialize, Debug)]
 pub struct Hud {
     mode: HudMode,
     altitude_ground: f64,
@@ -81,8 +75,7 @@ impl Default for Hud {
     }
 }
 
-#[derive(Deserialize)]
-#[derive(Debug)]
+#[derive(Deserialize, Debug)]
 pub struct Config {
     video: Video,
     data: Data,
@@ -90,16 +83,12 @@ pub struct Config {
     hud: Hud,
 }
 
-#[derive(Deserialize)]
-#[derive(Debug)]
-pub struct SwingBoat {
-    
-}
+#[derive(Deserialize, Debug)]
+pub struct SwingBoat {}
 
 impl Default for SwingBoat {
     fn default() -> SwingBoat {
-        SwingBoat {
-        }
+        SwingBoat {}
     }
 }
 
