@@ -2,10 +2,13 @@ use crate::error::*;
 
 use serde_derive::Deserialize;
 use std::io::Read;
+use nalgebra::geometry::{Quaternion, UnitQuaternion};
 
 #[derive(Deserialize, Debug)]
 pub struct Video {
+    #[serde(default)]
     pub startoff: u64,
+    #[serde(default)]
     pub endoff: u64,
 }
 
@@ -18,17 +21,23 @@ impl Default for Video {
     }
 }
 
+
 #[derive(Deserialize, Debug)]
 pub struct Data {
+    #[serde(default)]
     pub startoff: u64,
-    pub imu_orientation: [f64; 4],
+    #[serde(default="UnitQuaternion::identity")]
+    pub imu_orientation: UnitQuaternion<f64>,
+    #[serde(default)]
+    pub pressure_coeff: f64,
 }
 
 impl Default for Data {
     fn default() -> Self {
         Self {
             startoff: 0,
-            imu_orientation: [1., 0., 0., 0.],
+            imu_orientation: UnitQuaternion::identity(),
+            pressure_coeff: 0.,
         }
     }
 }
@@ -38,8 +47,15 @@ pub enum OrientationMode {
     Normal,
 }
 
+impl Default for OrientationMode {
+    fn default() -> Self {
+        Self::Normal
+    }
+}
+
 #[derive(Deserialize, Debug)]
 pub struct Orientation {
+    #[serde(default)]
     pub mode: OrientationMode,
 }
 
@@ -57,9 +73,18 @@ pub enum HudMode {
     SwingBoat,
 }
 
+impl Default for HudMode {
+    fn default() -> Self {
+        Self::Generic
+    }
+}
+
+
 #[derive(Deserialize, Debug)]
 pub struct Hud {
+    #[serde(default)]
     pub mode: HudMode,
+    #[serde(default)]
     pub altitude_ground: f64,
 
     pub swingboat: SwingBoat,
@@ -110,8 +135,24 @@ pub fn load(filename: std::string::String) -> Result<Config, Error> {
     file.read_to_string(&mut buffer)?;
     drop(file);
 
-    return match toml::from_str(&buffer) {
-        Err(e) => Err(Error::from(e)),
-        Ok(v) => Ok(v),
-    };
+    let mut cfg:Config = toml::from_str(&buffer)?;
+
+    {
+        let q = cfg.data.imu_orientation.as_mut_unchecked();
+
+        // we loaded a wxyz quat, even though we need a xyzw quat, fix that
+        let w = q[0];
+        let x = q[1];
+        let y = q[2];
+        let z = q[3];
+        q[0] = x;
+        q[1] = y;
+        q[2] = z;
+        q[3] = w;
+    }
+
+    // we deserialized a normal quat into a unit-quat, fix that
+    cfg.data.imu_orientation.renormalize();
+
+    return Ok(cfg);
 }

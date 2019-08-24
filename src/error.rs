@@ -10,6 +10,16 @@ pub enum ErrorRepr {
     ExitStatus(std::process::ExitStatus),
     BinCode(bincode::Error),
     TomlDe(toml::de::Error),
+
+    NoDataArr,
+    SampleNotFound,
+}
+
+impl From<ErrorRepr> for Error {
+    #[inline]
+    fn from(e: ErrorRepr) -> Self {
+        Self { repr: e }
+    }
 }
 
 impl From<serde_pickle::error::Error> for Error {

@@ -1,7 +1,8 @@
 use crate::error::*;
 
-use nalgebra::geometry::Quaternion;
-use std::mem;
+use nalgebra::base::Vector3;
+use nalgebra::geometry::{Quaternion, UnitQuaternion};
+use serde::ser::{Serialize, SerializeSeq, Serializer};
 
 #[derive(Debug)]
 pub struct Data {
@@ -9,14 +10,14 @@ pub struct Data {
     pub time: u64,
 
     // unit: g
-    pub accel: [f64; 3],
+    pub accel: Vector3<f64>,
     // unit: dps
-    pub gyro: [f64; 3],
+    pub gyro: Vector3<f64>,
     // unit: uT
-    pub mag: [f64; 3],
+    pub mag: Vector3<f64>,
 
     // format: ENU
-    pub quat: Quaternion<f64>,
+    pub quat: UnitQuaternion<f64>,
 
     // unit: degrees celsius
     pub temperature: f64,
@@ -25,103 +26,91 @@ pub struct Data {
 }
 
 impl Default for Data {
-    fn default() -> Data {
-        Data {
+    fn default() -> Self {
+        Self {
             time: 0,
-            accel: [0., 0., 0.],
-            gyro: [0., 0., 0.],
-            mag: [0., 0., 0.],
-            quat: Quaternion::identity(),
+            accel: Vector3::new(0., 0., 0.),
+            gyro: Vector3::new(0., 0., 0.),
+            mag: Vector3::new(0., 0., 0.),
+            quat: UnitQuaternion::identity(),
             temperature: 0.,
             pressure: 0.,
         }
     }
 }
 
-fn read_primitive<S: std::io::Read, R: for<'a> serde::de::Deserialize<'a>>(
-    source: &mut S,
-) -> Result<R, Error> {
-    let mut buffer = vec![0; mem::size_of::<R>()];
-    source.read_exact(&mut buffer)?;
+impl Data {
+    fn pressure_altitude_feet(&self) -> f64 {
+        return 145366.45 * (1.0 - (self.pressure/1013.25).powf(0.190284));
+    }
 
-    return Ok(bincode::deserialize(&buffer)?);
-}
-
-fn filter_eof<R>(r: Result<R, Error>) -> Result<R, Error> {
-    match &r {
-        Err(e) => match &e.repr {
-            ErrorRepr::Io(eio) => match eio.kind() {
-                std::io::ErrorKind::UnexpectedEof => Err(Error::from(std::io::Error::new(
-                    std::io::ErrorKind::InvalidData,
-                    "EOF within sample",
-                ))),
-                _ => r,
-            },
-            _ => r,
-        },
-        Ok(_) => r,
+    pub fn pressure_altitude(&self) -> f64 {
+        return self.pressure_altitude_feet() * 0.3048;
     }
 }
 
-pub fn read_sample<S: std::io::Read>(source: &mut S) -> Result<Data, Error> {
-    let mut data = Data::default();
+macro_rules! create_serializer(
+    ($var:ident,
+     $name:ident,
+     $value:expr) => {
+        pub struct $name<'a>(&'a Vec<Data>);
 
-    // this is the only one where we let through EOF
-    // so the the caller can see the diff between a proper end
-    // and an end in the middle of the data
-    data.time = read_primitive(source)?;
+        impl<'a> Serialize for $name<'a> {
+            fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+            where
+                S: Serializer,
+            {
+                let mut seq = serializer.serialize_seq(Some(self.0.len()))?;
+                for $var in self.0 {
+                    seq.serialize_element($value)?;
+                }
+                seq.end()
+            }
+        }
 
-    for i in 0..data.accel.len() {
-        data.accel[i] = filter_eof(read_primitive(source))?;
+        impl<'a> From<&'a Vec<Data>> for $name<'a> {
+            fn from(dataset: &'a Vec<Data>) -> $name<'a> {
+                $name(dataset)
+            }
+        }
+    }
+);
+
+create_serializer!(
+    data,
+    AccelDataSerializer,
+    &data.accel.as_slice()
+);
+
+create_serializer!(
+    data,
+    AccelLenDataSerializer,
+    &data.accel.magnitude()
+);
+
+create_serializer!(
+    data,
+    TimeDataSerializer,
+    &data.time
+);
+
+create_serializer!(
+    data,
+    AltitudeDataSerializer,
+    &data.pressure_altitude()
+);
+
+pub fn id_for_time(data: &Vec<Data>, startid: usize, us: u64) -> Option<usize> {
+    if startid >= data.len() {
+        return None;
     }
 
-    for i in 0..data.gyro.len() {
-        data.gyro[i] = filter_eof(read_primitive(source))?;
+    for i in startid..data.len() {
+        let sample = &data[i];
+        if sample.time >= us {
+            return Some(i);
+        }
     }
 
-    for i in 0..data.mag.len() {
-        data.mag[i] = filter_eof(read_primitive(source))?;
-    }
-
-    {
-        let _: u64 = filter_eof(read_primitive(source))?;
-    }
-
-    data.temperature = filter_eof(read_primitive(source))?;
-    data.pressure = filter_eof(read_primitive(source))?;
-
-    {
-        let w: f64 = filter_eof(read_primitive(source))?;
-        let x: f64 = filter_eof(read_primitive(source))?;
-        let y: f64 = filter_eof(read_primitive(source))?;
-        let z: f64 = filter_eof(read_primitive(source))?;
-
-        data.quat[0] = x;
-        data.quat[1] = y;
-        data.quat[2] = z;
-        data.quat[3] = w;
-    }
-
-    return Ok(data);
-}
-
-pub fn read_all_samples<S: std::io::Read>(source: &mut S) -> Result<Vec<Data>, Error> {
-    let mut samples = Vec::new();
-
-    loop {
-        let sample = match read_sample(source) {
-            Err(e) => match &e.repr {
-                ErrorRepr::Io(eio) => match eio.kind() {
-                    std::io::ErrorKind::UnexpectedEof => break,
-                    _ => return Err(e),
-                },
-                _ => return Err(e),
-            },
-            Ok(v) => v,
-        };
-
-        samples.push(sample);
-    }
-
-    return Ok(samples);
+    return None;
 }
