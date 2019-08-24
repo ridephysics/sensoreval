@@ -41,7 +41,7 @@ impl Default for Data {
 
 impl Data {
     fn pressure_altitude_feet(&self) -> f64 {
-        return 145366.45 * (1.0 - (self.pressure/1013.25).powf(0.190284));
+        return 145366.45 * (1.0 - (self.pressure / 1013.25).powf(0.190284));
     }
 
     pub fn pressure_altitude(&self) -> f64 {
@@ -77,26 +77,12 @@ macro_rules! create_serializer(
     }
 );
 
+create_serializer!(Data, data, AccelDataSerializer, &data.accel.as_slice());
+create_serializer!(Data, data, AccelLenDataSerializer, &data.accel.magnitude());
+create_serializer!(Data, data, TimeDataSerializer, &data.time);
 create_serializer!(
-    Data, data,
-    AccelDataSerializer,
-    &data.accel.as_slice()
-);
-
-create_serializer!(
-    Data, data,
-    AccelLenDataSerializer,
-    &data.accel.magnitude()
-);
-
-create_serializer!(
-    Data, data,
-    TimeDataSerializer,
-    &data.time
-);
-
-create_serializer!(
-    Data, data,
+    Data,
+    data,
     AltitudeDataSerializer,
     &data.pressure_altitude()
 );

@@ -1,9 +1,9 @@
-use crate::error::*;
 use crate::data::*;
+use crate::error::*;
 
-use std::mem;
 use nalgebra::base::Vector3;
 use nalgebra::geometry::{Quaternion, UnitQuaternion};
+use std::mem;
 
 fn read_primitive<S: std::io::Read, R: for<'a> serde::de::Deserialize<'a>>(
     source: &mut S,
@@ -30,7 +30,10 @@ fn filter_eof<R>(r: Result<R, Error>) -> Result<R, Error> {
     }
 }
 
-pub fn read_sample<S: std::io::Read>(source: &mut S, cfg: &crate::config::Config) -> Result<Data, Error> {
+pub fn read_sample<S: std::io::Read>(
+    source: &mut S,
+    cfg: &crate::config::Config,
+) -> Result<Data, Error> {
     let mut data = Data::default();
     let imu_orientation_inv = cfg.data.imu_orientation.inverse();
 
@@ -74,8 +77,11 @@ pub fn read_sample<S: std::io::Read>(source: &mut S, cfg: &crate::config::Config
     return Ok(data);
 }
 
-pub fn read_all_samples<S: std::io::Read>(source: &mut S, cfg: &crate::config::Config) -> Result<Vec<Data>, Error> {
-    let mut samples:Vec<Data> = Vec::new();
+pub fn read_all_samples<S: std::io::Read>(
+    source: &mut S,
+    cfg: &crate::config::Config,
+) -> Result<Vec<Data>, Error> {
+    let mut samples: Vec<Data> = Vec::new();
 
     loop {
         let mut sample = match read_sample(source, cfg) {
@@ -93,7 +99,9 @@ pub fn read_all_samples<S: std::io::Read>(source: &mut S, cfg: &crate::config::C
         if cfg.data.pressure_coeff > 0. {
             match samples.last() {
                 Some(prev) => {
-                    sample.pressure = (prev.pressure * (cfg.data.pressure_coeff - 1.0) + sample.pressure) / cfg.data.pressure_coeff;
+                    sample.pressure = (prev.pressure * (cfg.data.pressure_coeff - 1.0)
+                        + sample.pressure)
+                        / cfg.data.pressure_coeff;
                 }
                 None => {}
             }

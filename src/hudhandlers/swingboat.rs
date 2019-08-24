@@ -12,11 +12,7 @@ pub(crate) struct SwingBoat {
     dataset: Vec<Data>,
 }
 
-create_serializer!(
-    Data, data,
-    AngleDataSerializer,
-    &data.angle.to_degrees()
-);
+create_serializer!(Data, data, AngleDataSerializer, &data.angle.to_degrees());
 
 impl SwingBoat {
     pub fn new(ctx: &crate::render::Context) -> Self {

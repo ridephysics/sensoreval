@@ -1,8 +1,8 @@
 use crate::error::*;
 
+use nalgebra::geometry::{Quaternion, UnitQuaternion};
 use serde_derive::Deserialize;
 use std::io::Read;
-use nalgebra::geometry::{Quaternion, UnitQuaternion};
 
 #[derive(Deserialize, Debug)]
 pub struct Video {
@@ -21,12 +21,11 @@ impl Default for Video {
     }
 }
 
-
 #[derive(Deserialize, Debug)]
 pub struct Data {
     #[serde(default)]
     pub startoff: u64,
-    #[serde(default="UnitQuaternion::identity")]
+    #[serde(default = "UnitQuaternion::identity")]
     pub imu_orientation: UnitQuaternion<f64>,
     #[serde(default)]
     pub pressure_coeff: f64,
@@ -78,7 +77,6 @@ impl Default for HudMode {
         Self::Generic
     }
 }
-
 
 #[derive(Deserialize, Debug)]
 pub struct Hud {
@@ -135,7 +133,7 @@ pub fn load(filename: std::string::String) -> Result<Config, Error> {
     file.read_to_string(&mut buffer)?;
     drop(file);
 
-    let mut cfg:Config = toml::from_str(&buffer)?;
+    let mut cfg: Config = toml::from_str(&buffer)?;
 
     {
         let q = cfg.data.imu_orientation.as_mut_unchecked();
