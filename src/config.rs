@@ -10,8 +10,8 @@ pub struct Video {
 }
 
 impl Default for Video {
-    fn default() -> Video {
-        Video {
+    fn default() -> Self {
+        Self {
             startoff: 0,
             endoff: 0,
         }
@@ -25,8 +25,8 @@ pub struct Data {
 }
 
 impl Default for Data {
-    fn default() -> Data {
-        Data {
+    fn default() -> Self {
+        Self {
             startoff: 0,
             imu_orientation: [1., 0., 0., 0.],
         }
@@ -44,8 +44,8 @@ pub struct Orientation {
 }
 
 impl Default for Orientation {
-    fn default() -> Orientation {
-        Orientation {
+    fn default() -> Self {
+        Self {
             mode: OrientationMode::Normal,
         }
     }
@@ -66,8 +66,8 @@ pub struct Hud {
 }
 
 impl Default for Hud {
-    fn default() -> Hud {
-        Hud {
+    fn default() -> Self {
+        Self {
             mode: HudMode::Generic,
             altitude_ground: 0.,
             swingboat: SwingBoat::default(),
@@ -87,14 +87,14 @@ pub struct Config {
 pub struct SwingBoat {}
 
 impl Default for SwingBoat {
-    fn default() -> SwingBoat {
-        SwingBoat {}
+    fn default() -> Self {
+        Self {}
     }
 }
 
 impl Default for Config {
-    fn default() -> Config {
-        Config {
+    fn default() -> Self {
+        Self {
             video: Video::default(),
             data: Data::default(),
             orientation: Orientation::default(),

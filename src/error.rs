@@ -14,8 +14,8 @@ pub enum ErrorRepr {
 
 impl From<serde_pickle::error::Error> for Error {
     #[inline]
-    fn from(e: serde_pickle::error::Error) -> Error {
-        Error {
+    fn from(e: serde_pickle::error::Error) -> Self {
+        Self {
             repr: ErrorRepr::SerdePickle(e),
         }
     }
@@ -23,8 +23,8 @@ impl From<serde_pickle::error::Error> for Error {
 
 impl From<std::io::Error> for Error {
     #[inline]
-    fn from(e: std::io::Error) -> Error {
-        Error {
+    fn from(e: std::io::Error) -> Self {
+        Self {
             repr: ErrorRepr::Io(e),
         }
     }
@@ -32,8 +32,8 @@ impl From<std::io::Error> for Error {
 
 impl From<std::process::ExitStatus> for Error {
     #[inline]
-    fn from(e: std::process::ExitStatus) -> Error {
-        Error {
+    fn from(e: std::process::ExitStatus) -> Self {
+        Self {
             repr: ErrorRepr::ExitStatus(e),
         }
     }
@@ -41,8 +41,8 @@ impl From<std::process::ExitStatus> for Error {
 
 impl From<bincode::Error> for Error {
     #[inline]
-    fn from(e: bincode::Error) -> Error {
-        Error {
+    fn from(e: bincode::Error) -> Self {
+        Self {
             repr: ErrorRepr::BinCode(e),
         }
     }
@@ -50,8 +50,8 @@ impl From<bincode::Error> for Error {
 
 impl From<toml::de::Error> for Error {
     #[inline]
-    fn from(e: toml::de::Error) -> Error {
-        Error {
+    fn from(e: toml::de::Error) -> Self {
+        Self {
             repr: ErrorRepr::TomlDe(e),
         }
     }
