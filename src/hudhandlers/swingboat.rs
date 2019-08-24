@@ -8,19 +8,19 @@ pub(crate) struct Data {
 
 pub(crate) struct SwingBoat {
     ppm: f64,
-    dataarr: Vec<Data>,
+    dataset: Vec<Data>,
 }
 
 impl SwingBoat {
     pub fn new(ctx: &crate::render::Context) -> Self {
         let mut sb = Self {
             ppm: 1.,
-            dataarr: Vec::new(),
+            dataset: Vec::new(),
         };
 
-        match ctx.dataarr {
-            Some(dataarr) => {
-                for data in dataarr {
+        match ctx.dataset {
+            Some(dataset) => {
+                for data in dataset {
                     let vnorth = Vector3::new(0., 1., 0.);
                     let mut vnorthrot = data.quat * vnorth;
 
@@ -32,7 +32,7 @@ impl SwingBoat {
                         angle *= -1.;
                     }
 
-                    sb.dataarr.push(Data { angle: angle });
+                    sb.dataset.push(Data { angle: angle });
                 }
             }
             None => {}

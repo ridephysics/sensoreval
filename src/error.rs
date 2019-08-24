@@ -11,7 +11,7 @@ pub enum ErrorRepr {
     BinCode(bincode::Error),
     TomlDe(toml::de::Error),
 
-    NoDataArr,
+    NoDataSet,
     SampleNotFound,
 }
 

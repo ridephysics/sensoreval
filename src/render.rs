@@ -8,7 +8,7 @@ enum DataSrc {
 
 pub struct Context<'a, 'b> {
     pub cfg: &'a crate::config::Config,
-    pub dataarr: Option<&'b Vec<crate::data::Data>>,
+    pub dataset: Option<&'b Vec<crate::data::Data>>,
     pub dpi: f64,
     pub spi: f64,
     src: DataSrc,
@@ -31,11 +31,11 @@ fn handler_from_ctx(ctx: &Context) -> Option<Box<dyn HudHandler>> {
 impl<'a, 'b> Context<'a, 'b> {
     pub fn new(
         cfg: &'a crate::config::Config,
-        dataarr: Option<&'b Vec<crate::data::Data>>,
+        dataset: Option<&'b Vec<crate::data::Data>>,
     ) -> Self {
         let mut ctx = Self {
             cfg: cfg,
-            dataarr: dataarr,
+            dataset: dataset,
             dpi: 141.21,
             spi: 141.21,
             src: DataSrc::None,
@@ -48,11 +48,11 @@ impl<'a, 'b> Context<'a, 'b> {
     }
 
     pub fn set_ts(&mut self, us: u64) -> Result<(), Error> {
-        if self.dataarr.is_none() {
-            return Err(Error::from(ErrorRepr::NoDataArr));
+        if self.dataset.is_none() {
+            return Err(Error::from(ErrorRepr::NoDataSet));
         }
 
-        match crate::data::id_for_time(self.dataarr.unwrap(), 0, us) {
+        match crate::data::id_for_time(self.dataset.unwrap(), 0, us) {
             Some(id) => {
                 self.src = DataSrc::Array { us: us, id: id };
                 return Ok(());
@@ -71,7 +71,7 @@ impl<'a, 'b> Context<'a, 'b> {
         match &self.src {
             DataSrc::None => None,
             DataSrc::Data(data) => Some(&data),
-            DataSrc::Array { id, us: _ } => match self.dataarr {
+            DataSrc::Array { id, us: _ } => match self.dataset {
                 None => None,
                 Some(arr) => Some(&arr[*id]),
             },
