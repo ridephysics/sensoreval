@@ -1,6 +1,7 @@
 use crate::error::*;
 
 use nalgebra::base::Vector3;
+use serde::ser::{Serialize, SerializeSeq, Serializer};
 
 pub(crate) struct Data {
     angle: f64,
@@ -10,6 +11,12 @@ pub(crate) struct SwingBoat {
     ppm: f64,
     dataset: Vec<Data>,
 }
+
+create_serializer!(
+    Data, data,
+    AngleDataSerializer,
+    &data.angle.to_degrees()
+);
 
 impl SwingBoat {
     pub fn new(ctx: &crate::render::Context) -> Self {
