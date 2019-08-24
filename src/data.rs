@@ -50,10 +50,11 @@ impl Data {
 }
 
 macro_rules! create_serializer(
-    ($var:ident,
+    ($type:ident,
+     $var:ident,
      $name:ident,
      $value:expr) => {
-        pub struct $name<'a>(&'a Vec<Data>);
+        pub struct $name<'a>(&'a Vec<$type>);
 
         impl<'a> Serialize for $name<'a> {
             fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
@@ -68,8 +69,8 @@ macro_rules! create_serializer(
             }
         }
 
-        impl<'a> From<&'a Vec<Data>> for $name<'a> {
-            fn from(dataset: &'a Vec<Data>) -> $name<'a> {
+        impl<'a> From<&'a Vec<$type>> for $name<'a> {
+            fn from(dataset: &'a Vec<$type>) -> $name<'a> {
                 $name(dataset)
             }
         }
@@ -77,25 +78,25 @@ macro_rules! create_serializer(
 );
 
 create_serializer!(
-    data,
+    Data, data,
     AccelDataSerializer,
     &data.accel.as_slice()
 );
 
 create_serializer!(
-    data,
+    Data, data,
     AccelLenDataSerializer,
     &data.accel.magnitude()
 );
 
 create_serializer!(
-    data,
+    Data, data,
     TimeDataSerializer,
     &data.time
 );
 
 create_serializer!(
-    data,
+    Data, data,
     AltitudeDataSerializer,
     &data.pressure_altitude()
 );

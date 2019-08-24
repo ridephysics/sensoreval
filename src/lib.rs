@@ -1,4 +1,5 @@
 pub mod config;
+#[macro_use]
 pub mod data;
 pub mod datareader;
 pub mod error;
