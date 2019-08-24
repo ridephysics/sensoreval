@@ -1,7 +1,5 @@
-use crate::error::*;
-
 use nalgebra::base::Vector3;
-use nalgebra::geometry::{Quaternion, UnitQuaternion};
+use nalgebra::geometry::UnitQuaternion;
 use serde::ser::{Serialize, SerializeSeq, Serializer};
 
 #[derive(Debug)]

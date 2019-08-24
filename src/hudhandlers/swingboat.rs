@@ -1,4 +1,4 @@
-use crate::error::*;
+use crate::*;
 
 use nalgebra::base::Vector3;
 use serde::ser::{Serialize, SerializeSeq, Serializer};
@@ -15,7 +15,7 @@ pub(crate) struct SwingBoat {
 create_serializer!(Data, data, AngleDataSerializer, &data.angle.to_degrees());
 
 impl SwingBoat {
-    pub fn new(ctx: &crate::render::Context) -> Self {
+    pub fn new(ctx: &render::Context) -> Self {
         let mut sb = Self {
             ppm: 1.,
             dataset: Vec::new(),
@@ -45,8 +45,8 @@ impl SwingBoat {
     }
 }
 
-impl crate::render::HudHandler for SwingBoat {
-    fn render(&self, ctx: &crate::render::Context, cr: &cairo::Context) -> Result<(), Error> {
+impl render::HudHandler for SwingBoat {
+    fn render(&self, ctx: &render::Context, cr: &cairo::Context) -> Result<(), Error> {
         return Ok(());
     }
 }

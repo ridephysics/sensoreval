@@ -14,8 +14,7 @@ fn main() {
     println!("config: {:#?}", cfg);
 
     // load data
-    let samples =
-        datareader::read_all_samples(&mut std::io::stdin(), &cfg).expect("can't read all samples");
+    let samples = read_all_samples(&mut std::io::stdin(), &cfg).expect("can't read all samples");
 
     // init render context
     let mut renderctx = render::Context::new(&cfg, Some(&samples));
@@ -35,9 +34,9 @@ fn main() {
     drop(file);
 
     // plot
-    let mut plot = plot::Plot::new(data::TimeDataSerializer::from(&samples)).unwrap();
-    plot.add(data::AccelDataSerializer::from(&samples)).unwrap();
-    plot.add(data::AccelLenDataSerializer::from(&samples)).unwrap();
-    plot.add(data::AltitudeDataSerializer::from(&samples)).unwrap();
+    let mut plot = Plot::new(TimeDataSerializer::from(&samples)).unwrap();
+    plot.add(AccelDataSerializer::from(&samples)).unwrap();
+    plot.add(AccelLenDataSerializer::from(&samples)).unwrap();
+    plot.add(AltitudeDataSerializer::from(&samples)).unwrap();
     plot.show().unwrap();
 }

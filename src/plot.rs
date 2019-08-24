@@ -1,4 +1,4 @@
-use crate::error::*;
+use crate::*;
 
 pub struct Plot {
     child: std::process::Child,

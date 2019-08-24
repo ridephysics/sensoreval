@@ -1,7 +1,5 @@
-use crate::data::*;
-use crate::error::*;
+use crate::*;
 
-use nalgebra::base::Vector3;
 use nalgebra::geometry::{Quaternion, UnitQuaternion};
 use std::mem;
 
@@ -30,10 +28,7 @@ fn filter_eof<R>(r: Result<R, Error>) -> Result<R, Error> {
     }
 }
 
-pub fn read_sample<S: std::io::Read>(
-    source: &mut S,
-    cfg: &crate::config::Config,
-) -> Result<Data, Error> {
+pub fn read_sample<S: std::io::Read>(source: &mut S, cfg: &config::Config) -> Result<Data, Error> {
     let mut data = Data::default();
     let imu_orientation_inv = cfg.data.imu_orientation.inverse();
 
@@ -79,7 +74,7 @@ pub fn read_sample<S: std::io::Read>(
 
 pub fn read_all_samples<S: std::io::Read>(
     source: &mut S,
-    cfg: &crate::config::Config,
+    cfg: &config::Config,
 ) -> Result<Vec<Data>, Error> {
     let mut samples: Vec<Data> = Vec::new();
 

@@ -1,6 +1,6 @@
-use crate::error::*;
+use crate::*;
 
-use nalgebra::geometry::{Quaternion, UnitQuaternion};
+use nalgebra::geometry::UnitQuaternion;
 use serde_derive::Deserialize;
 use std::io::Read;
 

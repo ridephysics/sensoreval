@@ -1,14 +1,14 @@
-use crate::error::*;
+use crate::*;
 
 enum DataSrc {
     None,
-    Data(crate::data::Data),
+    Data(Data),
     Array { us: u64, id: usize },
 }
 
 pub struct Context<'a, 'b> {
-    pub cfg: &'a crate::config::Config,
-    pub dataset: Option<&'b Vec<crate::data::Data>>,
+    pub cfg: &'a config::Config,
+    pub dataset: Option<&'b Vec<Data>>,
     pub dpi: f64,
     pub spi: f64,
     src: DataSrc,
@@ -16,12 +16,12 @@ pub struct Context<'a, 'b> {
 }
 
 pub trait HudHandler {
-    fn render(&self, ctx: &crate::render::Context, cr: &cairo::Context) -> Result<(), Error>;
+    fn render(&self, ctx: &render::Context, cr: &cairo::Context) -> Result<(), Error>;
 }
 
 fn handler_from_ctx(ctx: &Context) -> Option<Box<dyn HudHandler>> {
     let handler = match ctx.cfg.hud.mode {
-        crate::config::HudMode::SwingBoat => crate::hudhandlers::swingboat::SwingBoat::new(ctx),
+        config::HudMode::SwingBoat => hudhandlers::swingboat::SwingBoat::new(ctx),
         _ => return None,
     };
 
@@ -29,10 +29,7 @@ fn handler_from_ctx(ctx: &Context) -> Option<Box<dyn HudHandler>> {
 }
 
 impl<'a, 'b> Context<'a, 'b> {
-    pub fn new(
-        cfg: &'a crate::config::Config,
-        dataset: Option<&'b Vec<crate::data::Data>>,
-    ) -> Self {
+    pub fn new(cfg: &'a config::Config, dataset: Option<&'b Vec<Data>>) -> Self {
         let mut ctx = Self {
             cfg: cfg,
             dataset: dataset,
@@ -52,7 +49,7 @@ impl<'a, 'b> Context<'a, 'b> {
             return Err(Error::from(ErrorRepr::NoDataSet));
         }
 
-        match crate::data::id_for_time(self.dataset.unwrap(), 0, us) {
+        match id_for_time(self.dataset.unwrap(), 0, us) {
             Some(id) => {
                 self.src = DataSrc::Array { us: us, id: id };
                 return Ok(());
@@ -63,11 +60,11 @@ impl<'a, 'b> Context<'a, 'b> {
         }
     }
 
-    pub fn set_data(&mut self, data: crate::data::Data) {
+    pub fn set_data(&mut self, data: Data) {
         self.src = DataSrc::Data(data);
     }
 
-    pub fn current_data(&self) -> Option<&crate::data::Data> {
+    pub fn current_data(&self) -> Option<&Data> {
         match &self.src {
             DataSrc::None => None,
             DataSrc::Data(data) => Some(&data),
