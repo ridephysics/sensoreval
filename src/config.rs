@@ -5,8 +5,8 @@ use std::io::Read;
 
 #[derive(Deserialize, Debug)]
 pub struct Video {
-    startoff: u64,
-    endoff: u64,
+    pub startoff: u64,
+    pub endoff: u64,
 }
 
 impl Default for Video {
@@ -20,8 +20,8 @@ impl Default for Video {
 
 #[derive(Deserialize, Debug)]
 pub struct Data {
-    startoff: u64,
-    imu_orientation: [f64; 4],
+    pub startoff: u64,
+    pub imu_orientation: [f64; 4],
 }
 
 impl Default for Data {
@@ -40,7 +40,7 @@ pub enum OrientationMode {
 
 #[derive(Deserialize, Debug)]
 pub struct Orientation {
-    mode: OrientationMode,
+    pub mode: OrientationMode,
 }
 
 impl Default for Orientation {
@@ -59,10 +59,10 @@ pub enum HudMode {
 
 #[derive(Deserialize, Debug)]
 pub struct Hud {
-    mode: HudMode,
-    altitude_ground: f64,
+    pub mode: HudMode,
+    pub altitude_ground: f64,
 
-    swingboat: SwingBoat,
+    pub swingboat: SwingBoat,
 }
 
 impl Default for Hud {
@@ -77,10 +77,10 @@ impl Default for Hud {
 
 #[derive(Deserialize, Debug)]
 pub struct Config {
-    video: Video,
-    data: Data,
-    orientation: Orientation,
-    hud: Hud,
+    pub video: Video,
+    pub data: Data,
+    pub orientation: Orientation,
+    pub hud: Hud,
 }
 
 #[derive(Deserialize, Debug)]
