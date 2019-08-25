@@ -1,75 +1,107 @@
 use crate::*;
 
 use nalgebra::geometry::{Quaternion, UnitQuaternion};
+use serde_derive::Deserialize;
 use std::mem;
 
-fn read_primitive<S: std::io::Read, R: for<'a> serde::de::Deserialize<'a>>(
-    source: &mut S,
-) -> Result<R, Error> {
-    let mut buffer = vec![0; mem::size_of::<R>()];
-    source.read_exact(&mut buffer)?;
-
-    return Ok(bincode::deserialize(&buffer)?);
+// https://github.com/rust-lang/rust/issues/27060
+// in theory, this struct should never need alignment anyway
+// because it's a sequence of 8-byte primitives
+//#[repr(C, packed)]
+#[derive(Deserialize)]
+struct RawData {
+    time_imu: u64,
+    accel: [f64; 3],
+    gyro: [f64; 3],
+    mag: [f64; 3],
+    time_compass: f64,
+    temperature: f64,
+    pressure: f64,
+    quat: [f64; 4],
 }
 
-fn filter_eof<R>(r: Result<R, Error>) -> Result<R, Error> {
-    match &r {
-        Err(e) => match &e.repr {
-            ErrorRepr::Io(eio) => match eio.kind() {
-                std::io::ErrorKind::UnexpectedEof => Err(Error::from(std::io::Error::new(
-                    std::io::ErrorKind::InvalidData,
-                    "EOF within sample",
-                ))),
-                _ => r,
-            },
-            _ => r,
-        },
-        Ok(_) => r,
-    }
+pub struct Context {
+    buf: [u8; mem::size_of::<RawData>()],
+    bufpos: usize,
 }
 
-pub fn read_sample<S: std::io::Read>(source: &mut S, cfg: &config::Config) -> Result<Data, Error> {
-    let mut data = Data::default();
-    let imu_orientation_inv = cfg.data.imu_orientation.inverse();
+impl Context {
+    pub fn new() -> Self {
+        assert_eq!(mem::size_of::<RawData>(), mem::size_of::<[u64; 17]>());
 
-    // this is the only one where we let through EOF
-    // so the the caller can see the diff between a proper end
-    // and an end in the middle of the data
-    data.time = read_primitive(source)?;
-
-    for i in 0..data.accel.len() {
-        data.accel[i] = filter_eof(read_primitive(source))?;
-    }
-    data.accel = imu_orientation_inv * data.accel;
-
-    for i in 0..data.gyro.len() {
-        data.gyro[i] = filter_eof(read_primitive(source))?;
-    }
-    data.gyro = imu_orientation_inv * data.gyro;
-
-    for i in 0..data.mag.len() {
-        data.mag[i] = filter_eof(read_primitive(source))?;
-    }
-    data.mag = imu_orientation_inv * data.mag;
-
-    {
-        let _: u64 = filter_eof(read_primitive(source))?;
+        Self {
+            buf: [0; mem::size_of::<RawData>()],
+            bufpos: 0,
+        }
     }
 
-    data.temperature = filter_eof(read_primitive(source))?;
-    data.pressure = filter_eof(read_primitive(source))?;
+    pub fn read_sample<S: std::io::Read>(
+        &mut self,
+        source: &mut S,
+        cfg: &config::Config,
+    ) -> Result<Data, Error> {
+        loop {
+            // read data
+            let buflen = self.buf.len();
+            let ret = source.read(&mut self.buf[self.bufpos..buflen]);
+            let nbytes = match ret {
+                Ok(0) => match self.bufpos {
+                    0 => return Err(Error::from(ErrorRepr::EOF)),
+                    _ => {
+                        return Err(Error::new_io(
+                            std::io::ErrorKind::UnexpectedEof,
+                            "EOF within sample",
+                        ))
+                    }
+                },
+                Err(e) => match &e.kind() {
+                    std::io::ErrorKind::Interrupted => continue,
+                    _ => return Err(Error::from(e)),
+                },
+                Ok(v) => v,
+            };
 
-    {
-        let w: f64 = filter_eof(read_primitive(source))?;
-        let x: f64 = filter_eof(read_primitive(source))?;
-        let y: f64 = filter_eof(read_primitive(source))?;
-        let z: f64 = filter_eof(read_primitive(source))?;
+            // try again if we don't have enough yet
+            self.bufpos += nbytes;
+            assert!(self.bufpos <= buflen);
+            if self.bufpos != buflen {
+                continue;
+            }
+            self.bufpos = 0;
 
-        let q = Quaternion::new(w, x, y, z);
-        data.quat = UnitQuaternion::from_quaternion(q) * cfg.data.imu_orientation;
+            // parse data
+            let rawdata: RawData = bincode::deserialize(&self.buf)?;
+
+            // turn rawdata into data
+            let mut data = Data::default();
+            let imu_orientation_inv = cfg.data.imu_orientation.inverse();
+
+            data.time = rawdata.time_imu;
+            data.temperature = rawdata.temperature;
+            data.pressure = rawdata.pressure;
+
+            for i in 0..3 {
+                data.accel[i] = rawdata.accel[i];
+                data.gyro[i] = rawdata.gyro[i];
+                data.mag[i] = rawdata.mag[i];
+            }
+            data.accel = imu_orientation_inv * data.accel;
+            data.gyro = imu_orientation_inv * data.gyro;
+            data.mag = imu_orientation_inv * data.mag;
+
+            {
+                let w: f64 = rawdata.quat[0];
+                let x: f64 = rawdata.quat[1];
+                let y: f64 = rawdata.quat[2];
+                let z: f64 = rawdata.quat[3];
+
+                let q = Quaternion::new(w, x, y, z);
+                data.quat = UnitQuaternion::from_quaternion(q) * cfg.data.imu_orientation;
+            }
+
+            return Ok(data);
+        }
     }
-
-    return Ok(data);
 }
 
 pub fn read_all_samples<S: std::io::Read>(
@@ -77,12 +109,17 @@ pub fn read_all_samples<S: std::io::Read>(
     cfg: &config::Config,
 ) -> Result<Vec<Data>, Error> {
     let mut samples: Vec<Data> = Vec::new();
+    let mut readctx = Context::new();
 
     loop {
-        let mut sample = match read_sample(source, cfg) {
+        let mut sample = match readctx.read_sample(source, cfg) {
             Err(e) => match &e.repr {
+                ErrorRepr::EOF => break,
                 ErrorRepr::Io(eio) => match eio.kind() {
-                    std::io::ErrorKind::UnexpectedEof => break,
+                    std::io::ErrorKind::WouldBlock => {
+                        // this could cause some cpu load but it's the best we can do here
+                        continue;
+                    }
                     _ => return Err(e),
                 },
                 _ => return Err(e),

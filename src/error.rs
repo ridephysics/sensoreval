@@ -13,6 +13,7 @@ pub enum ErrorRepr {
 
     NoDataSet,
     SampleNotFound,
+    EOF,
 }
 
 impl From<ErrorRepr> for Error {
