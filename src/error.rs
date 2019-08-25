@@ -66,3 +66,13 @@ impl From<toml::de::Error> for Error {
         }
     }
 }
+
+impl Error {
+    #[inline]
+    pub fn new_io<E>(kind: std::io::ErrorKind, error: E) -> Self
+    where
+        E: Into<Box<dyn std::error::Error + std::marker::Send + std::marker::Sync>>,
+    {
+        Self::from(std::io::Error::new(kind, error))
+    }
+}
