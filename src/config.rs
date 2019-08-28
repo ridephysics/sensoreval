@@ -85,6 +85,7 @@ pub struct Hud {
     #[serde(default)]
     pub altitude_ground: f64,
 
+    #[serde(default)]
     pub swingboat: SwingBoat,
 }
 
@@ -100,9 +101,12 @@ impl Default for Hud {
 
 #[derive(Deserialize, Debug)]
 pub struct Config {
+    #[serde(default)]
     pub video: Video,
     pub data: Data,
+    #[serde(default)]
     pub orientation: Orientation,
+    #[serde(default)]
     pub hud: Hud,
 }
 
