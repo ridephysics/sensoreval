@@ -23,7 +23,7 @@ pkg_check_modules(CAIRO_GOBJECT REQUIRED cairo-gobject)
 # setup variables for rust
 set(RUST_SRC "${CMAKE_CURRENT_SOURCE_DIR}/src")
 set(RUST_OUT "${CMAKE_BINARY_DIR}/rust")
-file(GLOB_RECURSE RUST_DEPS ${RUST_SRC}/*.rs)
+file(GLOB_RECURSE RUST_DEPS ${RUST_SRC}/* ${CMAKE_CURRENT_SOURCE_DIR}/Cargo.*)
 set(RUST_BUILD_FLAGS --target-dir ${RUST_OUT} --color always)
 string(TOUPPER "${CMAKE_BUILD_TYPE}" CMAKE_BUILD_TYPE_UPPER)
 if(CMAKE_BUILD_TYPE_UPPER STREQUAL DEBUG)
