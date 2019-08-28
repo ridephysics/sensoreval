@@ -104,7 +104,7 @@ impl Context {
     }
 }
 
-pub fn read_all_samples<S: std::io::Read>(
+pub fn read_all_samples_input<S: std::io::Read>(
     source: &mut S,
     cfg: &config::Config,
 ) -> Result<Vec<Data>, Error> {
@@ -143,4 +143,56 @@ pub fn read_all_samples<S: std::io::Read>(
     }
 
     return Ok(samples);
+}
+
+fn run_usfs_reader(cfg: &config::Config) -> std::process::ChildStdout {
+    let mut args: Vec<&str> = Vec::new();
+
+    args.push("--infmt");
+    args.push(&cfg.data.format);
+    args.push("--outfmt");
+    args.push("processed");
+
+    match &cfg.data.mag_cal {
+        Some(v) => {
+            args.push("--cal_mag");
+            args.push(&v);
+        }
+        None => (),
+    }
+
+    match &cfg.data.bias_ag {
+        Some(v) => {
+            args.push("--bias_ag");
+            args.push(&v);
+        }
+        None => (),
+    }
+    args.push(&cfg.data.filename);
+
+    let child = std::process::Command::new("usfs_reader")
+        .args(args)
+        .stdout(std::process::Stdio::piped())
+        .spawn()
+        .unwrap();
+
+    return child.stdout.unwrap();
+}
+
+fn usfs_calc_quat<T: std::convert::Into<std::process::Stdio>>(
+    input: T,
+) -> std::process::ChildStdout {
+    let child = std::process::Command::new("usfs_calc_quat")
+        .stdin(input)
+        .stdout(std::process::Stdio::piped())
+        .spawn()
+        .unwrap();
+
+    return child.stdout.unwrap();
+}
+
+pub fn read_all_samples_cfg(cfg: &config::Config) -> Result<Vec<Data>, Error> {
+    let processed_out = run_usfs_reader(&cfg);
+    let mut quat_out = usfs_calc_quat(processed_out);
+    return read_all_samples_input(&mut quat_out, &cfg);
 }

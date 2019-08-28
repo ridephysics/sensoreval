@@ -14,7 +14,7 @@ fn main() {
     println!("config: {:#?}", cfg);
 
     // load data
-    let samples = read_all_samples(&mut std::io::stdin(), &cfg).expect("can't read all samples");
+    let samples = datareader::read_all_samples_cfg(&cfg).expect("can't read all samples");
 
     // init render context
     let mut renderctx = render::Context::new(&cfg, Some(&samples));
