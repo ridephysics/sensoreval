@@ -22,6 +22,8 @@ class Se(WestCommand):
                                          description=self.description)
 
         parser.add_argument('action', help='action to run (build, clean)')
+        parser.add_argument('--release', help='compile release build',
+            action='store_true', default=False)
 
         return parser
 
@@ -35,7 +37,7 @@ class Se(WestCommand):
         if p.returncode:
             raise subprocess.CalledProcessError(p.returncode, args)
 
-    def run_cmake(self):
+    def run_cmake(self, program_args):
         os.makedirs(self.build_dir, exist_ok=True)
 
         args = [
@@ -45,8 +47,15 @@ class Se(WestCommand):
             '-D', 'COMPONENTS_DIR=' + os.path.join(self.top_dir, 'components'),
             '-D', 'BMP280_DIR=' + os.path.join(self.top_dir, 'external/bmp280'),
             '-D', 'BUILD_SHARED_LIBS=OFF',
-            self.source_dir
         ]
+
+        args.append('-D')
+        if program_args.release:
+            args.append('CMAKE_BUILD_TYPE=Release')
+        else:
+            args.append('CMAKE_BUILD_TYPE=Debug')
+
+        args.append(self.source_dir)
 
         env = {
             'CFLAGS': '-fdiagnostics-color=always',
@@ -66,7 +75,7 @@ class Se(WestCommand):
                 'DESTDIR': os.path.join(self.build_dir, 'install')
             }
 
-            self.run_cmake()
+            self.run_cmake(args)
             self.run_cmd([
                 'ninja', 'install'
             ], env=env)
