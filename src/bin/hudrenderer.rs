@@ -4,7 +4,7 @@ fn main() {
     // parse args
     let mut args = std::env::args();
     if args.len() != 2 {
-        println!("Usage: {:?} CONFIG", args.nth(0));
+        println!("Usage: {} CONFIG", args.nth(0).unwrap());
         std::process::exit(1);
     }
     let cfgname = args.nth(1).unwrap();
