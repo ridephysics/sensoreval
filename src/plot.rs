@@ -5,7 +5,7 @@ pub struct Plot {
 }
 
 impl Plot {
-    pub fn new<T: serde::ser::Serialize>(time: T) -> Result<Plot, Error> {
+    pub fn new<T: serde::ser::Serialize>(time: &T) -> Result<Plot, Error> {
         let code = include_str!("python/plot_time_data.py");
 
         let mut child = std::process::Command::new("python")
@@ -24,7 +24,7 @@ impl Plot {
         return Ok(Plot { child: child });
     }
 
-    pub fn add<D: serde::ser::Serialize>(&mut self, data: D) -> Result<(), Error> {
+    pub fn add<D: serde::ser::Serialize>(&mut self, data: &D) -> Result<(), Error> {
         let isdata: bool = true;
         let stdin = self.child.stdin.as_mut().unwrap();
 

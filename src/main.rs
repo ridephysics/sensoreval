@@ -34,9 +34,9 @@ fn main() {
     drop(file);
 
     // plot
-    let mut plot = Plot::new(TimeDataSerializer::from(&samples)).unwrap();
-    plot.add(AccelDataSerializer::from(&samples)).unwrap();
-    plot.add(AccelLenDataSerializer::from(&samples)).unwrap();
-    plot.add(AltitudeDataSerializer::from(&samples)).unwrap();
+    let mut plot = Plot::new(&TimeDataSerializer::from(&samples)).unwrap();
+    plot.add(&AccelDataSerializer::from(&samples)).unwrap();
+    plot.add(&AccelLenDataSerializer::from(&samples)).unwrap();
+    plot.add(&AltitudeDataSerializer::from(&samples)).unwrap();
     plot.show().unwrap();
 }
