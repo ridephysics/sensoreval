@@ -32,16 +32,6 @@ pub struct Data {
     pub pressure_coeff: f64,
 }
 
-impl Default for Data {
-    fn default() -> Self {
-        Self {
-            startoff: 0,
-            imu_orientation: UnitQuaternion::identity(),
-            pressure_coeff: 0.,
-        }
-    }
-}
-
 #[derive(Deserialize, Debug)]
 pub enum OrientationMode {
     Normal,
@@ -120,15 +110,6 @@ impl Default for SwingBoat {
     }
 }
 
-impl Default for Config {
-    fn default() -> Self {
-        Self {
-            video: Video::default(),
-            data: Data::default(),
-            orientation: Orientation::default(),
-            hud: Hud::default(),
-        }
-    }
 }
 
 pub fn load<P: AsRef<std::path::Path>>(filename: P) -> Result<Config, Error> {
