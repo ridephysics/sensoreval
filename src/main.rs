@@ -10,7 +10,7 @@ fn main() {
     let cfgname = args.nth(1).unwrap();
 
     // load config
-    let cfg = config::load(cfgname).expect("can't load config");
+    let cfg = config::load(&cfgname).expect("can't load config");
     println!("config: {:#?}", cfg);
 
     // load data

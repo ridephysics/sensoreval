@@ -130,8 +130,8 @@ impl Default for Config {
     }
 }
 
-pub fn load(filename: std::string::String) -> Result<Config, Error> {
-    let mut file = std::fs::File::open(&filename)?;
+pub fn load<P: AsRef<std::path::Path>>(filename: P) -> Result<Config, Error> {
+    let mut file = std::fs::File::open(filename.as_ref())?;
     let mut buffer = String::new();
 
     file.read_to_string(&mut buffer)?;
