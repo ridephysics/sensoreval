@@ -1,6 +1,7 @@
 use crate::*;
 
 use nalgebra::geometry::UnitQuaternion;
+use serde::Deserialize;
 use serde_derive::Deserialize;
 use std::io::Read;
 
@@ -137,7 +138,16 @@ pub fn load<P: AsRef<std::path::Path>>(filename: P) -> Result<Config, Error> {
     file.read_to_string(&mut buffer)?;
     drop(file);
 
-    let mut cfg: Config = toml::from_str(&buffer)?;
+    let mut parser = toml::de::Deserializer::new(&buffer);
+    let value = toml::Value::deserialize(&mut parser)?;
+    let mut has_unsupported: bool = false;
+    let mut cfg: Config = serde_ignored::deserialize(value, |path| {
+        println!("unsupported config: {:?}", path.to_string());
+        has_unsupported = true;
+    })?;
+    if has_unsupported {
+        return Err(Error::from(ErrorRepr::UnsupportedConfigs));
+    }
 
     {
         let q = cfg.data.imu_orientation.as_mut_unchecked();
