@@ -11,6 +11,8 @@ pub struct Video {
     pub startoff: u64,
     #[serde(default)]
     pub endoff: u64,
+    #[serde(default)]
+    pub filename: Option<String>,
 }
 
 impl Default for Video {
@@ -18,6 +20,7 @@ impl Default for Video {
         Self {
             startoff: 0,
             endoff: 0,
+            filename: None,
         }
     }
 }
@@ -30,6 +33,12 @@ pub struct Data {
     pub imu_orientation: UnitQuaternion<f64>,
     #[serde(default)]
     pub pressure_coeff: f64,
+    pub filename: String,
+    pub format: String,
+    #[serde(default)]
+    pub mag_cal: Option<String>,
+    #[serde(default)]
+    pub bias_ag: Option<String>,
 }
 
 #[derive(Deserialize, Debug)]
@@ -110,11 +119,16 @@ impl Default for SwingBoat {
     }
 }
 
+fn path2abs(dir: &std::path::Path, relpath: &String) -> String {
+    String::from(dir.join(std::path::Path::new(&relpath)).to_str().unwrap())
 }
 
 pub fn load<P: AsRef<std::path::Path>>(filename: P) -> Result<Config, Error> {
     let mut file = std::fs::File::open(filename.as_ref())?;
     let mut buffer = String::new();
+    let cfgdir = std::path::Path::new(filename.as_ref())
+        .parent()
+        .expect("can't get parent dir of config");
 
     file.read_to_string(&mut buffer)?;
     drop(file);
@@ -146,6 +160,27 @@ pub fn load<P: AsRef<std::path::Path>>(filename: P) -> Result<Config, Error> {
 
     // we deserialized a normal quat into a unit-quat, fix that
     cfg.data.imu_orientation.renormalize();
+
+    // make all paths absolute
+    cfg.data.filename = path2abs(&cfgdir, &cfg.data.filename);
+    match cfg.video.filename {
+        Some(v) => {
+            cfg.video.filename = Some(path2abs(&cfgdir, &v));
+        }
+        None => (),
+    }
+    match cfg.data.mag_cal {
+        Some(v) => {
+            cfg.data.mag_cal = Some(path2abs(&cfgdir, &v));
+        }
+        None => (),
+    }
+    match cfg.data.bias_ag {
+        Some(v) => {
+            cfg.data.bias_ag = Some(path2abs(&cfgdir, &v));
+        }
+        None => (),
+    }
 
     return Ok(cfg);
 }
