@@ -129,13 +129,10 @@ pub fn read_all_samples_input<S: std::io::Read>(
 
         // apply pressure coefficient
         if cfg.data.pressure_coeff > 0. {
-            match samples.last() {
-                Some(prev) => {
-                    sample.pressure = (prev.pressure * (cfg.data.pressure_coeff - 1.0)
-                        + sample.pressure)
-                        / cfg.data.pressure_coeff;
-                }
-                None => {}
+            if let Some(prev) = samples.last() {
+                sample.pressure = (prev.pressure * (cfg.data.pressure_coeff - 1.0)
+                    + sample.pressure)
+                    / cfg.data.pressure_coeff;
             }
         }
 
@@ -153,20 +150,14 @@ fn run_usfs_reader(cfg: &config::Config) -> std::process::ChildStdout {
     args.push("--outfmt");
     args.push("processed");
 
-    match &cfg.data.mag_cal {
-        Some(v) => {
-            args.push("--cal_mag");
-            args.push(&v);
-        }
-        None => (),
+    if let Some(v) = &cfg.data.mag_cal {
+        args.push("--cal_mag");
+        args.push(&v);
     }
 
-    match &cfg.data.bias_ag {
-        Some(v) => {
-            args.push("--bias_ag");
-            args.push(&v);
-        }
-        None => (),
+    if let Some(v) = &cfg.data.bias_ag {
+        args.push("--bias_ag");
+        args.push(&v);
     }
     args.push(&cfg.data.filename);
 

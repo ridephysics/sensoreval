@@ -163,23 +163,14 @@ pub fn load<P: AsRef<std::path::Path>>(filename: P) -> Result<Config, Error> {
 
     // make all paths absolute
     cfg.data.filename = path2abs(&cfgdir, &cfg.data.filename);
-    match cfg.video.filename {
-        Some(v) => {
-            cfg.video.filename = Some(path2abs(&cfgdir, &v));
-        }
-        None => (),
+    if let Some(v) = cfg.video.filename {
+        cfg.video.filename = Some(path2abs(&cfgdir, &v));
     }
-    match cfg.data.mag_cal {
-        Some(v) => {
-            cfg.data.mag_cal = Some(path2abs(&cfgdir, &v));
-        }
-        None => (),
+    if let Some(v) = cfg.data.mag_cal {
+        cfg.data.mag_cal = Some(path2abs(&cfgdir, &v));
     }
-    match cfg.data.bias_ag {
-        Some(v) => {
-            cfg.data.bias_ag = Some(path2abs(&cfgdir, &v));
-        }
-        None => (),
+    if let Some(v) = cfg.data.bias_ag {
+        cfg.data.bias_ag = Some(path2abs(&cfgdir, &v));
     }
 
     return Ok(cfg);

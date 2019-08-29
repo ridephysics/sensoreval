@@ -83,14 +83,11 @@ impl<'a, 'b> Context<'a, 'b> {
         cr.paint();
         cr.restore();
 
-        match &self.hudhandler {
-            Some(handler) => {
-                cr.save();
-                let hudret = handler.render(self, cr);
-                cr.restore();
-                hudret?;
-            }
-            None => {}
+        if let Some(handler) = &self.hudhandler {
+            cr.save();
+            let hudret = handler.render(self, cr);
+            cr.restore();
+            hudret?;
         }
 
         return Ok(());
