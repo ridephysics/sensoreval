@@ -165,7 +165,7 @@ fn run_usfs_reader(cfg: &config::Config) -> std::process::ChildStdout {
         .args(args)
         .stdout(std::process::Stdio::piped())
         .spawn()
-        .unwrap();
+        .expect("usfs_reader failed");
 
     return child.stdout.unwrap();
 }
@@ -177,7 +177,7 @@ fn usfs_calc_quat<T: std::convert::Into<std::process::Stdio>>(
         .stdin(input)
         .stdout(std::process::Stdio::piped())
         .spawn()
-        .unwrap();
+        .expect("usfs_calc_quat failed");
 
     return child.stdout.unwrap();
 }
