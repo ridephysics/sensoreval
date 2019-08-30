@@ -127,6 +127,13 @@ pub fn read_all_samples_input<S: std::io::Read>(
             Ok(v) => v,
         };
 
+        if let Some(prev) = samples.last() {
+            if prev.time > sample.time {
+                println!("data jumped back in time");
+                return Err(Error::from(ErrorRepr::SampleNotFound));
+            }
+        }
+
         // apply pressure coefficient
         if cfg.data.pressure_coeff > 0. {
             if let Some(prev) = samples.last() {
