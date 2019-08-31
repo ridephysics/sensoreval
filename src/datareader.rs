@@ -90,6 +90,16 @@ impl Context {
                 _ => rawdata.time_imu,
             };
 
+            // skip samples before the start of the video
+            if time < cfg.video.startoff * 1000 {
+                continue;
+            }
+
+            // skip samples after the end of the video
+            if time > cfg.video.endoff * 1000 {
+                continue;
+            }
+
             // turn rawdata into data
             let mut data = Data::default();
             let imu_orientation_inv = cfg.data.imu_orientation.inverse();
