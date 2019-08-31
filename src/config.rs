@@ -28,7 +28,7 @@ impl Default for Video {
 #[derive(Deserialize, Debug)]
 pub struct Data {
     #[serde(default)]
-    pub startoff: u64,
+    pub video_off: i64,
     #[serde(default = "UnitQuaternion::identity")]
     pub imu_orientation: UnitQuaternion<f64>,
     #[serde(default)]
