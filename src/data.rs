@@ -49,6 +49,7 @@ impl Data {
 
 macro_rules! create_serializer(
     ($type:ident,
+     $idvar:ident,
      $var:ident,
      $name:ident,
      $value:expr) => {
@@ -60,8 +61,10 @@ macro_rules! create_serializer(
                 S: Serializer,
             {
                 let mut seq = serializer.serialize_seq(Some(self.0.len()))?;
+                let mut $idvar:usize = 0;
                 for $var in self.0 {
                     seq.serialize_element($value)?;
+                    $idvar += 1;
                 }
                 seq.end()
             }
@@ -75,11 +78,18 @@ macro_rules! create_serializer(
     }
 );
 
-create_serializer!(Data, data, AccelDataSerializer, &data.accel.as_slice());
-create_serializer!(Data, data, AccelLenDataSerializer, &data.accel.magnitude());
-create_serializer!(Data, data, TimeDataSerializer, &data.time);
+create_serializer!(Data, _i, data, AccelDataSerializer, &data.accel.as_slice());
 create_serializer!(
     Data,
+    _i,
+    data,
+    AccelLenDataSerializer,
+    &data.accel.magnitude()
+);
+create_serializer!(Data, _i, data, TimeDataSerializer, &data.time);
+create_serializer!(
+    Data,
+    _i,
     data,
     AltitudeDataSerializer,
     &data.pressure_altitude()
