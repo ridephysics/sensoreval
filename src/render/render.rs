@@ -92,4 +92,14 @@ impl<'a, 'b> Context<'a, 'b> {
 
         return Ok(());
     }
+
+    #[inline]
+    pub fn dp2px(&self, dp: f64) -> f64 {
+        dp * (self.dpi / 160.0)
+    }
+
+    #[inline]
+    pub fn sp2px(&self, sp: f64) -> f64 {
+        sp * (self.spi / 160.0)
+    }
 }
