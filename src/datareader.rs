@@ -2,6 +2,7 @@ use crate::*;
 
 use nalgebra::geometry::{Quaternion, UnitQuaternion};
 use serde_derive::Deserialize;
+use std::convert::TryInto;
 use std::mem;
 
 // https://github.com/rust-lang/rust/issues/27060
@@ -72,11 +73,28 @@ impl Context {
             // parse data
             let rawdata: RawData = bincode::deserialize(&self.buf)?;
 
+            // convert imu time into video time
+            let time = match cfg.data.video_off {
+                x if x > 0 => {
+                    let off: u64 = x.try_into().unwrap();
+                    rawdata.time_imu.checked_add(off).unwrap()
+                }
+                x if x < 0 => {
+                    let off: u64 = (-x).try_into().unwrap();
+                    match rawdata.time_imu.checked_sub(off) {
+                        Some(v) => v,
+                        // just skip samples which came before T0
+                        None => continue,
+                    }
+                }
+                _ => rawdata.time_imu,
+            };
+
             // turn rawdata into data
             let mut data = Data::default();
             let imu_orientation_inv = cfg.data.imu_orientation.inverse();
 
-            data.time = rawdata.time_imu;
+            data.time = time;
             data.temperature = rawdata.temperature;
             data.pressure = rawdata.pressure;
 
