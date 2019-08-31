@@ -91,6 +91,13 @@ create_serializer!(
     Data,
     _i,
     data,
+    TimeSDataSerializer,
+    &((data.time as f64) / 1000000.0)
+);
+create_serializer!(
+    Data,
+    _i,
+    data,
     AltitudeDataSerializer,
     &data.pressure_altitude()
 );
