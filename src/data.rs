@@ -94,6 +94,7 @@ create_serializer!(
     TimeSDataSerializer,
     &((data.time as f64) / 1000000.0)
 );
+create_serializer!(Data, i, _data, IndexDataSerializer, &i);
 create_serializer!(
     Data,
     _i,
