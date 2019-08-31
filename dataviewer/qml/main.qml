@@ -41,9 +41,9 @@ Window {
         Connections {
             target: player
             onPositionChanged: {
-                if (player.playbackState == MediaPlayer.PlayingState && player.duration > 0 && player.position >= player.duration - main_videoEndOffset) {
+                if (player.playbackState == MediaPlayer.PlayingState && player.duration > 0 && player.position >= main_videoEndOffset) {
                     player.stop();
-                    player.seek(player.duration - main_videoEndOffset);
+                    player.seek(main_videoEndOffset);
                 }
             }
         }
@@ -79,7 +79,7 @@ Window {
                 margins: 10
                 bottom: parent.bottom
             }
-            duration: player.duration - main_videoStartOffset - main_videoEndOffset
+            duration: main_videoEndOffset - main_videoStartOffset
             playPosition: player.position - main_videoStartOffset
             onSeekPositionChanged: player.seek(seekPosition + main_videoStartOffset);
         }
