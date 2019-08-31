@@ -1,3 +1,5 @@
+use crate::*;
+
 use nalgebra::base::Vector3;
 use nalgebra::geometry::UnitQuaternion;
 use serde::ser::{Serialize, SerializeSeq, Serializer};
@@ -116,4 +118,100 @@ pub fn id_for_time(dataset: &Vec<Data>, startid: usize, us: u64) -> Option<usize
     }
 
     return None;
+}
+
+pub fn downscale(lores: &mut Vec<Data>, dataset: &Vec<Data>, timeframe: u64) -> Result<(), Error> {
+    let data_last = unwrap_opt_or!(
+        dataset.last(),
+        return Err(Error::from(ErrorRepr::SampleNotFound))
+    );
+    let lores_len = data_last.time / timeframe;
+    let mut j = 0;
+
+    for i in 0..(lores_len as usize) {
+        let mut nsamples: usize = 0;
+        let mut data_lores = Data::default();
+        let mut quat: Option<&UnitQuaternion<f64>> = None;
+        let startid = j;
+
+        data_lores.time = (i as u64) * timeframe + timeframe / 2;
+
+        // sum up all data
+        loop {
+            let data = unwrap_opt_or!(dataset.get(j), break);
+            if data.time >= (i as u64) * timeframe {
+                break;
+            }
+            j += 1;
+
+            for k in 0..3 {
+                data_lores.accel[k] += data.accel[k];
+                data_lores.gyro[k] += data.gyro[k];
+                data_lores.mag[k] += data.mag[k];
+            }
+
+            data_lores.temperature = data.temperature;
+            data_lores.pressure = data.pressure;
+
+            // find the quat closest to our time
+            if quat.is_none() && data.time >= data_lores.time {
+                if j > 0
+                    && data_lores.time - dataset.get(j - 1).unwrap().time
+                        < data.time - data_lores.time
+                {
+                    quat = Some(&dataset.get(j - 1).unwrap().quat);
+                } else {
+                    quat = Some(&data.quat);
+                }
+            }
+
+            nsamples += 1;
+        }
+
+        // copy the quat we found
+        if quat.is_none() {
+            quat = Some(&dataset.get(startid).unwrap().quat);
+        }
+        data_lores.quat = quat.unwrap().clone();
+
+        if nsamples > 0 {
+            // calculate the mean values
+            for k in 0..3 {
+                data_lores.accel[k] /= nsamples as f64;
+                data_lores.gyro[k] /= nsamples as f64;
+                data_lores.mag[k] /= nsamples as f64;
+            }
+
+            data_lores.temperature /= nsamples as f64;
+            data_lores.pressure /= nsamples as f64;
+        } else if i > 0 {
+            // use the previous sample
+            let prev = dataset.get(i - 1).unwrap();
+
+            for k in 0..3 {
+                data_lores.accel[k] = prev.accel[k];
+                data_lores.gyro[k] = prev.gyro[k];
+                data_lores.mag[k] = prev.mag[k];
+            }
+
+            data_lores.temperature = prev.temperature;
+            data_lores.pressure = prev.pressure;
+        } else {
+            // use the first sample
+            let first = dataset.get(i).unwrap();
+
+            for k in 0..3 {
+                data_lores.accel[k] = first.accel[k];
+                data_lores.gyro[k] = first.gyro[k];
+                data_lores.mag[k] = first.mag[k];
+            }
+
+            data_lores.temperature = first.temperature;
+            data_lores.pressure = first.pressure;
+        }
+
+        lores.push(data_lores);
+    }
+
+    return Ok(());
 }
