@@ -103,13 +103,13 @@ create_serializer!(
     &data.pressure_altitude()
 );
 
-pub fn id_for_time(data: &Vec<Data>, startid: usize, us: u64) -> Option<usize> {
-    if startid >= data.len() {
+pub fn id_for_time(dataset: &Vec<Data>, startid: usize, us: u64) -> Option<usize> {
+    if startid >= dataset.len() {
         return None;
     }
 
-    for i in startid..data.len() {
-        let sample = &data[i];
+    for i in startid..dataset.len() {
+        let sample = &dataset[i];
         if sample.time >= us {
             return Some(i);
         }
