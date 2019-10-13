@@ -2,7 +2,6 @@ use crate::*;
 
 use nalgebra::geometry::UnitQuaternion;
 use serde::Deserialize;
-use serde_derive::Deserialize;
 use std::io::Read;
 
 #[derive(Deserialize, Debug)]

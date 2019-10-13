@@ -8,18 +8,14 @@ edition = "2018"
 crate-type = ["staticlib", "rlib"]
 
 [dependencies]
-serde = "1.0.99"
-serde-pickle = "0.5.0"
-serde_derive = "1.0.99"
-serde_ignored = "0.1.0"
-bincode = "1.1.4"
-toml = "0.5.3"
-cairo-sys-rs = "0.9.0"
+serde = { version = "1.0", features = ["derive"] }
+serde-pickle = "0.5"
+serde_ignored = "0.1"
+bincode = "1.2"
+toml = "0.5"
+cairo-sys-rs = "0.9"
+cairo-rs = { version = "0.7", features = ["png"] }
+nalgebra = { version = "0.18", features = ["serde-serialize"] }
 
-[dependencies.cairo-rs]
-version = "0.7.1"
-features = ["png"]
-
-[dependencies.nalgebra]
-version = "0.18.0"
-features = ["serde-serialize"]
+[profile.dev]
+opt-level = 1

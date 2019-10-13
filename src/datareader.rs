@@ -1,7 +1,7 @@
 use crate::*;
 
 use nalgebra::geometry::{Quaternion, UnitQuaternion};
-use serde_derive::Deserialize;
+use serde::Deserialize;
 use std::convert::TryInto;
 use std::mem;
 
