@@ -43,7 +43,7 @@ fn main() {
 
     // read index from stdin
     print!("index: ");
-    std::io::stdout().flush();
+    std::io::stdout().flush().unwrap();
     let mut input = String::new();
     match std::io::stdin().read_line(&mut input) {
         Err(e) => {
