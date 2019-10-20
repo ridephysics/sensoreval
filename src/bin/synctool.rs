@@ -19,9 +19,18 @@ fn main() {
     let samples = datareader::read_all_samples_cfg(&cfg).expect("can't read all samples");
 
     // plot
-    let mut plot = Plot::new(&IndexDataSerializer::from(&samples)).unwrap();
-    plot.add(&AccelDataSerializer::from(&samples)).unwrap();
-    plot.add(&AccelLenDataSerializer::from(&samples)).unwrap();
+    let mut plot = Plot::new(&DataSerializer::new(&samples, |i, _data| {
+        return i;
+    }))
+    .unwrap();
+    plot.add(&DataSerializer::new(&samples, |_i, data| {
+        return data.accel;
+    }))
+    .unwrap();
+    plot.add(&DataSerializer::new(&samples, |_i, data| {
+        return data.accel.magnitude();
+    }))
+    .unwrap();
     plot.show().unwrap();
 
     // read index from stdin

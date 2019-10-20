@@ -53,61 +53,31 @@ impl Data {
     }
 }
 
-macro_rules! create_serializer(
-    ($type:ident,
-     $idvar:ident,
-     $var:ident,
-     $name:ident,
-     $value:expr) => {
-        pub struct $name<'a>(&'a Vec<$type>);
+pub struct DataSerializer<'a, D, F> {
+    list: &'a Vec<D>,
+    f: F,
+}
 
-        impl<'a> Serialize for $name<'a> {
-            fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-            where
-                S: Serializer,
-            {
-                let mut seq = serializer.serialize_seq(Some(self.0.len()))?;
-                let mut $idvar:usize = 0;
-                for $var in self.0 {
-                    seq.serialize_element($value)?;
-                    $idvar += 1;
-                }
-                seq.end()
-            }
+impl<'a, D, ST: Serialize, F: Fn(usize, &D) -> ST> Serialize for DataSerializer<'a, D, F> {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        let mut seq = serializer.serialize_seq(Some(self.list.len()))?;
+        let mut i: usize = 0;
+        for data in self.list {
+            seq.serialize_element(&(self.f)(i, &data))?;
+            i += 1;
         }
-
-        impl<'a> From<&'a Vec<$type>> for $name<'a> {
-            fn from(dataset: &'a Vec<$type>) -> $name<'a> {
-                $name(dataset)
-            }
-        }
+        seq.end()
     }
-);
+}
 
-create_serializer!(Data, _i, data, AccelDataSerializer, &data.accel.as_slice());
-create_serializer!(
-    Data,
-    _i,
-    data,
-    AccelLenDataSerializer,
-    &data.accel.magnitude()
-);
-create_serializer!(Data, _i, data, TimeDataSerializer, &data.time);
-create_serializer!(
-    Data,
-    _i,
-    data,
-    TimeSDataSerializer,
-    &((data.time as f64) / 1000000.0)
-);
-create_serializer!(Data, i, _data, IndexDataSerializer, &i);
-create_serializer!(
-    Data,
-    _i,
-    data,
-    AltitudeDataSerializer,
-    &data.pressure_altitude()
-);
+impl<'a, D, ST: Serialize, F: Fn(usize, &D) -> ST> DataSerializer<'a, D, F> {
+    pub fn new(list: &'a Vec<D>, f: F) -> Self {
+        Self { list: list, f: f }
+    }
+}
 
 pub fn id_for_time(dataset: &Vec<Data>, startid: usize, us: u64) -> Option<usize> {
     if startid >= dataset.len() {

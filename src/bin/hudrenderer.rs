@@ -34,9 +34,22 @@ fn main() {
     drop(file);
 
     // plot
-    let mut plot = Plot::new(&TimeDataSerializer::from(&samples)).unwrap();
-    plot.add(&AccelDataSerializer::from(&samples)).unwrap();
-    plot.add(&AccelLenDataSerializer::from(&samples)).unwrap();
-    plot.add(&AltitudeDataSerializer::from(&samples)).unwrap();
+    let mut plot = Plot::new(&DataSerializer::new(&samples, |_i, data| {
+        return data.time_seconds();
+    }))
+    .unwrap();
+    plot.add(&DataSerializer::new(&samples, |_i, data| {
+        return data.accel;
+    }))
+    .unwrap();
+    plot.add(&DataSerializer::new(&samples, |_i, data| {
+        return data.accel.magnitude();
+    }))
+    .unwrap();
+    plot.add(&DataSerializer::new(&samples, |_i, data| {
+        return data.pressure_altitude();
+    }))
+    .unwrap();
+
     plot.show().unwrap();
 }
