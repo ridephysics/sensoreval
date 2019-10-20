@@ -145,7 +145,10 @@ pub extern "C" fn sensoreval_get_video_info<'a>(
 
     unsafe {
         *video_startoff_ptr = cctx.cfg.video.startoff;
-        *video_endoff_ptr = cctx.cfg.video.endoff;
+        *video_endoff_ptr = match cctx.cfg.video.endoff {
+            Some(v) => v,
+            None => std::u64::MAX,
+        }
     }
 
     return 0;

@@ -9,7 +9,7 @@ pub struct Video {
     #[serde(default)]
     pub startoff: u64,
     #[serde(default)]
-    pub endoff: u64,
+    pub endoff: Option<u64>,
     #[serde(default)]
     pub filename: Option<String>,
 }
@@ -18,7 +18,7 @@ impl Default for Video {
     fn default() -> Self {
         Self {
             startoff: 0,
-            endoff: 0,
+            endoff: None,
             filename: None,
         }
     }

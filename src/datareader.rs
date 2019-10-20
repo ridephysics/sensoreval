@@ -96,8 +96,10 @@ impl Context {
             }
 
             // skip samples after the end of the video
-            if time > cfg.video.endoff * 1000 {
-                continue;
+            if let Some(endoff) = cfg.video.endoff {
+                if time > endoff * 1000 {
+                    continue;
+                }
             }
 
             // turn rawdata into data
