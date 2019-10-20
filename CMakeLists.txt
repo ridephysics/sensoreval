@@ -19,6 +19,8 @@ find_library(DL_LIBRARY ${CMAKE_DL_LIBS})
 pkg_check_modules(GLIB REQUIRED glib-2.0)
 pkg_check_modules(GOBJECT REQUIRED gobject-2.0)
 pkg_check_modules(CAIRO_GOBJECT REQUIRED cairo-gobject)
+pkg_check_modules(PANGO REQUIRED pango)
+pkg_check_modules(PANGOCAIRO REQUIRED pangocairo)
 
 # setup variables for rust
 set(RUST_SRC "${CMAKE_CURRENT_SOURCE_DIR}/src")
@@ -54,6 +56,8 @@ target_link_libraries(sensoreval INTERFACE
     ${GLIB_LIBRARIES}
     ${GOBJECT_LIBRARIES}
     ${CAIRO_GOBJECT_LIBRARIES}
+    ${PANGO_LIBRARIES}
+    ${PANGOCAIRO_LIBRARIES}
 )
 
 add_compile_options(

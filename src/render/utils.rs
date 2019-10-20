@@ -1,0 +1,111 @@
+use crate::*;
+
+use std::convert::TryFrom;
+use std::convert::TryInto;
+
+pub fn render_font(cr: &cairo::Context, font: &pango::FontDescription, text: &str) -> (i32, i32) {
+    let layout = pangocairo::functions::create_layout(&cr).unwrap();
+    layout.set_font_description(Some(&font));
+    layout.set_text(&text);
+
+    set_source_rgba_u32(&cr, 0xffffffff);
+    pangocairo::functions::update_layout(&cr, &layout);
+    pangocairo::functions::show_layout(&cr, &layout);
+
+    cr.set_line_width(1.0);
+    set_source_rgba_u32(&cr, 0x000000ff);
+    pangocairo::functions::layout_path(&cr, &layout);
+    cr.stroke();
+
+    return layout.get_pixel_size();
+}
+
+pub fn set_source_rgba_u32(cr: &cairo::Context, rgba: u32) {
+    let r: f64 = ((rgba >> 24) & 0xff).try_into().unwrap();
+    let g: f64 = ((rgba >> 16) & 0xff).try_into().unwrap();
+    let b: f64 = ((rgba >> 8) & 0xff).try_into().unwrap();
+    let a: f64 = ((rgba >> 0) & 0xff).try_into().unwrap();
+
+    let rf = 1.0 / 255.0 * r;
+    let gf = 1.0 / 255.0 * g;
+    let bf = 1.0 / 255.0 * b;
+    let af = 1.0 / 255.0 * a;
+
+    cr.set_source_rgba(rf, gf, bf, af);
+}
+
+pub fn surface_sz_user(cr: &cairo::Context) -> (f64, f64) {
+    let surface = cairo::ImageSurface::try_from(cr.get_target()).unwrap();
+    let sw = surface.get_width() as f64;
+    let sh = surface.get_height() as f64;
+
+    return cr.device_to_user_distance(sw, sh);
+}
+
+pub fn draw_graph<T: Iterator<Item = u64>, D: Iterator<Item = f64>>(
+    cr: &cairo::Context,
+    iter_time: &mut T,
+    iter_data: &mut D,
+    graph_width: f64,
+    graph_height: f64,
+    dt: u64,
+    maxval: f64,
+    redval: f64,
+) {
+    cr.save();
+    cr.rectangle(0.0, 0.0, graph_width, graph_height);
+    cr.clip();
+
+    // graph-line style
+    cr.set_line_width(6.0);
+    let pat = cairo::LinearGradient::new(
+        0.0,
+        graph_height - (graph_height / maxval * redval),
+        0.0,
+        graph_height,
+    );
+    pat.add_color_stop_rgb(0.0, 1.0, 0.0, 0.0);
+    pat.add_color_stop_rgb(0.5, 1.0, 1.0, 0.0);
+    pat.add_color_stop_rgb(1.0, 0.0, 1.0, 0.0);
+    cr.set_source(&pat);
+
+    let mut tnow: u64 = 0;
+    let mut tstart: u64 = 0;
+    let mut first: bool = true;
+    loop {
+        let time = unwrap_opt_or!(iter_time.next(), break);
+        let data = unwrap_opt_or!(iter_data.next(), break);
+        let was_first = first;
+        if first {
+            tnow = time;
+            tstart = match time.checked_sub(dt) {
+                None => 0,
+                Some(v) => v,
+            };
+            first = false;
+        }
+
+        if time < tstart {
+            break;
+        }
+
+        let x = graph_width - (graph_width / (dt as f64) * ((tnow - time) as f64));
+        let y = graph_height - (graph_height / maxval * data);
+
+        match was_first {
+            true => cr.move_to(x, y),
+            false => cr.line_to(x, y),
+        }
+    }
+
+    cr.stroke();
+    cr.restore();
+
+    // border
+    render::utils::set_source_rgba_u32(cr, 0x000000ff);
+    cr.set_line_width(3.0);
+    cr.move_to(0.0, 0.0);
+    cr.line_to(0.0, graph_height);
+    cr.line_to(graph_width, graph_height);
+    cr.stroke();
+}
