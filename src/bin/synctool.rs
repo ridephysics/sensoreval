@@ -18,6 +18,14 @@ fn main() {
     // load data
     let samples = datareader::read_all_samples_cfg(&cfg).expect("can't read all samples");
 
+    if let Some(sample) = samples.first() {
+        println!("FIRST: {}", sample.time);
+    }
+
+    if let Some(sample) = samples.last() {
+        println!("LAST: {}", sample.time);
+    }
+
     // plot
     let mut plot = Plot::new(&DataSerializer::new(&samples, |i, _data| {
         return i;
