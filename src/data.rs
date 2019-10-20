@@ -150,8 +150,8 @@ pub fn downscale(lores: &mut Vec<Data>, dataset: &Vec<Data>, timeframe: u64) -> 
                 data_lores.mag[k] += data.mag[k];
             }
 
-            data_lores.temperature = data.temperature;
-            data_lores.pressure = data.pressure;
+            data_lores.temperature += data.temperature;
+            data_lores.pressure += data.pressure;
 
             // find the quat closest to our time
             if quat.is_none() && data.time >= data_lores.time {
