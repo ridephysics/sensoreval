@@ -47,6 +47,10 @@ impl Data {
     pub fn pressure_altitude(&self) -> f64 {
         return self.pressure_altitude_feet() * 0.3048;
     }
+
+    pub fn time_seconds(&self) -> f64 {
+        return (self.time as f64) / 1000000.0;
+    }
 }
 
 macro_rules! create_serializer(
