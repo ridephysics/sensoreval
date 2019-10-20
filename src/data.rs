@@ -53,6 +53,28 @@ impl Data {
     }
 }
 
+pub struct DataIterator<I, F> {
+    iter: I,
+    f: F,
+}
+
+impl<'a, D: 'a, I: Iterator<Item = &'a D>, R, F: Fn(&D) -> R> Iterator for DataIterator<I, F> {
+    type Item = R;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        match self.iter.next() {
+            Some(data) => Some((self.f)(&data)),
+            _ => None,
+        }
+    }
+}
+
+impl<'a, D: 'a, I: Iterator<Item = &'a D>, R, F: Fn(&D) -> R> DataIterator<I, F> {
+    pub fn new(iter: I, f: F) -> Self {
+        Self { iter: iter, f: f }
+    }
+}
+
 pub struct DataSerializer<'a, D, F> {
     list: &'a Vec<D>,
     f: F,
