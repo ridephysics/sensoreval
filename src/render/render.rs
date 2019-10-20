@@ -3,7 +3,7 @@ use crate::*;
 enum DataSrc {
     None,
     Data(Data),
-    Array { us: u64, id: usize },
+    Array { id: usize },
 }
 
 pub struct Context<'a, 'b> {
@@ -51,7 +51,7 @@ impl<'a, 'b> Context<'a, 'b> {
 
         match id_for_time(self.dataset.unwrap(), 0, us) {
             Some(id) => {
-                self.src = DataSrc::Array { us: us, id: id };
+                self.src = DataSrc::Array { id: id };
                 return Ok(());
             }
             None => {
@@ -68,7 +68,7 @@ impl<'a, 'b> Context<'a, 'b> {
         match &self.src {
             DataSrc::None => None,
             DataSrc::Data(data) => Some(&data),
-            DataSrc::Array { id, us: _ } => match self.dataset {
+            DataSrc::Array { id } => match self.dataset {
                 None => None,
                 Some(arr) => Some(&arr[*id]),
             },
