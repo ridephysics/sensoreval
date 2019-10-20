@@ -25,5 +25,7 @@ if len(plotdata) == 1:
 for i in range(len(plotdata)):
     plots[i].plot(x, plotdata[i])
 
+fig.tight_layout()
+
 # show
 plt.show()
