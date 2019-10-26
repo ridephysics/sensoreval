@@ -21,7 +21,7 @@ impl Plot {
         serde_pickle::to_writer(stdin, &code, true)?;
         serde_pickle::to_writer(stdin, &time, true)?;
 
-        return Ok(Plot { child: child });
+        Ok(Plot { child })
     }
 
     pub fn add<D: serde::ser::Serialize>(&mut self, data: &D) -> Result<(), Error> {
@@ -31,7 +31,7 @@ impl Plot {
         serde_pickle::to_writer(stdin, &isdata, true)?;
         serde_pickle::to_writer(stdin, &data, true)?;
 
-        return Ok(());
+        Ok(())
     }
 
     pub fn show(&mut self) -> Result<(), Error> {
@@ -45,6 +45,6 @@ impl Plot {
             return Err(Error::from(status));
         }
 
-        return Ok(());
+        Ok(())
     }
 }

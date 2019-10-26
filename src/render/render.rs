@@ -25,14 +25,14 @@ fn handler_from_ctx(ctx: &Context) -> Option<Box<dyn HudHandler>> {
         _ => return None,
     };
 
-    return Some(Box::new(handler));
+    Some(Box::new(handler))
 }
 
 impl<'a, 'b> Context<'a, 'b> {
     pub fn new(cfg: &'a config::Config, dataset: Option<&'b Vec<Data>>) -> Self {
         let mut ctx = Self {
-            cfg: cfg,
-            dataset: dataset,
+            cfg,
+            dataset,
             dpi: 141.21,
             spi: 141.21,
             src: DataSrc::None,
@@ -41,7 +41,7 @@ impl<'a, 'b> Context<'a, 'b> {
 
         ctx.hudhandler = handler_from_ctx(&ctx);
 
-        return ctx;
+        ctx
     }
 
     pub fn set_ts(&mut self, us: u64) -> Result<(), Error> {
@@ -51,12 +51,10 @@ impl<'a, 'b> Context<'a, 'b> {
 
         match id_for_time(self.dataset.unwrap(), 0, us) {
             Some(id) => {
-                self.src = DataSrc::Array { id: id };
-                return Ok(());
+                self.src = DataSrc::Array { id };
+                Ok(())
             }
-            None => {
-                return Err(Error::from(ErrorRepr::SampleNotFound));
-            }
+            None => Err(Error::from(ErrorRepr::SampleNotFound)),
         }
     }
 
@@ -101,7 +99,7 @@ impl<'a, 'b> Context<'a, 'b> {
             hudret?;
         }
 
-        return Ok(());
+        Ok(())
     }
 
     #[inline]

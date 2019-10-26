@@ -118,10 +118,11 @@ impl Default for SwingBoat {
     }
 }
 
-fn path2abs(dir: &std::path::Path, relpath: &String) -> String {
+fn path2abs(dir: &std::path::Path, relpath: &str) -> String {
     String::from(dir.join(std::path::Path::new(&relpath)).to_str().unwrap())
 }
 
+#[allow(clippy::many_single_char_names)]
 pub fn load<P: AsRef<std::path::Path>>(filename: P) -> Result<Config, Error> {
     let mut file = std::fs::File::open(filename.as_ref())?;
     let mut buffer = String::new();
@@ -172,5 +173,5 @@ pub fn load<P: AsRef<std::path::Path>>(filename: P) -> Result<Config, Error> {
         cfg.data.bias_ag = Some(path2abs(&cfgdir, &v));
     }
 
-    return Ok(cfg);
+    Ok(cfg)
 }

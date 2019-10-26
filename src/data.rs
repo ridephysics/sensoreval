@@ -44,15 +44,15 @@ impl Default for Data {
 
 impl Data {
     fn pressure_altitude_feet(&self) -> f64 {
-        return 145366.45 * (1.0 - (self.pressure / 1013.25).powf(0.190284));
+        145_366.45 * (1.0 - (self.pressure / 1013.25).powf(0.190_284))
     }
 
     pub fn pressure_altitude(&self) -> f64 {
-        return self.pressure_altitude_feet() * 0.3048;
+        self.pressure_altitude_feet() * 0.3048
     }
 
     pub fn time_seconds(&self) -> f64 {
-        return (self.time as f64) / 1000000.0;
+        (self.time as f64) / 1_000_000.0
     }
 }
 
@@ -74,12 +74,12 @@ impl<'a, D: 'a, I: Iterator<Item = &'a D>, R, F: Fn(&D) -> R> Iterator for DataI
 
 impl<'a, D: 'a, I: Iterator<Item = &'a D>, R, F: Fn(&D) -> R> DataIterator<I, F> {
     pub fn new(iter: I, f: F) -> Self {
-        Self { iter: iter, f: f }
+        Self { iter, f }
     }
 }
 
 pub struct DataSerializer<'a, D, F> {
-    list: &'a Vec<D>,
+    list: &'a [D],
     f: F,
 }
 
@@ -89,37 +89,35 @@ impl<'a, D, ST: Serialize, F: Fn(usize, &D) -> ST> Serialize for DataSerializer<
         S: Serializer,
     {
         let mut seq = serializer.serialize_seq(Some(self.list.len()))?;
-        let mut i: usize = 0;
-        for data in self.list {
+
+        for (i, data) in self.list.iter().enumerate() {
             seq.serialize_element(&(self.f)(i, &data))?;
-            i += 1;
         }
         seq.end()
     }
 }
 
 impl<'a, D, ST: Serialize, F: Fn(usize, &D) -> ST> DataSerializer<'a, D, F> {
-    pub fn new(list: &'a Vec<D>, f: F) -> Self {
-        Self { list: list, f: f }
+    pub fn new(list: &'a [D], f: F) -> Self {
+        Self { list, f }
     }
 }
 
-pub fn id_for_time(dataset: &Vec<Data>, startid: usize, us: u64) -> Option<usize> {
+pub fn id_for_time(dataset: &[Data], startid: usize, us: u64) -> Option<usize> {
     if startid >= dataset.len() {
         return None;
     }
 
-    for i in startid..dataset.len() {
-        let sample = &dataset[i];
+    for (i, sample) in (&dataset[startid..]).iter().enumerate() {
         if sample.time >= us {
             return Some(i);
         }
     }
 
-    return None;
+    None
 }
 
-pub fn downscale(lores: &mut Vec<Data>, dataset: &Vec<Data>, timeframe: u64) -> Result<(), Error> {
+pub fn downscale(lores: &mut Vec<Data>, dataset: &[Data], timeframe: u64) -> Result<(), Error> {
     let data_last = unwrap_opt_or!(
         dataset.last(),
         return Err(Error::from(ErrorRepr::SampleNotFound))
@@ -136,8 +134,7 @@ pub fn downscale(lores: &mut Vec<Data>, dataset: &Vec<Data>, timeframe: u64) -> 
         data_lores.time = (i as u64) * timeframe + timeframe / 2;
 
         // sum up all data
-        loop {
-            let data = unwrap_opt_or!(dataset.get(j), break);
+        while let Some(data) = dataset.get(j) {
             if data.time >= (i as u64) * timeframe {
                 break;
             }
@@ -171,7 +168,7 @@ pub fn downscale(lores: &mut Vec<Data>, dataset: &Vec<Data>, timeframe: u64) -> 
         if quat.is_none() {
             quat = Some(&dataset.get(startid).unwrap().quat);
         }
-        data_lores.quat = quat.unwrap().clone();
+        data_lores.quat = *quat.unwrap();
 
         if nsamples > 0 {
             // calculate the mean values
@@ -212,5 +209,5 @@ pub fn downscale(lores: &mut Vec<Data>, dataset: &Vec<Data>, timeframe: u64) -> 
         lores.push(data_lores);
     }
 
-    return Ok(());
+    Ok(())
 }

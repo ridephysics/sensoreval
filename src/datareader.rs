@@ -26,6 +26,12 @@ pub struct Context {
     bufpos: usize,
 }
 
+impl Default for Context {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Context {
     pub fn new() -> Self {
         assert_eq!(mem::size_of::<RawData>(), mem::size_of::<[u64; 17]>());
@@ -54,6 +60,7 @@ impl Context {
         }
     }
 
+    #[allow(clippy::many_single_char_names)]
     pub fn read_sample<S: std::io::Read>(
         &mut self,
         source: &mut S,
@@ -187,7 +194,7 @@ pub fn read_all_samples_input<S: std::io::Read>(
         samples.push(sample);
     }
 
-    return Ok(samples);
+    Ok(samples)
 }
 
 fn run_usfs_reader(cfg: &config::Config) -> std::process::ChildStdout {

@@ -8,23 +8,23 @@ pub fn render_font(cr: &cairo::Context, font: &pango::FontDescription, text: &st
     layout.set_font_description(Some(&font));
     layout.set_text(&text);
 
-    set_source_rgba_u32(&cr, 0xffffffff);
+    set_source_rgba_u32(&cr, 0xffff_ffff);
     pangocairo::functions::update_layout(&cr, &layout);
     pangocairo::functions::show_layout(&cr, &layout);
 
     cr.set_line_width(1.0);
-    set_source_rgba_u32(&cr, 0x000000ff);
+    set_source_rgba_u32(&cr, 0x0000_00ff);
     pangocairo::functions::layout_path(&cr, &layout);
     cr.stroke();
 
-    return layout.get_pixel_size();
+    layout.get_pixel_size()
 }
 
 pub fn set_source_rgba_u32(cr: &cairo::Context, rgba: u32) {
     let r: f64 = ((rgba >> 24) & 0xff).try_into().unwrap();
     let g: f64 = ((rgba >> 16) & 0xff).try_into().unwrap();
     let b: f64 = ((rgba >> 8) & 0xff).try_into().unwrap();
-    let a: f64 = ((rgba >> 0) & 0xff).try_into().unwrap();
+    let a: f64 = (rgba & 0xff).try_into().unwrap();
 
     let rf = 1.0 / 255.0 * r;
     let gf = 1.0 / 255.0 * g;
@@ -36,12 +36,13 @@ pub fn set_source_rgba_u32(cr: &cairo::Context, rgba: u32) {
 
 pub fn surface_sz_user(cr: &cairo::Context) -> (f64, f64) {
     let surface = cairo::ImageSurface::try_from(cr.get_target()).unwrap();
-    let sw = surface.get_width() as f64;
-    let sh = surface.get_height() as f64;
+    let sw = f64::from(surface.get_width());
+    let sh = f64::from(surface.get_height());
 
-    return cr.device_to_user_distance(sw, sh);
+    cr.device_to_user_distance(sw, sh)
 }
 
+#[allow(clippy::too_many_arguments)]
 pub fn draw_graph<T: Iterator<Item = u64>, D: Iterator<Item = f64>>(
     cr: &cairo::Context,
     iter_time: &mut T,
@@ -72,6 +73,10 @@ pub fn draw_graph<T: Iterator<Item = u64>, D: Iterator<Item = f64>>(
     let mut tnow: u64 = 0;
     let mut tstart: u64 = 0;
     let mut first: bool = true;
+
+    // clippy is wrong, because we're iterating of two iterators at the same time
+    // alos, I'm not comfortable using zip, yet due to unclear performance impacts
+    #[allow(clippy::while_let_loop)]
     loop {
         let time = unwrap_opt_or!(iter_time.next(), break);
         let data = unwrap_opt_or!(iter_data.next(), break);
@@ -92,9 +97,10 @@ pub fn draw_graph<T: Iterator<Item = u64>, D: Iterator<Item = f64>>(
         let x = graph_width - (graph_width / (dt as f64) * ((tnow - time) as f64));
         let y = graph_height - (graph_height / maxval * data);
 
-        match was_first {
-            true => cr.move_to(x, y),
-            false => cr.line_to(x, y),
+        if was_first {
+            cr.move_to(x, y);
+        } else {
+            cr.line_to(x, y);
         }
     }
 
@@ -102,7 +108,7 @@ pub fn draw_graph<T: Iterator<Item = u64>, D: Iterator<Item = f64>>(
     cr.restore();
 
     // border
-    render::utils::set_source_rgba_u32(cr, 0x000000ff);
+    render::utils::set_source_rgba_u32(cr, 0x0000_00ff);
     cr.set_line_width(3.0);
     cr.move_to(0.0, 0.0);
     cr.line_to(0.0, graph_height);

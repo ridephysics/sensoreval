@@ -1,3 +1,5 @@
+#![allow(clippy::not_unsafe_ptr_arg_deref)]
+
 use crate::*;
 
 pub struct CContext<'a> {
@@ -17,17 +19,18 @@ pub extern "C" fn sensoreval_create<'a>(
         return std::ptr::null_mut()
     );
     let cfg = unwrap_res_or!(config::load(&path), return std::ptr::null_mut());
-    let dataset = match islive {
-        true => None,
-        false => Some(unwrap_res_or!(
+    let dataset = if islive {
+        None
+    } else {
+        Some(unwrap_res_or!(
             datareader::read_all_samples_cfg(&cfg),
             return std::ptr::null_mut()
-        )),
+        ))
     };
 
     let cctx_ptr = Box::into_raw(Box::new(CContext {
-        cfg: cfg,
-        dataset: dataset,
+        cfg,
+        dataset,
         readctx: datareader::Context::new(),
         renderctx: None,
     }));
@@ -35,17 +38,17 @@ pub extern "C" fn sensoreval_create<'a>(
 
     cctx.renderctx = Some(render::Context::new(&cctx.cfg, cctx.dataset.as_ref()));
 
-    return cctx_ptr;
+    cctx_ptr
 }
 
 #[no_mangle]
-pub extern "C" fn sensoreval_destroy<'a>(cctx_ptr: *mut CContext<'a>) {
+pub extern "C" fn sensoreval_destroy(cctx_ptr: *mut CContext) {
     unsafe { Box::from_raw(cctx_ptr) };
 }
 
 #[no_mangle]
-pub extern "C" fn sensoreval_render<'a>(
-    cctx_ptr: *const CContext<'a>,
+pub extern "C" fn sensoreval_render(
+    cctx_ptr: *const CContext,
     cr_ptr: *mut cairo_sys::cairo_t,
 ) -> std::os::raw::c_int {
     let cctx = unwrap_opt_or!(unsafe { cctx_ptr.as_ref() }, return -1);
@@ -54,24 +57,21 @@ pub extern "C" fn sensoreval_render<'a>(
 
     unwrap_res_or!(renderctx.render(&cr), return -3);
 
-    return 0;
+    0
 }
 
 #[no_mangle]
-pub extern "C" fn sensoreval_set_ts<'a>(
-    cctx_ptr: *mut CContext<'a>,
-    us: u64,
-) -> std::os::raw::c_int {
+pub extern "C" fn sensoreval_set_ts(cctx_ptr: *mut CContext, us: u64) -> std::os::raw::c_int {
     let cctx = unwrap_opt_or!(unsafe { cctx_ptr.as_mut() }, return -1);
     let renderctx = unwrap_opt_or!(&mut cctx.renderctx, return -2);
 
     unwrap_res_or!(renderctx.set_ts(us), return -3);
 
-    return 0;
+    0
 }
 
 #[no_mangle]
-pub extern "C" fn sensoreval_notify_stdin<'a>(cctx_ptr: *mut CContext<'a>) -> std::os::raw::c_int {
+pub extern "C" fn sensoreval_notify_stdin(cctx_ptr: *mut CContext) -> std::os::raw::c_int {
     let cctx = unwrap_opt_or!(unsafe { cctx_ptr.as_mut() }, return -1);
     let renderctx = unwrap_opt_or!(&mut cctx.renderctx, return -2);
 
@@ -91,12 +91,12 @@ pub extern "C" fn sensoreval_notify_stdin<'a>(cctx_ptr: *mut CContext<'a>) -> st
 
     renderctx.set_data(sample);
 
-    return 1;
+    1
 }
 
 #[no_mangle]
-pub extern "C" fn sensoreval_get_quat<'a>(
-    cctx_ptr: *const CContext<'a>,
+pub extern "C" fn sensoreval_get_quat(
+    cctx_ptr: *const CContext,
     quat_ptr: *mut std::os::raw::c_double,
 ) -> std::os::raw::c_int {
     let cctx = unwrap_opt_or!(unsafe { cctx_ptr.as_ref() }, return -1);
@@ -109,12 +109,12 @@ pub extern "C" fn sensoreval_get_quat<'a>(
     quat[2] = data.quat[1];
     quat[3] = data.quat[2];
 
-    return 0;
+    0
 }
 
 #[no_mangle]
-pub extern "C" fn sensoreval_get_video_info<'a>(
-    cctx_ptr: *const CContext<'a>,
+pub extern "C" fn sensoreval_get_video_info(
+    cctx_ptr: *const CContext,
     filename_ptr: *mut std::os::raw::c_char,
     filename_sz_uint: std::os::raw::c_uint,
     video_startoff_ptr: *mut u64,
@@ -130,7 +130,7 @@ pub extern "C" fn sensoreval_get_video_info<'a>(
             }
             unsafe {
                 std::ptr::copy(v.as_ptr(), filename_ptr as *mut u8, v.len());
-                *filename_ptr.offset(v.len() as isize) = 0;
+                *filename_ptr.add(v.len()) = 0;
             }
         }
         None => {
@@ -151,5 +151,5 @@ pub extern "C" fn sensoreval_get_video_info<'a>(
         }
     }
 
-    return 0;
+    0
 }

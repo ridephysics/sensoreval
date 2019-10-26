@@ -28,15 +28,13 @@ fn main() {
 
     // plot
     let mut plot = Plot::new(&DataSerializer::new(&samples, |i, _data| {
-        return i;
+        i
     }))
     .unwrap();
+    plot.add(&DataSerializer::new(&samples, |_i, data| data.accel))
+        .unwrap();
     plot.add(&DataSerializer::new(&samples, |_i, data| {
-        return data.accel;
-    }))
-    .unwrap();
-    plot.add(&DataSerializer::new(&samples, |_i, data| {
-        return data.accel.magnitude();
+        data.accel.magnitude()
     }))
     .unwrap();
     plot.show().unwrap();
@@ -45,21 +43,10 @@ fn main() {
     print!("index: ");
     std::io::stdout().flush().unwrap();
     let mut input = String::new();
-    match std::io::stdin().read_line(&mut input) {
-        Err(e) => {
-            println!("can't read line from stdin: {}", e);
-            std::process::exit(1);
-        }
-        _ => (),
-    }
-
-    let index: usize = match input.trim().parse() {
-        Err(e) => {
-            println!("can't parse line as int: {}", e);
-            std::process::exit(1);
-        }
-        Ok(v) => v,
-    };
+    std::io::stdin()
+        .read_line(&mut input)
+        .expect("can't read line from stdin");
+    let index: usize = input.trim().parse().expect("can't parse line as int");
 
     // print requested sample
     println!("{:#?}", samples[index]);

@@ -35,19 +35,17 @@ fn main() {
 
     // plot
     let mut plot = Plot::new(&DataSerializer::new(&samples, |_i, data| {
-        return data.time_seconds();
+        data.time_seconds()
+    }))
+    .unwrap();
+    plot.add(&DataSerializer::new(&samples, |_i, data| data.accel))
+        .unwrap();
+    plot.add(&DataSerializer::new(&samples, |_i, data| {
+        data.accel.magnitude()
     }))
     .unwrap();
     plot.add(&DataSerializer::new(&samples, |_i, data| {
-        return data.accel;
-    }))
-    .unwrap();
-    plot.add(&DataSerializer::new(&samples, |_i, data| {
-        return data.accel.magnitude();
-    }))
-    .unwrap();
-    plot.add(&DataSerializer::new(&samples, |_i, data| {
-        return data.pressure_altitude();
+        data.pressure_altitude()
     }))
     .unwrap();
 
