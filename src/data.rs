@@ -8,6 +8,8 @@ use serde::ser::{Serialize, SerializeSeq, Serializer};
 pub struct Data {
     // unit: microseconds
     pub time: u64,
+    // unit: microseconds
+    pub time_baro: u64,
 
     // unit: g
     pub accel: Vector3<f64>,
@@ -29,6 +31,7 @@ impl Default for Data {
     fn default() -> Self {
         Self {
             time: 0,
+            time_baro: 0,
             accel: Vector3::new(0., 0., 0.),
             gyro: Vector3::new(0., 0., 0.),
             mag: Vector3::new(0., 0., 0.),
