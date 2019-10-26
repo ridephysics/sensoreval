@@ -36,6 +36,24 @@ impl Context {
         }
     }
 
+    fn time_imu2video(cfg: &config::Config, us: u64) -> Option<u64> {
+        match cfg.data.video_off {
+            x if x > 0 => {
+                let off: u64 = x.try_into().unwrap();
+                Some(us.checked_add(off).unwrap())
+            }
+            x if x < 0 => {
+                let off: u64 = (-x).try_into().unwrap();
+                match us.checked_sub(off) {
+                    Some(v) => Some(v),
+                    // just skip samples which came before T0
+                    None => None,
+                }
+            }
+            _ => Some(us),
+        }
+    }
+
     pub fn read_sample<S: std::io::Read>(
         &mut self,
         source: &mut S,
@@ -73,21 +91,9 @@ impl Context {
             // parse data
             let rawdata: RawData = bincode::deserialize(&self.buf)?;
 
-            // convert imu time into video time
-            let time = match cfg.data.video_off {
-                x if x > 0 => {
-                    let off: u64 = x.try_into().unwrap();
-                    rawdata.time_imu.checked_add(off).unwrap()
-                }
-                x if x < 0 => {
-                    let off: u64 = (-x).try_into().unwrap();
-                    match rawdata.time_imu.checked_sub(off) {
-                        Some(v) => v,
-                        // just skip samples which came before T0
-                        None => continue,
-                    }
-                }
-                _ => rawdata.time_imu,
+            let time = match Self::time_imu2video(cfg, rawdata.time_imu) {
+                Some(v) => v,
+                None => continue,
             };
 
             // skip samples before the start of the video
