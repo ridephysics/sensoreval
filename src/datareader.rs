@@ -15,7 +15,7 @@ struct RawData {
     accel: [f64; 3],
     gyro: [f64; 3],
     mag: [f64; 3],
-    time_compass: f64,
+    time_baro: u64,
     temperature: f64,
     pressure: f64,
     quat: [f64; 4],
@@ -95,6 +95,10 @@ impl Context {
                 Some(v) => v,
                 None => continue,
             };
+            let time_baro = match Self::time_imu2video(cfg, rawdata.time_baro) {
+                Some(v) => v,
+                None => continue,
+            };
 
             // skip samples before the start of the video
             if time < cfg.video.startoff * 1000 {
@@ -113,6 +117,7 @@ impl Context {
             let imu_orientation_inv = cfg.data.imu_orientation.inverse();
 
             data.time = time;
+            data.time_baro = time_baro;
             data.temperature = rawdata.temperature;
             data.pressure = rawdata.pressure;
 
