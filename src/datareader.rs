@@ -1,6 +1,5 @@
 use crate::*;
 
-use nalgebra::geometry::{Quaternion, UnitQuaternion};
 use serde::Deserialize;
 use std::convert::TryInto;
 use std::mem;
@@ -18,7 +17,7 @@ struct RawData {
     time_baro: u64,
     temperature: f64,
     pressure: f64,
-    quat: [f64; 4],
+    _quat: [f64; 4],
 }
 
 pub struct Context {
@@ -96,22 +95,11 @@ impl Context {
                 data.mag[i] = rawdata.mag[i];
             }
 
-            {
-                let w: f64 = rawdata.quat[0];
-                let x: f64 = rawdata.quat[1];
-                let y: f64 = rawdata.quat[2];
-                let z: f64 = rawdata.quat[3];
-
-                let q = Quaternion::new(w, x, y, z);
-                data.quat = UnitQuaternion::from_quaternion(q);
-            }
-
             // apply imu_orientation
             let imu_orientation_inv = cfg.data.imu_orientation.inverse();
             data.accel = imu_orientation_inv * data.accel;
             data.gyro = imu_orientation_inv * data.gyro;
             data.mag = imu_orientation_inv * data.mag;
-            data.quat *= cfg.data.imu_orientation;
 
             // apply pressure coefficient
             if cfg.data.pressure_coeff > 0. {

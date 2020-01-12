@@ -1,7 +1,6 @@
 use crate::*;
 
 use nalgebra::base::Vector3;
-use nalgebra::geometry::UnitQuaternion;
 use serde::ser::{Serialize, SerializeSeq, Serializer};
 
 #[derive(Debug)]
@@ -18,9 +17,6 @@ pub struct Data {
     // unit: uT
     pub mag: Vector3<f64>,
 
-    // format: ENU
-    pub quat: UnitQuaternion<f64>,
-
     // unit: degrees celsius
     pub temperature: f64,
     // unit: hPa
@@ -35,7 +31,6 @@ impl Default for Data {
             accel: Vector3::new(0., 0., 0.),
             gyro: Vector3::new(0., 0., 0.),
             mag: Vector3::new(0., 0., 0.),
-            quat: UnitQuaternion::identity(),
             temperature: 0.,
             pressure: 0.,
         }
@@ -128,8 +123,6 @@ pub fn downscale(lores: &mut Vec<Data>, dataset: &[Data], timeframe: u64) -> Res
     for i in 0..(lores_len as usize) {
         let mut nsamples: usize = 0;
         let mut data_lores = Data::default();
-        let mut quat: Option<&UnitQuaternion<f64>> = None;
-        let startid = j;
 
         data_lores.time = (i as u64) * timeframe + timeframe / 2;
 
@@ -149,26 +142,8 @@ pub fn downscale(lores: &mut Vec<Data>, dataset: &[Data], timeframe: u64) -> Res
             data_lores.temperature += data.temperature;
             data_lores.pressure += data.pressure;
 
-            // find the quat closest to our time
-            if quat.is_none() && data.time >= data_lores.time {
-                if j > 0
-                    && data_lores.time - dataset.get(j - 1).unwrap().time
-                        < data.time - data_lores.time
-                {
-                    quat = Some(&dataset.get(j - 1).unwrap().quat);
-                } else {
-                    quat = Some(&data.quat);
-                }
-            }
-
             nsamples += 1;
         }
-
-        // copy the quat we found
-        if quat.is_none() {
-            quat = Some(&dataset.get(startid).unwrap().quat);
-        }
-        data_lores.quat = *quat.unwrap();
 
         if nsamples > 0 {
             // calculate the mean values

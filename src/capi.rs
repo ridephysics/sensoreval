@@ -99,15 +99,13 @@ pub extern "C" fn sensoreval_get_quat(
     cctx_ptr: *const CContext,
     quat_ptr: *mut std::os::raw::c_double,
 ) -> std::os::raw::c_int {
-    let cctx = unwrap_opt_or!(unsafe { cctx_ptr.as_ref() }, return -1);
+    let _cctx = unwrap_opt_or!(unsafe { cctx_ptr.as_ref() }, return -1);
     let quat = unsafe { std::slice::from_raw_parts_mut(quat_ptr, 4) };
-    let renderctx = unwrap_opt_or!(&cctx.renderctx, return -2);
-    let data = unwrap_opt_or!(renderctx.current_data(), return -3);
 
-    quat[0] = data.quat[3];
-    quat[1] = data.quat[0];
-    quat[2] = data.quat[1];
-    quat[3] = data.quat[2];
+    quat[0] = 1.0;
+    quat[1] = 0.0;
+    quat[2] = 0.0;
+    quat[3] = 0.0;
 
     0
 }
