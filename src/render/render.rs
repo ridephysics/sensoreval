@@ -76,10 +76,10 @@ impl<'a, 'b> Context<'a, 'b> {
     pub fn current_data_id(&self) -> Option<usize> {
         match &self.src {
             DataSrc::None => None,
-            DataSrc::Data(data) => None,
+            DataSrc::Data(_) => None,
             DataSrc::Array { id } => match self.dataset {
                 None => None,
-                Some(arr) => Some(*id),
+                Some(_) => Some(*id),
             },
         }
     }
