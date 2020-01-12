@@ -30,6 +30,9 @@ pub(crate) mod hudhandlers;
 mod plot;
 pub mod render;
 
+mod drain_filter;
+use drain_filter::*;
+
 pub use data::*;
 pub use error::*;
 pub use plot::*;
