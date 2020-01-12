@@ -12,7 +12,10 @@ fn main() {
     let cfgname = args.nth(1).unwrap();
 
     // load config
-    let cfg = config::load(&cfgname).expect("can't load config");
+    let mut cfg = config::load(&cfgname).expect("can't load config");
+    cfg.video.startoff = 0;
+    cfg.video.endoff = None;
+    cfg.data.video_off = 0;
     println!("config: {:#?}", cfg);
 
     // load data
@@ -27,10 +30,7 @@ fn main() {
     }
 
     // plot
-    let mut plot = Plot::new(&DataSerializer::new(&samples, |i, _data| {
-        i
-    }))
-    .unwrap();
+    let mut plot = Plot::new(&DataSerializer::new(&samples, |i, _data| i)).unwrap();
     plot.add(&DataSerializer::new(&samples, |_i, data| data.accel))
         .unwrap();
     plot.add(&DataSerializer::new(&samples, |_i, data| {
@@ -40,6 +40,8 @@ fn main() {
     plot.show().unwrap();
 
     // read index from stdin
+    std::io::stdout().flush().unwrap();
+    std::io::stderr().flush().unwrap();
     print!("index: ");
     std::io::stdout().flush().unwrap();
     let mut input = String::new();
@@ -48,6 +50,28 @@ fn main() {
         .expect("can't read line from stdin");
     let index: usize = input.trim().parse().expect("can't parse line as int");
 
+    std::io::stdout().flush().unwrap();
+    std::io::stderr().flush().unwrap();
+    print!("videooff(mpv --osd-fractions): ");
+    std::io::stdout().flush().unwrap();
+    let mut input = String::new();
+    std::io::stdin()
+        .read_line(&mut input)
+        .expect("can't read line from stdin");
+
+    // 00:01:00.944
+    let re = regex::Regex::new(r"(\d{2}):(\d{2}):(\d{2}).(\d{3})").unwrap();
+    let caps = re.captures(input.trim()).unwrap();
+    let h: u64 = caps[1].parse().unwrap();
+    let m: u64 = caps[2].parse().unwrap();
+    let s: u64 = caps[3].parse().unwrap();
+    let ms: u64 = caps[4].parse().unwrap();
+    let us = (((h * 60 + m) * 60 + s) * 1000 + ms) * 1000;
+
     // print requested sample
     println!("{:#?}", samples[index]);
+    println!(
+        "video_off = {}",
+        (us as i64).checked_sub(samples[index].time as i64).unwrap()
+    );
 }
