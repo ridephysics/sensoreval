@@ -238,28 +238,13 @@ fn run_usfs_reader(cfg: &config::Config) -> std::process::Child {
     child
 }
 
-fn usfs_calc_quat<T: std::convert::Into<std::process::Stdio>>(input: T) -> std::process::Child {
-    let child = std::process::Command::new("usfs_calc_quat")
-        .stdin(input)
-        .stdout(std::process::Stdio::piped())
-        .spawn()
-        .expect("usfs_calc_quat failed");
-
-    child
-}
-
 pub fn read_all_samples_cfg(cfg: &config::Config) -> Result<Vec<Data>, Error> {
     let mut child_reader = run_usfs_reader(&cfg);
-    let mut child_calc_quat = usfs_calc_quat(child_reader.stdout.take().unwrap());
 
-    let res = read_all_samples_input(&mut child_calc_quat.stdout.take().unwrap(), &cfg);
+    let res = read_all_samples_input(&mut child_reader.stdout.take().unwrap(), &cfg);
     assert!(child_reader
         .wait()
         .expect("can't wait for usfs_reader")
-        .success());
-    assert!(child_calc_quat
-        .wait()
-        .expect("can't wait for usfs_calc_quat")
         .success());
     res
 }
