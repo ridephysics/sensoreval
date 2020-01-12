@@ -24,6 +24,7 @@ struct RawData {
 pub struct Context {
     buf: [u8; mem::size_of::<RawData>()],
     bufpos: usize,
+    pressure_prev: Option<f64>,
 }
 
 impl Default for Context {
@@ -39,24 +40,7 @@ impl Context {
         Self {
             buf: [0; mem::size_of::<RawData>()],
             bufpos: 0,
-        }
-    }
-
-    fn time_imu2video(cfg: &config::Config, us: u64) -> Option<u64> {
-        match cfg.data.video_off {
-            x if x > 0 => {
-                let off: u64 = x.try_into().unwrap();
-                Some(us.checked_add(off).unwrap())
-            }
-            x if x < 0 => {
-                let off: u64 = (-x).try_into().unwrap();
-                match us.checked_sub(off) {
-                    Some(v) => Some(v),
-                    // just skip samples which came before T0
-                    None => None,
-                }
-            }
-            _ => Some(us),
+            pressure_prev: None,
         }
     }
 
@@ -98,33 +82,11 @@ impl Context {
             // parse data
             let rawdata: RawData = bincode::deserialize(&self.buf)?;
 
-            let time = match Self::time_imu2video(cfg, rawdata.time_imu) {
-                Some(v) => v,
-                None => continue,
-            };
-            let time_baro = match Self::time_imu2video(cfg, rawdata.time_baro) {
-                Some(v) => v,
-                None => continue,
-            };
-
-            // skip samples before the start of the video
-            if time < cfg.video.startoff * 1000 {
-                continue;
-            }
-
-            // skip samples after the end of the video
-            if let Some(endoff) = cfg.video.endoff {
-                if time > endoff * 1000 {
-                    continue;
-                }
-            }
-
             // turn rawdata into data
             let mut data = Data::default();
-            let imu_orientation_inv = cfg.data.imu_orientation.inverse();
 
-            data.time = time;
-            data.time_baro = time_baro;
+            data.time = rawdata.time_imu;
+            data.time_baro = rawdata.time_baro;
             data.temperature = rawdata.temperature;
             data.pressure = rawdata.pressure;
 
@@ -133,9 +95,6 @@ impl Context {
                 data.gyro[i] = rawdata.gyro[i];
                 data.mag[i] = rawdata.mag[i];
             }
-            data.accel = imu_orientation_inv * data.accel;
-            data.gyro = imu_orientation_inv * data.gyro;
-            data.mag = imu_orientation_inv * data.mag;
 
             {
                 let w: f64 = rawdata.quat[0];
@@ -144,11 +103,46 @@ impl Context {
                 let z: f64 = rawdata.quat[3];
 
                 let q = Quaternion::new(w, x, y, z);
-                data.quat = UnitQuaternion::from_quaternion(q) * cfg.data.imu_orientation;
+                data.quat = UnitQuaternion::from_quaternion(q);
             }
 
+            // apply imu_orientation
+            let imu_orientation_inv = cfg.data.imu_orientation.inverse();
+            data.accel = imu_orientation_inv * data.accel;
+            data.gyro = imu_orientation_inv * data.gyro;
+            data.mag = imu_orientation_inv * data.mag;
+            data.quat *= cfg.data.imu_orientation;
+
+            // apply pressure coefficient
+            if cfg.data.pressure_coeff > 0. {
+                if let Some(pressure_prev) = self.pressure_prev {
+                    data.pressure = (pressure_prev * (cfg.data.pressure_coeff - 1.0)
+                        + data.pressure)
+                        / cfg.data.pressure_coeff;
+                }
+            }
+
+            self.pressure_prev = Some(data.pressure);
             return Ok(data);
         }
+    }
+}
+
+fn time_imu2video(cfg: &config::Config, us: u64) -> Option<u64> {
+    match cfg.data.video_off {
+        x if x > 0 => {
+            let off: u64 = x.try_into().unwrap();
+            Some(us.checked_add(off).unwrap())
+        }
+        x if x < 0 => {
+            let off: u64 = (-x).try_into().unwrap();
+            match us.checked_sub(off) {
+                Some(v) => Some(v),
+                // just skip samples which came before T0
+                None => None,
+            }
+        }
+        _ => Some(us),
     }
 }
 
@@ -160,7 +154,7 @@ pub fn read_all_samples_input<S: std::io::Read>(
     let mut readctx = Context::new();
 
     loop {
-        let mut sample = match readctx.read_sample(source, cfg) {
+        let sample = match readctx.read_sample(source, cfg) {
             Err(e) => match &e.repr {
                 ErrorRepr::EOF => break,
                 ErrorRepr::Io(eio) => match eio.kind() {
@@ -182,17 +176,36 @@ pub fn read_all_samples_input<S: std::io::Read>(
             }
         }
 
-        // apply pressure coefficient
-        if cfg.data.pressure_coeff > 0. {
-            if let Some(prev) = samples.last() {
-                sample.pressure = (prev.pressure * (cfg.data.pressure_coeff - 1.0)
-                    + sample.pressure)
-                    / cfg.data.pressure_coeff;
+        samples.push(sample);
+    }
+
+    samples.drain_filter_stable(|sample| {
+        let time = match time_imu2video(cfg, sample.time) {
+            Some(v) => v,
+            None => return true,
+        };
+        let time_baro = match time_imu2video(cfg, sample.time_baro) {
+            Some(v) => v,
+            None => return true,
+        };
+
+        // skip samples before the start of the video
+        if time < cfg.video.startoff * 1000 {
+            return true;
+        }
+
+        // skip samples after the end of the video
+        if let Some(endoff) = cfg.video.endoff {
+            if time > endoff * 1000 {
+                return true;
             }
         }
 
-        samples.push(sample);
-    }
+        sample.time = time;
+        sample.time_baro = time_baro;
+
+        false
+    });
 
     Ok(samples)
 }
