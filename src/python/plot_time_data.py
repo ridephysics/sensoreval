@@ -1,10 +1,3 @@
-#!/usr/bin/env python3
-
-import sys
-import pickle
-import numpy as np
-import matplotlib.pyplot as plt
-
 # load time data
 x = np.array(pickle.load(sys.stdin.buffer))
 plotdata = []

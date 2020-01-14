@@ -34,7 +34,7 @@ fn main() {
     drop(file);
 
     // plot
-    let mut plot = Plot::new(&DataSerializer::new(&samples, |_i, data| {
+    let mut plot = TimeDataPlot::new(&DataSerializer::new(&samples, |_i, data| {
         data.time_seconds()
     }))
     .unwrap();
