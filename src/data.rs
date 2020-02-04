@@ -113,10 +113,7 @@ pub fn id_for_time(dataset: &[Data], startid: usize, us: u64) -> Option<usize> {
 }
 
 pub fn downscale(lores: &mut Vec<Data>, dataset: &[Data], timeframe: u64) -> Result<(), Error> {
-    let data_last = unwrap_opt_or!(
-        dataset.last(),
-        return Err(Error::from(ErrorRepr::SampleNotFound))
-    );
+    let data_last = unwrap_opt_or!(dataset.last(), return Err(Error::SampleNotFound));
     let lores_len = data_last.time / timeframe;
     let mut j = 0;
 

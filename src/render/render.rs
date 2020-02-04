@@ -46,7 +46,7 @@ impl<'a, 'b> Context<'a, 'b> {
 
     pub fn set_ts(&mut self, us: u64) -> Result<(), Error> {
         if self.dataset.is_none() {
-            return Err(Error::from(ErrorRepr::NoDataSet));
+            return Err(Error::NoDataSet);
         }
 
         match id_for_time(self.dataset.unwrap(), 0, us) {
@@ -54,7 +54,7 @@ impl<'a, 'b> Context<'a, 'b> {
                 self.src = DataSrc::Array { id };
                 Ok(())
             }
-            None => Err(Error::from(ErrorRepr::SampleNotFound)),
+            None => Err(Error::SampleNotFound),
         }
     }
 

@@ -141,7 +141,7 @@ pub fn load<P: AsRef<std::path::Path>>(filename: P) -> Result<Config, Error> {
         has_unsupported = true;
     })?;
     if has_unsupported {
-        return Err(Error::from(ErrorRepr::UnsupportedConfigs));
+        return Err(Error::UnsupportedConfigs);
     }
 
     {

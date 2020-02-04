@@ -55,12 +55,12 @@ impl Context {
             let ret = source.read(&mut self.buf[self.bufpos..buflen]);
             let nbytes = match ret {
                 Ok(0) => match self.bufpos {
-                    0 => return Err(Error::from(ErrorRepr::EOF)),
+                    0 => return Err(Error::EOF),
                     _ => {
-                        return Err(Error::new_io(
+                        return Err(Error::from(std::io::Error::new(
                             std::io::ErrorKind::UnexpectedEof,
                             "EOF within sample",
-                        ))
+                        )))
                     }
                 },
                 Err(e) => match &e.kind() {
@@ -143,9 +143,9 @@ pub fn read_all_samples_input<S: std::io::Read>(
 
     loop {
         let sample = match readctx.read_sample(source, cfg) {
-            Err(e) => match &e.repr {
-                ErrorRepr::EOF => break,
-                ErrorRepr::Io(eio) => match eio.kind() {
+            Err(e) => match &e {
+                Error::EOF => break,
+                Error::Io(eio) => match eio.kind() {
                     std::io::ErrorKind::WouldBlock => {
                         // this could cause some cpu load but it's the best we can do here
                         continue;
@@ -160,7 +160,7 @@ pub fn read_all_samples_input<S: std::io::Read>(
         if let Some(prev) = samples.last() {
             if prev.time > sample.time {
                 println!("data jumped back in time");
-                return Err(Error::from(ErrorRepr::SampleNotFound));
+                return Err(Error::SampleNotFound);
             }
         }
 
