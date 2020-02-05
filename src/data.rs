@@ -78,7 +78,11 @@ pub struct DataSerializer<'a, D, F> {
     f: F,
 }
 
-impl<'a, D, ST: Serialize, F: Fn(usize, &D) -> ST> Serialize for DataSerializer<'a, D, F> {
+impl<'a, D, ST, F> Serialize for DataSerializer<'a, D, F>
+where
+    ST: 'a + Serialize,
+    F: Fn(usize, &'a D) -> ST,
+{
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
@@ -88,11 +92,16 @@ impl<'a, D, ST: Serialize, F: Fn(usize, &D) -> ST> Serialize for DataSerializer<
         for (i, data) in self.list.iter().enumerate() {
             seq.serialize_element(&(self.f)(i, &data))?;
         }
+
         seq.end()
     }
 }
 
-impl<'a, D, ST: Serialize, F: Fn(usize, &D) -> ST> DataSerializer<'a, D, F> {
+impl<'a, D, ST, F> DataSerializer<'a, D, F>
+where
+    ST: 'a + Serialize,
+    F: Fn(usize, &'a D) -> ST,
+{
     pub fn new(list: &'a [D], f: F) -> Self {
         Self { list, f }
     }
