@@ -14,20 +14,20 @@ pub struct Context<'a, 'b> {
     pub dpi: f64,
     pub spi: f64,
     src: DataSrc,
-    hudhandler: Option<Box<dyn HudRenderer>>,
+    hudrenderer: Option<Box<dyn HudRenderer>>,
 }
 
 pub trait HudRenderer {
     fn render(&self, ctx: &render::Context, cr: &cairo::Context) -> Result<(), Error>;
 }
 
-fn handler_from_ctx(ctx: &Context) -> Option<Box<dyn HudRenderer>> {
-    let handler = match &ctx.cfg.hud.renderer {
+fn renderer_from_ctx(ctx: &Context) -> Option<Box<dyn HudRenderer>> {
+    let renderer = match &ctx.cfg.hud.renderer {
         config::HudRenderer::Pendulum(cfg) => hudrenderers::pendulum::Pendulum::new(ctx, cfg),
         _ => return None,
     };
 
-    Some(Box::new(handler))
+    Some(Box::new(renderer))
 }
 
 impl<'a, 'b> Context<'a, 'b> {
@@ -38,10 +38,10 @@ impl<'a, 'b> Context<'a, 'b> {
             dpi: 141.21,
             spi: 141.21,
             src: DataSrc::None,
-            hudhandler: None,
+            hudrenderer: None,
         };
 
-        ctx.hudhandler = handler_from_ctx(&ctx);
+        ctx.hudrenderer = renderer_from_ctx(&ctx);
 
         ctx
     }
@@ -94,9 +94,9 @@ impl<'a, 'b> Context<'a, 'b> {
         cr.paint();
         cr.restore();
 
-        if let Some(handler) = &self.hudhandler {
+        if let Some(renderer) = &self.hudrenderer {
             cr.save();
-            let hudret = handler.render(self, cr);
+            let hudret = renderer.render(self, cr);
             cr.restore();
             hudret?;
         }
