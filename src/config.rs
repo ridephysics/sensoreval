@@ -165,6 +165,15 @@ pub struct Config {
     pub hud: Hud,
 }
 
+impl Config {
+    pub fn load_data(&self) -> Result<Vec<crate::Data>, Error> {
+        match &self.data {
+            Data::SensorData(_) => datareader::read_all_samples_cfg(self),
+            Data::Sim => Ok(Vec::new()),
+        }
+    }
+}
+
 fn path2abs(dir: &std::path::Path, relpath: &str) -> String {
     String::from(dir.join(std::path::Path::new(&relpath)).to_str().unwrap())
 }

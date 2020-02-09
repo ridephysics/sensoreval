@@ -22,7 +22,7 @@ fn main() {
     println!("config: {:#?}", cfg);
 
     // load data
-    let samples = datareader::read_all_samples_cfg(&cfg).expect("can't read all samples");
+    let samples = cfg.load_data().expect("can't read samples");
 
     if let Some(sample) = samples.first() {
         println!("FIRST: {}", sample.time);
