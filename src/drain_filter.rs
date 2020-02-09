@@ -37,22 +37,6 @@ impl<T> DrainFilterTrait<T> for Vec<T> {
     ///
     /// Note that `drain_filter` also lets you mutate every element in the filter closure,
     /// regardless of whether you choose to keep or remove it.
-    ///
-    ///
-    /// # Examples
-    ///
-    /// Splitting an array into evens and odds, reusing the original allocation:
-    ///
-    /// ```
-    /// #![feature(drain_filter)]
-    /// let mut numbers = vec![1, 2, 3, 4, 5, 6, 8, 9, 11, 13, 14, 15];
-    ///
-    /// let evens = numbers.drain_filter(|x| *x % 2 == 0).collect::<Vec<_>>();
-    /// let odds = numbers;
-    ///
-    /// assert_eq!(evens, vec![2, 4, 6, 8, 14]);
-    /// assert_eq!(odds, vec![1, 3, 5, 9, 11, 13, 15]);
-    /// ```
     fn drain_filter_stable<F>(&mut self, filter: F) -> DrainFilter<'_, T, F>
     where
         F: FnMut(&mut T) -> bool,
