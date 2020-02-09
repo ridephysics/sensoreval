@@ -26,7 +26,7 @@ mod data;
 pub mod capi;
 pub mod datareader;
 mod error;
-pub(crate) mod hudhandlers;
+pub(crate) mod hudrenderers;
 mod plot;
 pub mod render;
 

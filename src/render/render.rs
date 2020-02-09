@@ -12,16 +12,16 @@ pub struct Context<'a, 'b> {
     pub dpi: f64,
     pub spi: f64,
     src: DataSrc,
-    hudhandler: Option<Box<dyn HudHandler>>,
+    hudhandler: Option<Box<dyn HudRenderer>>,
 }
 
-pub trait HudHandler {
+pub trait HudRenderer {
     fn render(&self, ctx: &render::Context, cr: &cairo::Context) -> Result<(), Error>;
 }
 
-fn handler_from_ctx(ctx: &Context) -> Option<Box<dyn HudHandler>> {
+fn handler_from_ctx(ctx: &Context) -> Option<Box<dyn HudRenderer>> {
     let handler = match ctx.cfg.hud.renderer {
-        config::HudRenderer::SwingBoat(_) => hudhandlers::swingboat::SwingBoat::new(ctx),
+        config::HudRenderer::SwingBoat(_) => hudrenderers::swingboat::SwingBoat::new(ctx),
         _ => return None,
     };
 
