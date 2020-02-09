@@ -26,4 +26,8 @@ impl render::HudRenderer for Pendulum {
     fn render(&self, _ctx: &render::Context, _cr: &cairo::Context) -> Result<(), Error> {
         Ok(())
     }
+
+    fn plot(&self, ctx: &render::Context) -> Result<(), Error> {
+        Ok(())
+    }
 }

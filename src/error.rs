@@ -12,6 +12,7 @@ pub enum Error {
     UnsupportedConfigs,
     InvalidData,
     UnsupportedDatatype,
+    NoHudRenderer,
 }
 
 impl From<std::io::Error> for Error {

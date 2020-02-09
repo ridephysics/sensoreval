@@ -19,6 +19,7 @@ pub struct Context<'a, 'b> {
 
 pub trait HudRenderer {
     fn render(&self, ctx: &render::Context, cr: &cairo::Context) -> Result<(), Error>;
+    fn plot(&self, ctx: &render::Context) -> Result<(), Error>;
 }
 
 fn renderer_from_ctx(ctx: &Context) -> Option<Box<dyn HudRenderer>> {
@@ -102,6 +103,14 @@ impl<'a, 'b> Context<'a, 'b> {
         }
 
         Ok(())
+    }
+
+    pub fn plot(&self) -> Result<(), Error> {
+        if let Some(renderer) = &self.hudrenderer {
+            renderer.plot(self)
+        } else {
+            Err(Error::NoHudRenderer)
+        }
     }
 
     #[inline]
