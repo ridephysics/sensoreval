@@ -1,3 +1,4 @@
+use ndarray_linalg::norm::Norm;
 use sensoreval::*;
 
 fn main() {
@@ -38,10 +39,10 @@ fn main() {
         data.time_seconds()
     }))
     .unwrap();
-    plot.add(&DataSerializer::new(&samples, |_i, data| data.accel))
+    plot.add(&DataSerializer::new(&samples, |_i, data| &data.accel))
         .unwrap();
     plot.add(&DataSerializer::new(&samples, |_i, data| {
-        data.accel.magnitude()
+        data.accel.norm_l2()
     }))
     .unwrap();
     plot.add(&DataSerializer::new(&samples, |_i, data| {

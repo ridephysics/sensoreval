@@ -1,5 +1,6 @@
 use sensoreval::*;
 
+use ndarray_linalg::norm::Norm;
 use std::io::Write;
 
 fn main() {
@@ -31,10 +32,12 @@ fn main() {
 
     // plot
     let mut plot = TimeDataPlot::new(&DataSerializer::new(&samples, |i, _data| i)).unwrap();
-    plot.add(&DataSerializer::new(&samples, |_i, data| data.accel))
-        .unwrap();
     plot.add(&DataSerializer::new(&samples, |_i, data| {
-        data.accel.magnitude()
+        data.accel.as_slice().unwrap()
+    }))
+    .unwrap();
+    plot.add(&DataSerializer::new(&samples, |_i, data| {
+        data.accel.norm_l2()
     }))
     .unwrap();
     plot.show().unwrap();

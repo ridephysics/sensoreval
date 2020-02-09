@@ -1,6 +1,5 @@
 use crate::*;
 
-use nalgebra::geometry::UnitQuaternion;
 use serde::Deserialize;
 use std::io::Read;
 
@@ -25,11 +24,61 @@ impl Default for Video {
 }
 
 #[derive(Deserialize, Debug)]
+pub struct AxisMap(Vec<isize>);
+
+impl AxisMap {
+    #[inline(always)]
+    pub fn copy_single<A, T>(&self, dst: &mut A, src: &[T], dstidx: usize)
+    where
+        A: std::ops::IndexMut<usize, Output = T>,
+        T: Copy + std::ops::Neg<Output = T>,
+    {
+        let mut srcidx = self.0[dstidx].abs() as usize;
+        assert!(srcidx != 0);
+        srcidx -= 1;
+
+        let mut tmp = src[srcidx];
+        if self.0[dstidx] < 0 {
+            tmp = -tmp;
+        }
+        dst[dstidx] = tmp;
+    }
+
+    #[inline(always)]
+    pub fn copy<A, T>(&self, dst: &mut A, src: &[T])
+    where
+        A: std::ops::IndexMut<usize, Output = T>,
+        T: Copy + std::ops::Neg<Output = T>,
+    {
+        for i in 0..self.0.len() {
+            self.copy_single(dst, src, i);
+        }
+    }
+}
+
+#[derive(Deserialize, Debug)]
+pub struct AxisMaps {
+    pub accel: AxisMap,
+    pub gyro: AxisMap,
+    pub mag: AxisMap,
+}
+
+impl Default for AxisMaps {
+    fn default() -> Self {
+        Self {
+            accel: AxisMap(vec![1, 2, 3]),
+            gyro: AxisMap(vec![1, 2, 3]),
+            mag: AxisMap(vec![1, 2, 3]),
+        }
+    }
+}
+
+#[derive(Deserialize, Debug)]
 pub struct Data {
     #[serde(default)]
     pub video_off: i64,
-    #[serde(default = "UnitQuaternion::identity")]
-    pub imu_orientation: UnitQuaternion<f64>,
+    #[serde(default)]
+    pub axismaps: AxisMaps,
     #[serde(default)]
     pub pressure_coeff: f64,
     pub filename: String,
@@ -144,23 +193,6 @@ pub fn load<P: AsRef<std::path::Path>>(filename: P) -> Result<Config, Error> {
         return Err(Error::UnsupportedConfigs);
     }
 
-    {
-        let q = cfg.data.imu_orientation.as_mut_unchecked();
-
-        // we loaded a wxyz quat, even though we need a xyzw quat, fix that
-        let w = q[0];
-        let x = q[1];
-        let y = q[2];
-        let z = q[3];
-        q[0] = x;
-        q[1] = y;
-        q[2] = z;
-        q[3] = w;
-    }
-
-    // we deserialized a normal quat into a unit-quat, fix that
-    cfg.data.imu_orientation.renormalize();
-
     // make all paths absolute
     cfg.data.filename = path2abs(&cfgdir, &cfg.data.filename);
     if let Some(v) = cfg.video.filename {
@@ -174,4 +206,32 @@ pub fn load<P: AsRef<std::path::Path>>(filename: P) -> Result<Config, Error> {
     }
 
     Ok(cfg)
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use ndarray::array;
+
+    #[test]
+    fn axismap() {
+        let mut dst = ndarray::Array::zeros(3);
+        let src: [isize; 3] = [10, 20, 30];
+
+        let map = AxisMap(vec![1, 2, 3]);
+        map.copy(&mut dst, &src);
+        assert_eq!(dst, array![10, 20, 30]);
+
+        let map = AxisMap(vec![1, 3, 2]);
+        map.copy(&mut dst, &src);
+        assert_eq!(dst, array![10, 30, 20]);
+
+        let map = AxisMap(vec![1, -2, 3]);
+        map.copy(&mut dst, &src);
+        assert_eq!(dst, array![10, -20, 30]);
+
+        let map = AxisMap(vec![1, 3, -2]);
+        map.copy(&mut dst, &src);
+        assert_eq!(dst, array![10, 30, -20]);
+    }
 }

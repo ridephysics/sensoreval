@@ -1,6 +1,5 @@
 use crate::*;
 
-use nalgebra::base::Vector3;
 use serde::ser::{Serialize, SerializeSeq, Serializer};
 
 #[derive(Debug)]
@@ -11,11 +10,11 @@ pub struct Data {
     pub time_baro: u64,
 
     // unit: g
-    pub accel: Vector3<f64>,
+    pub accel: ndarray::Array1<f64>,
     // unit: dps
-    pub gyro: Vector3<f64>,
+    pub gyro: ndarray::Array1<f64>,
     // unit: uT
-    pub mag: Vector3<f64>,
+    pub mag: ndarray::Array1<f64>,
 
     // unit: degrees celsius
     pub temperature: f64,
@@ -28,9 +27,9 @@ impl Default for Data {
         Self {
             time: 0,
             time_baro: 0,
-            accel: Vector3::new(0., 0., 0.),
-            gyro: Vector3::new(0., 0., 0.),
-            mag: Vector3::new(0., 0., 0.),
+            accel: ndarray::Array::zeros(3),
+            gyro: ndarray::Array::zeros(3),
+            mag: ndarray::Array::zeros(3),
             temperature: 0.,
             pressure: 0.,
         }

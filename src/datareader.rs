@@ -89,17 +89,13 @@ impl Context {
             data.temperature = rawdata.temperature;
             data.pressure = rawdata.pressure;
 
-            for i in 0..3 {
-                data.accel[i] = rawdata.accel[i];
-                data.gyro[i] = rawdata.gyro[i];
-                data.mag[i] = rawdata.mag[i];
-            }
-
-            // apply imu_orientation
-            let imu_orientation_inv = cfg.data.imu_orientation.inverse();
-            data.accel = imu_orientation_inv * data.accel;
-            data.gyro = imu_orientation_inv * data.gyro;
-            data.mag = imu_orientation_inv * data.mag;
+            // copy axis data using mappping
+            cfg.data
+                .axismaps
+                .accel
+                .copy(&mut data.accel, &rawdata.accel);
+            cfg.data.axismaps.gyro.copy(&mut data.gyro, &rawdata.gyro);
+            cfg.data.axismaps.mag.copy(&mut data.mag, &rawdata.mag);
 
             // apply pressure coefficient
             if cfg.data.pressure_coeff > 0. {
