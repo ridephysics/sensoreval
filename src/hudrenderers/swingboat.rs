@@ -1,10 +1,24 @@
 use crate::*;
+use serde::Deserialize;
 
-pub(crate) struct SwingBoat {}
+#[derive(Deserialize, Debug, Clone)]
+pub struct Config {}
+
+impl Default for Config {
+    fn default() -> Self {
+        Self {}
+    }
+}
+
+pub(crate) struct SwingBoat {
+    cfg: Config,
+}
 
 impl SwingBoat {
-    pub fn new(_ctx: &render::Context) -> Self {
-        Self {}
+    pub fn new(_ctx: &render::Context, cfg: &Config) -> Self {
+        Self {
+            cfg: (*cfg).clone(),
+        }
     }
 }
 

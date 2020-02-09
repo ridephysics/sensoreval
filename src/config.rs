@@ -120,7 +120,7 @@ pub enum HudRenderer {
     #[serde(rename = "generic")]
     Generic,
     #[serde(rename = "swingboat")]
-    SwingBoat(SwingBoat),
+    SwingBoat(hudrenderers::swingboat::Config),
 }
 
 impl Default for HudRenderer {
@@ -155,15 +155,6 @@ pub struct Config {
     pub orientation: Orientation,
     #[serde(default)]
     pub hud: Hud,
-}
-
-#[derive(Deserialize, Debug)]
-pub struct SwingBoat {}
-
-impl Default for SwingBoat {
-    fn default() -> Self {
-        Self {}
-    }
 }
 
 fn path2abs(dir: &std::path::Path, relpath: &str) -> String {
