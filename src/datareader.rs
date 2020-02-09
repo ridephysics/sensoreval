@@ -130,7 +130,7 @@ pub fn read_all_samples_input<S: std::io::Read>(
     source: &mut S,
     cfg: &config::Config,
 ) -> Result<Vec<Data>, Error> {
-    let datacfg = if let config::Data::SensorData(sd) = &cfg.data {
+    let datacfg = if let config::DataSource::SensorData(sd) = &cfg.data.source {
         sd
     } else {
         return Err(Error::UnsupportedDatatype);
@@ -225,7 +225,7 @@ fn run_usfs_reader(cfg: &config::SensorData) -> std::process::Child {
 }
 
 pub fn read_all_samples_cfg(cfg: &config::Config) -> Result<Vec<Data>, Error> {
-    let datacfg = if let config::Data::SensorData(sd) = &cfg.data {
+    let datacfg = if let config::DataSource::SensorData(sd) = &cfg.data.source {
         sd
     } else {
         return Err(Error::UnsupportedDatatype);

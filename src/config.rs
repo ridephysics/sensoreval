@@ -80,11 +80,16 @@ pub struct SensorData {
 
 #[derive(Deserialize, Debug)]
 #[serde(tag = "type")]
-pub enum Data {
+pub enum DataSource {
     #[serde(rename = "sensordata")]
     SensorData(SensorData),
     #[serde(rename = "sim_pendulum")]
     SimPendulum(simulator::pendulum::Config),
+}
+
+#[derive(Deserialize, Debug)]
+pub struct Data {
+    pub source: DataSource,
 }
 
 #[derive(Deserialize, Debug)]
@@ -157,9 +162,9 @@ pub struct Config {
 
 impl Config {
     pub fn load_data(&self) -> Result<Vec<crate::Data>, Error> {
-        match &self.data {
-            Data::SensorData(_) => datareader::read_all_samples_cfg(self),
-            Data::SimPendulum(cfg) => simulator::pendulum::generate(cfg),
+        match &self.data.source {
+            DataSource::SensorData(_) => datareader::read_all_samples_cfg(self),
+            DataSource::SimPendulum(cfg) => simulator::pendulum::generate(cfg),
         }
     }
 }
@@ -192,7 +197,7 @@ pub fn load<P: AsRef<std::path::Path>>(filename: P) -> Result<Config, Error> {
 
     // make all paths absolute
 
-    if let Data::SensorData(sd) = &mut cfg.data {
+    if let DataSource::SensorData(sd) = &mut cfg.data.source {
         sd.filename = path2abs(&cfgdir, &sd.filename);
         if let Some(v) = &sd.mag_cal {
             sd.mag_cal = Some(path2abs(&cfgdir, &v));
