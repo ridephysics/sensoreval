@@ -88,8 +88,36 @@ pub enum DataSource {
 }
 
 #[derive(Deserialize, Debug)]
+pub struct Noise {
+    low: f64,
+    high: f64,
+}
+
+#[derive(Deserialize, Debug, Default)]
+pub struct NoiseXYZ {
+    #[serde(default)]
+    pub x: Option<Noise>,
+    #[serde(default)]
+    pub y: Option<Noise>,
+    #[serde(default)]
+    pub z: Option<Noise>,
+}
+
+#[derive(Deserialize, Debug, Default)]
+pub struct DataNoise {
+    #[serde(default)]
+    pub accel: NoiseXYZ,
+    #[serde(default)]
+    pub gyro: NoiseXYZ,
+    #[serde(default)]
+    pub mag: NoiseXYZ,
+}
+
+#[derive(Deserialize, Debug)]
 pub struct Data {
     pub source: DataSource,
+    #[serde(default)]
+    pub noise: DataNoise,
 }
 
 #[derive(Deserialize, Debug)]
@@ -161,11 +189,41 @@ pub struct Config {
 }
 
 impl Config {
+    fn add_noise<S, R>(arr: &mut ndarray::ArrayBase<S, ndarray::Ix1>, cfg: &NoiseXYZ, rng: &mut R)
+    where
+        S: ndarray::DataMut<Elem = f64>,
+        R: rand::Rng,
+    {
+        if let Some(n) = &cfg.x {
+            arr[0] += rng.gen_range(n.low, n.high);
+        }
+
+        if let Some(n) = &cfg.y {
+            arr[1] += rng.gen_range(n.low, n.high);
+        }
+
+        if let Some(n) = &cfg.z {
+            arr[2] += rng.gen_range(n.low, n.high);
+        }
+    }
+
     pub fn load_data(&self) -> Result<Vec<crate::Data>, Error> {
-        match &self.data.source {
+        let mut ret = match &self.data.source {
             DataSource::SensorData(_) => datareader::read_all_samples_cfg(self),
             DataSource::SimPendulum(cfg) => simulator::pendulum::generate(cfg),
+        };
+
+        if let Ok(samples) = &mut ret {
+            let mut rng = rand::thread_rng();
+
+            for sample in samples {
+                Self::add_noise(&mut sample.accel, &self.data.noise.accel, &mut rng);
+                Self::add_noise(&mut sample.gyro, &self.data.noise.gyro, &mut rng);
+                Self::add_noise(&mut sample.mag, &self.data.noise.mag, &mut rng);
+            }
         }
+
+        ret
     }
 }
 

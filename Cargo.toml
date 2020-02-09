@@ -20,6 +20,7 @@ regex = "1.3"
 cairo-rs = { version = "0.8", features = ["png"] }
 ndarray = {version = "0.13", features = ["serde"] }
 ndarray-linalg = "0.12"
+rand = "0.7"
 
 [profile.dev]
 opt-level = 1
