@@ -22,6 +22,7 @@ ndarray = {version = "0.13", features = ["serde"] }
 ndarray-linalg = "0.12"
 rand = "0.7"
 eom = { git = "https://github.com/M1cha/eom", branch = "master" }
+clap = "2.33"
 
 [profile.dev]
 opt-level = 1

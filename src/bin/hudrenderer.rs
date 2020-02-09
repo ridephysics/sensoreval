@@ -3,12 +3,23 @@ use sensoreval::*;
 
 fn main() {
     // parse args
-    let mut args = std::env::args();
-    if args.len() != 2 {
-        println!("Usage: {} CONFIG", args.nth(0).unwrap());
-        std::process::exit(1);
-    }
-    let cfgname = args.nth(1).unwrap();
+    let matches = clap::App::new("hudrenderer")
+        .version("0.1")
+        .arg(
+            clap::Arg::with_name("plot")
+                .short("p")
+                .long("plot")
+                .help("plot data instead of rendering"),
+        )
+        .arg(
+            clap::Arg::with_name("CONFIG")
+                .help("config file to use")
+                .required(true)
+                .index(1),
+        )
+        .get_matches();
+
+    let cfgname = matches.value_of("CONFIG").unwrap();
 
     // load config
     let cfg = config::load(&cfgname).expect("can't load config");
@@ -19,36 +30,24 @@ fn main() {
 
     // init render context
     let mut renderctx = render::Context::new(&cfg, Some(&samples));
-    renderctx.set_ts(0).expect("can't set timestamp");
 
-    // render
-    let surface = cairo::ImageSurface::create(cairo::Format::ARgb32, 2720, 1520)
-        .expect("Can't create surface");
-    let cr = cairo::Context::new(&surface);
-    cr.set_antialias(cairo::Antialias::Best);
-    renderctx.render(&cr).expect("can't render");
-    surface.flush();
-    let mut file = std::fs::File::create("/tmp/out.png").expect("can't create png file");
-    surface
-        .write_to_png(&mut file)
-        .expect("can't write png file");
-    drop(file);
+    if matches.is_present("plot") {
+        // plot
+        renderctx.plot().expect("can't plot");
+    } else {
+        renderctx.set_ts(0).expect("can't set timestamp");
 
-    // plot
-    let mut plot = TimeDataPlot::new(&DataSerializer::new(&samples, |_i, data| {
-        data.time_seconds()
-    }))
-    .unwrap();
-    plot.add(&DataSerializer::new(&samples, |_i, data| &data.accel))
-        .unwrap();
-    plot.add(&DataSerializer::new(&samples, |_i, data| {
-        data.accel.norm_l2()
-    }))
-    .unwrap();
-    plot.add(&DataSerializer::new(&samples, |_i, data| {
-        data.pressure_altitude()
-    }))
-    .unwrap();
-
-    plot.show().unwrap();
+        // render
+        let surface = cairo::ImageSurface::create(cairo::Format::ARgb32, 2720, 1520)
+            .expect("Can't create surface");
+        let cr = cairo::Context::new(&surface);
+        cr.set_antialias(cairo::Antialias::Best);
+        renderctx.render(&cr).expect("can't render");
+        surface.flush();
+        let mut file = std::fs::File::create("/tmp/out.png").expect("can't create png file");
+        surface
+            .write_to_png(&mut file)
+            .expect("can't write png file");
+        drop(file);
+    }
 }
