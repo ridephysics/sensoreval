@@ -23,10 +23,10 @@ macro_rules! unwrap_opt_or {
 pub mod config;
 #[macro_use]
 mod data;
-pub mod capi;
-pub mod datareader;
+mod capi;
+mod datareader;
 mod error;
-pub(crate) mod hudrenderers;
+mod hudrenderers;
 mod plot;
 pub mod render;
 
