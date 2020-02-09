@@ -150,8 +150,8 @@ impl Default for Orientation {
 pub enum HudRenderer {
     #[serde(rename = "generic")]
     Generic,
-    #[serde(rename = "swingboat")]
-    SwingBoat(hudrenderers::swingboat::Config),
+    #[serde(rename = "pendulum")]
+    Pendulum(hudrenderers::pendulum::Config),
 }
 
 impl Default for HudRenderer {

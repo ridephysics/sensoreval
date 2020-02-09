@@ -10,11 +10,11 @@ impl Default for Config {
     }
 }
 
-pub(crate) struct SwingBoat {
+pub(crate) struct Pendulum {
     cfg: Config,
 }
 
-impl SwingBoat {
+impl Pendulum {
     pub fn new(_ctx: &render::Context, cfg: &Config) -> Self {
         Self {
             cfg: (*cfg).clone(),
@@ -22,7 +22,7 @@ impl SwingBoat {
     }
 }
 
-impl render::HudRenderer for SwingBoat {
+impl render::HudRenderer for Pendulum {
     fn render(&self, _ctx: &render::Context, _cr: &cairo::Context) -> Result<(), Error> {
         Ok(())
     }
