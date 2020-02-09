@@ -9,9 +9,9 @@ pub struct Data {
     // unit: microseconds
     pub time_baro: u64,
 
-    // unit: g
+    // unit: m/s^2
     pub accel: ndarray::Array1<f64>,
-    // unit: dps
+    // unit: rad/s
     pub gyro: ndarray::Array1<f64>,
     // unit: uT
     pub mag: ndarray::Array1<f64>,

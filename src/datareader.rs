@@ -102,6 +102,16 @@ impl Context {
                 }
             }
 
+            // g -> m/s^2
+            for a in &mut data.accel {
+                *a = *a * math::GRAVITY;
+            }
+
+            // dps -> rad/s
+            for g in &mut data.gyro {
+                *g = (*g).to_radians();
+            }
+
             self.pressure_prev = Some(data.pressure);
             return Ok(data);
         }
