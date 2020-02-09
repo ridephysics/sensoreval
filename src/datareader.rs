@@ -43,7 +43,6 @@ impl Context {
         }
     }
 
-    #[allow(clippy::many_single_char_names)]
     pub fn read_sample<S: std::io::Read>(
         &mut self,
         source: &mut S,
@@ -104,7 +103,7 @@ impl Context {
 
             // g -> m/s^2
             for a in &mut data.accel {
-                *a = *a * math::GRAVITY;
+                *a *= math::GRAVITY;
             }
 
             // dps -> rad/s
@@ -225,13 +224,11 @@ fn run_usfs_reader(cfg: &config::SensorData) -> std::process::Child {
     }
     args.push(&cfg.filename);
 
-    let child = std::process::Command::new("usfs_reader")
+    std::process::Command::new("usfs_reader")
         .args(args)
         .stdout(std::process::Stdio::piped())
         .spawn()
-        .expect("usfs_reader failed");
-
-    child
+        .expect("usfs_reader failed")
 }
 
 pub fn read_all_samples_cfg(cfg: &config::Config) -> Result<Vec<Data>, Error> {

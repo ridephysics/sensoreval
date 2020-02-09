@@ -59,7 +59,7 @@ fn build_sample<S>(cfg: &Config, t: f64, data: &ndarray::ArrayBase<S, ndarray::I
 where
     S: ndarray::Data<Elem = f64>,
 {
-    let t_us = (t * 1000000.0) as u64;
+    let t_us = (t * 1_000_000.0) as u64;
     let p_ang = data[0];
     let v_ang = data[1];
     let v_tan = v_ang * cfg.radius;

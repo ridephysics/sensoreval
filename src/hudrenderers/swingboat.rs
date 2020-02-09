@@ -24,6 +24,6 @@ impl SwingBoat {
 
 impl render::HudRenderer for SwingBoat {
     fn render(&self, _ctx: &render::Context, _cr: &cairo::Context) -> Result<(), Error> {
-        return Ok(());
+        Ok(())
     }
 }
