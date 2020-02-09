@@ -21,6 +21,7 @@ cairo-rs = { version = "0.8", features = ["png"] }
 ndarray = {version = "0.13", features = ["serde"] }
 ndarray-linalg = "0.12"
 rand = "0.7"
+eom = { git = "https://github.com/M1cha/eom", branch = "master" }
 
 [profile.dev]
 opt-level = 1

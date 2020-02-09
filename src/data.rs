@@ -3,6 +3,11 @@ use crate::*;
 use serde::ser::{Serialize, SerializeSeq, Serializer};
 
 #[derive(Debug)]
+pub enum ActualData {
+    Pendulum(simulator::pendulum::Actual),
+}
+
+#[derive(Debug)]
 pub struct Data {
     // unit: microseconds
     pub time: u64,
@@ -20,6 +25,9 @@ pub struct Data {
     pub temperature: f64,
     // unit: hPa
     pub pressure: f64,
+
+    // optional actual state data
+    pub actual: Option<Box<ActualData>>,
 }
 
 impl Default for Data {
@@ -32,6 +40,7 @@ impl Default for Data {
             mag: ndarray::Array::zeros(3),
             temperature: 0.,
             pressure: 0.,
+            actual: None,
         }
     }
 }
