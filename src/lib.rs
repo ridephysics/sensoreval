@@ -27,6 +27,7 @@ mod capi;
 mod datareader;
 mod error;
 mod hudrenderers;
+mod math;
 mod plot;
 pub mod render;
 mod simulator;
