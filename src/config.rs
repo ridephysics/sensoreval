@@ -83,7 +83,8 @@ pub struct SensorData {
 pub enum Data {
     #[serde(rename = "sensordata")]
     SensorData(SensorData),
-    Sim,
+    #[serde(rename = "sim_pendulum")]
+    SimPendulum(simulator::pendulum::Config),
 }
 
 #[derive(Deserialize, Debug)]
@@ -158,7 +159,7 @@ impl Config {
     pub fn load_data(&self) -> Result<Vec<crate::Data>, Error> {
         match &self.data {
             Data::SensorData(_) => datareader::read_all_samples_cfg(self),
-            Data::Sim => Ok(Vec::new()),
+            Data::SimPendulum(cfg) => simulator::pendulum::generate(cfg),
         }
     }
 }

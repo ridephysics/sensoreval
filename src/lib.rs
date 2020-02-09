@@ -29,6 +29,7 @@ mod error;
 mod hudrenderers;
 mod plot;
 pub mod render;
+mod simulator;
 
 mod drain_filter;
 use drain_filter::*;
