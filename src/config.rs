@@ -26,6 +26,12 @@ impl Default for Video {
 #[derive(Deserialize, Debug)]
 pub struct AxisMap(Vec<isize>);
 
+impl Default for AxisMap {
+    fn default() -> Self {
+        Self(vec![1, 2, 3])
+    }
+}
+
 impl AxisMap {
     #[inline(always)]
     pub fn copy_single<A, T>(&self, dst: &mut A, src: &[T], dstidx: usize)
@@ -57,28 +63,11 @@ impl AxisMap {
 }
 
 #[derive(Deserialize, Debug)]
-pub struct AxisMaps {
-    pub accel: AxisMap,
-    pub gyro: AxisMap,
-    pub mag: AxisMap,
-}
-
-impl Default for AxisMaps {
-    fn default() -> Self {
-        Self {
-            accel: AxisMap(vec![1, 2, 3]),
-            gyro: AxisMap(vec![1, 2, 3]),
-            mag: AxisMap(vec![1, 2, 3]),
-        }
-    }
-}
-
-#[derive(Deserialize, Debug)]
 pub struct SensorData {
     #[serde(default)]
     pub video_off: i64,
     #[serde(default)]
-    pub axismaps: AxisMaps,
+    pub axismap: AxisMap,
     #[serde(default)]
     pub pressure_coeff: f64,
     pub filename: String,

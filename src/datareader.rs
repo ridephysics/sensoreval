@@ -90,9 +90,9 @@ impl Context {
             data.pressure = rawdata.pressure;
 
             // copy axis data using mappping
-            cfg.axismaps.accel.copy(&mut data.accel, &rawdata.accel);
-            cfg.axismaps.gyro.copy(&mut data.gyro, &rawdata.gyro);
-            cfg.axismaps.mag.copy(&mut data.mag, &rawdata.mag);
+            cfg.axismap.copy(&mut data.accel, &rawdata.accel);
+            cfg.axismap.copy(&mut data.gyro, &rawdata.gyro);
+            cfg.axismap.copy(&mut data.mag, &rawdata.mag);
 
             // apply pressure coefficient
             if cfg.pressure_coeff > 0. {
