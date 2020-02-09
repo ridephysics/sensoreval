@@ -16,7 +16,9 @@ fn main() {
     let mut cfg = config::load(&cfgname).expect("can't load config");
     cfg.video.startoff = 0;
     cfg.video.endoff = None;
-    cfg.data.video_off = 0;
+    if let config::Data::SensorData(sd) = &mut cfg.data {
+        sd.video_off = 0;
+    }
     println!("config: {:#?}", cfg);
 
     // load data

@@ -74,7 +74,7 @@ impl Default for AxisMaps {
 }
 
 #[derive(Deserialize, Debug)]
-pub struct Data {
+pub struct SensorData {
     #[serde(default)]
     pub video_off: i64,
     #[serde(default)]
@@ -87,6 +87,14 @@ pub struct Data {
     pub mag_cal: Option<String>,
     #[serde(default)]
     pub bias_ag: Option<String>,
+}
+
+#[derive(Deserialize, Debug)]
+#[serde(tag = "type")]
+pub enum Data {
+    #[serde(rename = "sensordata")]
+    SensorData(SensorData),
+    Sim,
 }
 
 #[derive(Deserialize, Debug)]
@@ -184,15 +192,19 @@ pub fn load<P: AsRef<std::path::Path>>(filename: P) -> Result<Config, Error> {
     }
 
     // make all paths absolute
-    cfg.data.filename = path2abs(&cfgdir, &cfg.data.filename);
+
+    if let Data::SensorData(sd) = &mut cfg.data {
+        sd.filename = path2abs(&cfgdir, &sd.filename);
+        if let Some(v) = &sd.mag_cal {
+            sd.mag_cal = Some(path2abs(&cfgdir, &v));
+        }
+        if let Some(v) = &sd.bias_ag {
+            sd.bias_ag = Some(path2abs(&cfgdir, &v));
+        }
+    }
+
     if let Some(v) = cfg.video.filename {
         cfg.video.filename = Some(path2abs(&cfgdir, &v));
-    }
-    if let Some(v) = cfg.data.mag_cal {
-        cfg.data.mag_cal = Some(path2abs(&cfgdir, &v));
-    }
-    if let Some(v) = cfg.data.bias_ag {
-        cfg.data.bias_ag = Some(path2abs(&cfgdir, &v));
     }
 
     Ok(cfg)

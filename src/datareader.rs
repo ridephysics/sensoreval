@@ -47,7 +47,7 @@ impl Context {
     pub fn read_sample<S: std::io::Read>(
         &mut self,
         source: &mut S,
-        cfg: &config::Config,
+        cfg: &config::SensorData,
     ) -> Result<Data, Error> {
         loop {
             // read data
@@ -90,19 +90,15 @@ impl Context {
             data.pressure = rawdata.pressure;
 
             // copy axis data using mappping
-            cfg.data
-                .axismaps
-                .accel
-                .copy(&mut data.accel, &rawdata.accel);
-            cfg.data.axismaps.gyro.copy(&mut data.gyro, &rawdata.gyro);
-            cfg.data.axismaps.mag.copy(&mut data.mag, &rawdata.mag);
+            cfg.axismaps.accel.copy(&mut data.accel, &rawdata.accel);
+            cfg.axismaps.gyro.copy(&mut data.gyro, &rawdata.gyro);
+            cfg.axismaps.mag.copy(&mut data.mag, &rawdata.mag);
 
             // apply pressure coefficient
-            if cfg.data.pressure_coeff > 0. {
+            if cfg.pressure_coeff > 0. {
                 if let Some(pressure_prev) = self.pressure_prev {
-                    data.pressure = (pressure_prev * (cfg.data.pressure_coeff - 1.0)
-                        + data.pressure)
-                        / cfg.data.pressure_coeff;
+                    data.pressure = (pressure_prev * (cfg.pressure_coeff - 1.0) + data.pressure)
+                        / cfg.pressure_coeff;
                 }
             }
 
@@ -112,8 +108,8 @@ impl Context {
     }
 }
 
-fn time_imu2video(cfg: &config::Config, us: u64) -> Option<u64> {
-    match cfg.data.video_off {
+fn time_imu2video(cfg: &config::SensorData, us: u64) -> Option<u64> {
+    match cfg.video_off {
         x if x > 0 => {
             let off: u64 = x.try_into().unwrap();
             Some(us.checked_add(off).unwrap())
@@ -134,11 +130,17 @@ pub fn read_all_samples_input<S: std::io::Read>(
     source: &mut S,
     cfg: &config::Config,
 ) -> Result<Vec<Data>, Error> {
+    let datacfg = if let config::Data::SensorData(sd) = &cfg.data {
+        sd
+    } else {
+        return Err(Error::UnsupportedDatatype);
+    };
+
     let mut samples: Vec<Data> = Vec::new();
     let mut readctx = Context::new();
 
     loop {
-        let sample = match readctx.read_sample(source, cfg) {
+        let sample = match readctx.read_sample(source, datacfg) {
             Err(e) => match &e {
                 Error::EOF => break,
                 Error::Io(eio) => match eio.kind() {
@@ -164,11 +166,11 @@ pub fn read_all_samples_input<S: std::io::Read>(
     }
 
     samples.drain_filter_stable(|sample| {
-        let time = match time_imu2video(cfg, sample.time) {
+        let time = match time_imu2video(datacfg, sample.time) {
             Some(v) => v,
             None => return true,
         };
-        let time_baro = match time_imu2video(cfg, sample.time_baro) {
+        let time_baro = match time_imu2video(datacfg, sample.time_baro) {
             Some(v) => v,
             None => return true,
         };
@@ -194,24 +196,24 @@ pub fn read_all_samples_input<S: std::io::Read>(
     Ok(samples)
 }
 
-fn run_usfs_reader(cfg: &config::Config) -> std::process::Child {
+fn run_usfs_reader(cfg: &config::SensorData) -> std::process::Child {
     let mut args: Vec<&str> = Vec::new();
 
     args.push("--infmt");
-    args.push(&cfg.data.format);
+    args.push(&cfg.format);
     args.push("--outfmt");
     args.push("processed");
 
-    if let Some(v) = &cfg.data.mag_cal {
+    if let Some(v) = &cfg.mag_cal {
         args.push("--cal_mag");
         args.push(&v);
     }
 
-    if let Some(v) = &cfg.data.bias_ag {
+    if let Some(v) = &cfg.bias_ag {
         args.push("--bias_ag");
         args.push(&v);
     }
-    args.push(&cfg.data.filename);
+    args.push(&cfg.filename);
 
     let child = std::process::Command::new("usfs_reader")
         .args(args)
@@ -223,9 +225,15 @@ fn run_usfs_reader(cfg: &config::Config) -> std::process::Child {
 }
 
 pub fn read_all_samples_cfg(cfg: &config::Config) -> Result<Vec<Data>, Error> {
-    let mut child_reader = run_usfs_reader(&cfg);
+    let datacfg = if let config::Data::SensorData(sd) = &cfg.data {
+        sd
+    } else {
+        return Err(Error::UnsupportedDatatype);
+    };
 
-    let res = read_all_samples_input(&mut child_reader.stdout.take().unwrap(), &cfg);
+    let mut child_reader = run_usfs_reader(datacfg);
+
+    let res = read_all_samples_input(&mut child_reader.stdout.take().unwrap(), cfg);
     assert!(child_reader
         .wait()
         .expect("can't wait for usfs_reader")

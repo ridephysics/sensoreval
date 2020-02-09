@@ -11,6 +11,7 @@ pub enum Error {
     EOF,
     UnsupportedConfigs,
     InvalidData,
+    UnsupportedDatatype,
 }
 
 impl From<std::io::Error> for Error {

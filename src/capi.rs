@@ -74,8 +74,13 @@ pub extern "C" fn sensoreval_set_ts(cctx_ptr: *mut CContext, us: u64) -> std::os
 pub extern "C" fn sensoreval_notify_stdin(cctx_ptr: *mut CContext) -> std::os::raw::c_int {
     let cctx = unwrap_opt_or!(unsafe { cctx_ptr.as_mut() }, return -1);
     let renderctx = unwrap_opt_or!(&mut cctx.renderctx, return -2);
+    let datacfg = if let config::Data::SensorData(sd) = &cctx.cfg.data {
+        sd
+    } else {
+        return -3;
+    };
 
-    let sample = match cctx.readctx.read_sample(&mut std::io::stdin(), &cctx.cfg) {
+    let sample = match cctx.readctx.read_sample(&mut std::io::stdin(), datacfg) {
         Err(e) => match e {
             Error::EOF => return -3,
             Error::Io(eio) => match eio.kind() {
