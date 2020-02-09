@@ -20,8 +20,8 @@ pub trait HudHandler {
 }
 
 fn handler_from_ctx(ctx: &Context) -> Option<Box<dyn HudHandler>> {
-    let handler = match ctx.cfg.hud.mode {
-        config::HudMode::SwingBoat => hudhandlers::swingboat::SwingBoat::new(ctx),
+    let handler = match ctx.cfg.hud.renderer {
+        config::HudRenderer::SwingBoat(_) => hudhandlers::swingboat::SwingBoat::new(ctx),
         _ => return None,
     };
 

@@ -115,12 +115,15 @@ impl Default for Orientation {
 }
 
 #[derive(Deserialize, Debug)]
-pub enum HudMode {
+#[serde(tag = "type")]
+pub enum HudRenderer {
+    #[serde(rename = "generic")]
     Generic,
-    SwingBoat,
+    #[serde(rename = "swingboat")]
+    SwingBoat(SwingBoat),
 }
 
-impl Default for HudMode {
+impl Default for HudRenderer {
     fn default() -> Self {
         Self::Generic
     }
@@ -129,20 +132,16 @@ impl Default for HudMode {
 #[derive(Deserialize, Debug)]
 pub struct Hud {
     #[serde(default)]
-    pub mode: HudMode,
+    pub renderer: HudRenderer,
     #[serde(default)]
     pub altitude_ground: f64,
-
-    #[serde(default)]
-    pub swingboat: SwingBoat,
 }
 
 impl Default for Hud {
     fn default() -> Self {
         Self {
-            mode: HudMode::Generic,
+            renderer: HudRenderer::Generic,
             altitude_ground: 0.,
-            swingboat: SwingBoat::default(),
         }
     }
 }
