@@ -22,7 +22,7 @@ impl Pendulum {
     }
 
     #[inline]
-    fn get_actual<'a>(data: &'a Data) -> Option<&'a simulator::pendulum::Actual> {
+    fn get_actual(data: &'_ Data) -> Option<&'_ simulator::pendulum::Actual> {
         if let data::ActualData::Pendulum(p) = data.actual.as_ref()?.as_ref() {
             return Some(p);
         }
