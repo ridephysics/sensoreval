@@ -37,6 +37,7 @@ mod capi;
 mod datareader;
 mod error;
 mod hudrenderers;
+mod kalman;
 mod math;
 mod plot;
 pub mod render;
