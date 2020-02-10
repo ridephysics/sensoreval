@@ -1,4 +1,3 @@
-use ndarray_linalg::norm::Norm;
 use sensoreval::*;
 
 fn main() {
