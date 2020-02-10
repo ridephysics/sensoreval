@@ -1,3 +1,4 @@
+use crate::render::HudRenderer;
 use crate::*;
 use serde::Deserialize;
 
@@ -15,10 +16,14 @@ pub(crate) struct Pendulum {
 }
 
 impl Pendulum {
-    pub fn new(_ctx: &render::Context, cfg: &Config) -> Self {
-        Self {
+    pub fn new(ctx: &render::HudContext, cfg: &Config) -> Self {
+        let mut ret = Self {
             cfg: (*cfg).clone(),
-        }
+        };
+
+        ret.data_changed(ctx);
+
+        ret
     }
 
     #[inline]
@@ -32,11 +37,13 @@ impl Pendulum {
 }
 
 impl render::HudRenderer for Pendulum {
-    fn render(&self, _ctx: &render::Context, _cr: &cairo::Context) -> Result<(), Error> {
+    fn data_changed(&mut self, _ctx: &render::HudContext) {}
+
+    fn render(&self, _ctx: &render::HudContext, _cr: &cairo::Context) -> Result<(), Error> {
         Ok(())
     }
 
-    fn plot(&self, ctx: &render::Context) -> Result<(), Error> {
+    fn plot(&self, ctx: &render::HudContext) -> Result<(), Error> {
         let samples = ctx.dataset.ok_or(Error::NoDataSet)?;
 
         let mut plot = Plot::new(
