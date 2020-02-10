@@ -13,6 +13,7 @@ pub enum Error {
     InvalidData,
     UnsupportedDatatype,
     NoHudRenderer,
+    FloatConversion,
 }
 
 impl From<std::io::Error> for Error {

@@ -20,6 +20,12 @@ macro_rules! unwrap_opt_or {
     };
 }
 
+macro_rules! num2t {
+    ($type:ty, $num:expr) => {
+        <$type>::from($num).ok_or(Error::FloatConversion)?
+    };
+}
+
 pub mod config;
 #[macro_use]
 mod data;
