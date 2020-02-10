@@ -24,6 +24,8 @@ rand = "0.7"
 eom = { git = "https://github.com/M1cha/eom", branch = "master" }
 clap = "2.33"
 num-traits = "0.2"
+blas-src = { version = "*", features = ["intel-mkl"] }
+lapack-src = { version = "*", features = ["intel-mkl"] }
 
 [dev-dependencies]
 assert_approx_eq = "1.1"

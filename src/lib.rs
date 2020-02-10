@@ -26,6 +26,10 @@ macro_rules! num2t {
     };
 }
 
+// this forces them to get linked into the binaries
+extern crate blas_src;
+extern crate lapack_src;
+
 pub mod config;
 #[macro_use]
 mod data;
