@@ -13,10 +13,10 @@ pub struct Config {
 
 #[derive(Debug)]
 pub struct Actual {
-    p_ang: f64,
-    v_ang: f64,
-    v_tan: f64,
-    a_tan: f64,
+    pub p_ang: f64,
+    pub v_ang: f64,
+    pub v_tan: f64,
+    pub a_tan: f64,
 }
 
 #[derive(Clone)]
