@@ -4,6 +4,7 @@ use serde::ser::{Serialize, SerializeSeq, Serializer};
 
 #[derive(Debug)]
 pub enum ActualData {
+    None,
     Pendulum(simulator::pendulum::Actual),
 }
 
