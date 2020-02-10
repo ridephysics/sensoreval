@@ -32,6 +32,9 @@ mod plot;
 pub mod render;
 mod simulator;
 
+#[cfg(test)]
+mod test;
+
 mod drain_filter;
 use drain_filter::*;
 

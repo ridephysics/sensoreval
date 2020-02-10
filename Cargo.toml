@@ -23,6 +23,10 @@ ndarray-linalg = "0.12"
 rand = "0.7"
 eom = { git = "https://github.com/M1cha/eom", branch = "master" }
 clap = "2.33"
+num-traits = "0.2"
+
+[dev-dependencies]
+assert_approx_eq = "1.1"
 
 [profile.dev]
 opt-level = 1

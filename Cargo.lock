@@ -19,6 +19,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "assert_approx_eq"
+version = "1.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3c07dab4369547dbe5114677b33fbbf724971019f3818172d59a97a61c774ffd"
+
+[[package]]
 name = "atty"
 version = "0.2.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -776,6 +782,7 @@ checksum = "4c691c0e608126e00913e33f0ccf3727d5fc84573623b8d65b2df340b5201783"
 name = "sensoreval"
 version = "0.1.0"
 dependencies = [
+ "assert_approx_eq",
  "bincode",
  "cairo-rs",
  "cairo-sys-rs",
@@ -783,6 +790,7 @@ dependencies = [
  "eom",
  "ndarray 0.13.0",
  "ndarray-linalg",
+ "num-traits",
  "pango",
  "pangocairo",
  "rand 0.7.3",
