@@ -13,6 +13,7 @@ pub enum Error {
     InvalidData,
     UnsupportedDatatype,
     NoHudRenderer,
+    InvalidArgument,
     FloatConversion,
 }
 
