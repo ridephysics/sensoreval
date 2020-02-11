@@ -1,4 +1,3 @@
-use crate::render::HudRenderer;
 use crate::*;
 use serde::Deserialize;
 
@@ -17,13 +16,9 @@ pub(crate) struct Pendulum {
 
 impl Pendulum {
     pub fn new(ctx: &render::HudContext, cfg: &Config) -> Self {
-        let mut ret = Self {
+        Self {
             cfg: (*cfg).clone(),
-        };
-
-        ret.data_changed(ctx);
-
-        ret
+        }
     }
 
     #[inline]

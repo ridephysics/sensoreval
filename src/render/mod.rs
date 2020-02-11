@@ -91,7 +91,7 @@ impl<'a, 'b> Context<'a, 'b> {
             cfg,
             hudrenderer: None,
             hudctx: HudContext {
-                dataset,
+                dataset: None,
                 dpi: 141.21,
                 spi: 141.21,
                 src: DataSrc::None,
@@ -99,6 +99,8 @@ impl<'a, 'b> Context<'a, 'b> {
         };
 
         ctx.hudrenderer = renderer_from_ctx(&ctx);
+
+        ctx.set_dataset(dataset);
 
         ctx
     }
@@ -119,6 +121,16 @@ impl<'a, 'b> Context<'a, 'b> {
 
     pub fn set_data(&mut self, data: Data) {
         self.hudctx.src = DataSrc::Data(data);
+        self.hudctx.dataset = None;
+
+        if let Some(renderer) = &mut self.hudrenderer {
+            renderer.data_changed(&self.hudctx);
+        }
+    }
+
+    pub fn set_dataset(&mut self, dataset: Option<&'b Vec<Data>>) {
+        self.hudctx.src = DataSrc::Array { id: 0 };
+        self.hudctx.dataset = dataset;
 
         if let Some(renderer) = &mut self.hudrenderer {
             renderer.data_changed(&self.hudctx);
