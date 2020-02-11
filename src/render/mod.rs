@@ -2,12 +2,14 @@ pub mod utils;
 
 use crate::*;
 
+#[derive(Debug)]
 enum DataSrc {
     None,
     Data(Data),
     Array { id: usize },
 }
 
+#[derive(Debug)]
 pub struct HudContext<'b> {
     pub dataset: Option<&'b Vec<Data>>,
     src: DataSrc,
