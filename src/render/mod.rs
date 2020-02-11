@@ -40,6 +40,17 @@ impl<'b> HudContext<'b> {
         }
     }
 
+    pub fn get_dataset(&self) -> Option<&'b Vec<Data>> {
+        match &self.src {
+            DataSrc::None => None,
+            DataSrc::Data(_) => None,
+            DataSrc::Array { .. } => match self.dataset {
+                None => None,
+                Some(dataset) => Some(dataset),
+            },
+        }
+    }
+
     #[inline]
     pub fn dp2px(&self, dp: f64) -> f64 {
         dp * (self.dpi / 160.0)
@@ -120,6 +131,10 @@ impl<'a, 'b> Context<'a, 'b> {
 
     pub fn current_data_id(&self) -> Option<usize> {
         self.hudctx.current_data_id()
+    }
+
+    pub fn get_dataset(&self) -> Option<&'b Vec<Data>> {
+        self.hudctx.get_dataset()
     }
 
     pub fn render(&self, cr: &cairo::Context) -> Result<(), Error> {
