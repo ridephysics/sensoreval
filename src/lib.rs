@@ -1,10 +1,7 @@
 macro_rules! unwrap_res_or {
     ($opt:expr, $default:expr) => {
         match $opt {
-            Err(e) => {
-                println!("{:?}", e);
-                $default
-            }
+            Err(_) => $default,
             Ok(v) => v,
         }
     };
