@@ -39,7 +39,7 @@ impl render::HudRenderer for Pendulum {
     }
 
     fn plot(&self, ctx: &render::HudContext) -> Result<(), Error> {
-        let samples = ctx.dataset.ok_or(Error::NoDataSet)?;
+        let samples = ctx.get_dataset().ok_or(Error::NoDataSet)?;
 
         let mut plot = Plot::new(
             "\
