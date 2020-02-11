@@ -11,7 +11,7 @@ enum DataSrc {
 
 #[derive(Debug)]
 pub struct HudContext<'b> {
-    pub dataset: Option<&'b Vec<Data>>,
+    dataset: Option<&'b Vec<Data>>,
     src: DataSrc,
     pub dpi: f64,
     pub spi: f64,
