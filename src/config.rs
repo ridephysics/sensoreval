@@ -182,6 +182,20 @@ pub struct Config {
     pub hud: Hud,
 }
 
+#[derive(Deserialize, Debug, Clone)]
+pub struct SensorStdevXYZ {
+    pub x: f64,
+    pub y: f64,
+    pub z: f64,
+}
+
+#[derive(Deserialize, Debug, Clone)]
+pub struct SensorStdev {
+    pub accel: SensorStdevXYZ,
+    pub gyro: SensorStdevXYZ,
+    pub mag: SensorStdevXYZ,
+}
+
 impl Config {
     fn add_noise<S, R>(arr: &mut ndarray::ArrayBase<S, ndarray::Ix1>, cfg: &NoiseXYZ, rng: &mut R)
     where
