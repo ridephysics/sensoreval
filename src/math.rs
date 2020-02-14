@@ -29,6 +29,26 @@ where
     ((n % m) + m) % m
 }
 
+pub fn normalize_angle<A>(mut x: A) -> A
+where
+    A: Copy
+        + num_traits::cast::NumCast
+        + num_traits::float::FloatConst
+        + std::ops::Rem<Output = A>
+        + std::ops::Add<Output = A>
+        + std::cmp::PartialOrd
+        + std::ops::Mul<A, Output = A>
+        + std::ops::SubAssign,
+{
+    let pi = num_traits::float::FloatConst::PI();
+
+    x = pymod(x, pi * A::from(2.0).unwrap());
+    if x > pi {
+        x -= pi * A::from(2.0).unwrap();
+    }
+    x
+}
+
 #[cfg(test)]
 mod tests {
     use assert_approx_eq::assert_approx_eq;
@@ -57,5 +77,13 @@ mod tests {
         assert_eq!(super::pymod(-5, 4), 3);
         assert_eq!(super::pymod(5, 2), 1);
         assert_approx_eq!(super::pymod(3.14f64, 0.7f64), 0.34f64);
+    }
+
+    #[test]
+    fn normalize_angle() {
+        assert_approx_eq!(
+            super::normalize_angle((1.0f64 - 359.0f64).to_radians()),
+            (2.0f64).to_radians()
+        );
     }
 }
