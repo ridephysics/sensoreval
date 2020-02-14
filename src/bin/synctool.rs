@@ -42,6 +42,14 @@ fn main() {
         data.accel.norm_l2()
     }))
     .unwrap();
+    plot.add(&DataSerializer::new(&samples, |i, data| {
+        if i > 0 {
+            (data.time - samples[i - 1].time) as f64 / 1_000_000.0f64
+        } else {
+            0.0f64
+        }
+    }))
+    .unwrap();
     plot.show().unwrap();
 
     // read index from stdin
