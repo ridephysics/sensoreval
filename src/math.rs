@@ -24,12 +24,11 @@ where
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use ndarray::array;
 
     #[test]
-    fn outer_product_test() {
-        let res = outer_product(
+    fn outer_product() {
+        let res = super::outer_product(
             &ndarray::Array1::<f64>::ones(5),
             &ndarray::Array1::<f64>::linspace(-2.0, 2.0, 5),
         );
