@@ -22,8 +22,16 @@ where
     res
 }
 
+pub fn pymod<A>(n: A, m: A) -> A
+where
+    A: Copy + std::ops::Rem<Output = A> + std::ops::Add<Output = A>,
+{
+    ((n % m) + m) % m
+}
+
 #[cfg(test)]
 mod tests {
+    use assert_approx_eq::assert_approx_eq;
     use ndarray::array;
 
     #[test]
@@ -42,5 +50,12 @@ mod tests {
                 [-2., -1., 0., 1., 2.]
             ],
         );
+    }
+
+    #[test]
+    fn pymod() {
+        assert_eq!(super::pymod(-5, 4), 3);
+        assert_eq!(super::pymod(5, 2), 1);
+        assert_approx_eq!(super::pymod(3.14f64, 0.7f64), 0.34f64);
     }
 }
