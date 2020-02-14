@@ -20,13 +20,17 @@ pub struct Actual {
 }
 
 #[derive(Clone)]
-struct EomFns {
+pub struct EomFns {
     radius: f64,
 }
 
 impl EomFns {
-    fn new(cfg: &Config) -> Self {
+    pub fn new(cfg: &Config) -> Self {
         Self { radius: cfg.radius }
+    }
+
+    pub fn from_radius(radius: f64) -> Self {
+        Self { radius: radius }
     }
 }
 
