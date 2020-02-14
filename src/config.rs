@@ -87,20 +87,14 @@ pub enum DataSource {
     SimPendulum(simulator::pendulum::Config),
 }
 
-#[derive(Deserialize, Debug)]
-pub struct Noise {
-    low: f64,
-    high: f64,
-}
-
 #[derive(Deserialize, Debug, Default)]
 pub struct NoiseXYZ {
     #[serde(default)]
-    pub x: Option<Noise>,
+    pub x: Option<std::ops::Range<f64>>,
     #[serde(default)]
-    pub y: Option<Noise>,
+    pub y: Option<std::ops::Range<f64>>,
     #[serde(default)]
-    pub z: Option<Noise>,
+    pub z: Option<std::ops::Range<f64>>,
 }
 
 #[derive(Deserialize, Debug, Default)]
@@ -195,15 +189,15 @@ impl Config {
         R: rand::Rng,
     {
         if let Some(n) = &cfg.x {
-            arr[0] += rng.gen_range(n.low, n.high);
+            arr[0] += rng.gen_range(n.start, n.end);
         }
 
         if let Some(n) = &cfg.y {
-            arr[1] += rng.gen_range(n.low, n.high);
+            arr[1] += rng.gen_range(n.start, n.end);
         }
 
         if let Some(n) = &cfg.z {
-            arr[2] += rng.gen_range(n.low, n.high);
+            arr[2] += rng.gen_range(n.start, n.end);
         }
     }
 
