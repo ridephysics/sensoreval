@@ -191,4 +191,79 @@ where
         self.x = &self.x + &K.dot(&y);
         self.P = &self.P - &K.dot(&S).dot(&K.t());
     }
+
+    pub fn rts_smoother<Sx>(
+        &mut self,
+        xs: &[ndarray::ArrayBase<Sx, ndarray::Ix1>],
+        Ps: &[ndarray::ArrayBase<Sx, ndarray::Ix2>],
+        Qs: Option<&[ndarray::Array2<A>]>,
+        dts: &[A],
+    ) -> (Vec<ndarray::Array1<A>>, Vec<ndarray::Array2<A>>)
+    where
+        Sx: ndarray::Data<Elem = A>,
+    {
+        assert_eq!(xs.len(), Ps.len());
+        let mut xss = Vec::with_capacity(xs.len());
+        let mut Pss = Vec::with_capacity(Ps.len());
+
+        if xs.is_empty() {
+            return (xss, Pss);
+        }
+
+        xss.push(xs.last().unwrap().to_owned());
+        Pss.push(Ps.last().unwrap().to_owned());
+
+        for k in 0..xs.len() - 1 {
+            let k = xs.len() - 2 - k;
+            let x = &xs[k];
+            let P = &Ps[k];
+            let Q = match Qs {
+                Some(Qs) => &Qs[k],
+                None => &self.Q,
+            };
+            let dt = dts[k];
+
+            // create sigma points from state estimate
+            let sigmas = self.points_fn.sigma_points(x, P);
+
+            // pass sigmas through state function
+            for i in 0..sigmas.nrows() {
+                self.sigmas_f
+                    .index_axis_mut(ndarray::Axis(0), i)
+                    .assign(&self.fns.fx(&sigmas.index_axis(ndarray::Axis(0), i), dt));
+            }
+
+            let (xb, Pb) = kalman::unscented_transform(
+                &self.sigmas_f,
+                &self.Wm,
+                &self.Wc,
+                Q,
+                |sigmas, mean| self.fns.x_mean(sigmas, mean),
+                |a, b| self.fns.x_residual(a, b),
+            );
+
+            // compute cross variance
+            let mut Pxb = ndarray::Array2::<A>::zeros((self.x.dim(), self.x.dim()));
+            azip!((&Wci in &self.Wc, sfi in self.sigmas_f.genrows(), si in sigmas.genrows()) {
+                let y = self.fns.x_residual(&sfi, &xb);
+                let z = self.fns.x_residual(&si, x);
+                Pxb += &(math::outer_product(&z, &y) * Wci);
+            });
+
+            // compute gain
+            let K = Pxb.dot(&Pb.inv().unwrap());
+
+            // residual
+            let residual = self.fns.x_residual(&xss.last().unwrap(), &xb);
+
+            // update the smoothed estimates
+            xss.push(x + &K.dot(&residual));
+            Pss.push(P + &K.dot(&(Pss.last().unwrap() - &Pb)).dot(&K.t()));
+        }
+
+        xss.reverse();
+        Pss.reverse();
+
+        (xss, Pss)
+    }
 }
