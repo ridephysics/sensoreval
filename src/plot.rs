@@ -14,7 +14,9 @@ impl Plot {
                  import pickle\n\
                  import numpy as np\n\
                  import matplotlib.pyplot as plt\n\
-                 exec(pickle.load(sys.stdin.buffer))\n\
+                 def load_data():\n\
+                     \treturn pickle.load(sys.stdin.buffer)\n\
+                 exec(load_data())\n\
                  ",
             ])
             .stdin(std::process::Stdio::piped())
