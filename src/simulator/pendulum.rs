@@ -13,6 +13,9 @@ pub struct Config {
     duration: f64,
     /// unit: rad
     initial_angle: f64,
+    /// unit: rad
+    #[serde(default)]
+    orientation_offset: f64,
 }
 
 #[derive(Debug)]
@@ -88,7 +91,11 @@ where
     let mut sample = Data::default();
     sample.time = t_us;
     sample.time_baro = t_us;
-    sample.accel = array![0.0, 0.0, ac + math::GRAVITY * p_ang.cos()];
+    sample.accel = array![
+        0.0,
+        0.0,
+        ac + math::GRAVITY * (p_ang + cfg.orientation_offset).cos()
+    ];
     sample.gyro = array![v_ang, 0.0, 0.0];
     sample.actual = Some(Box::new(data::ActualData::Pendulum(actual)));
 
