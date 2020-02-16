@@ -16,7 +16,7 @@ pub struct Actual {
     pub p_ang: f64,
     pub v_ang: f64,
     pub v_tan: f64,
-    pub a_tan: f64,
+    pub ac: f64,
 }
 
 #[derive(Clone)]
@@ -67,19 +67,19 @@ where
     let p_ang = data[0];
     let v_ang = data[1];
     let v_tan = v_ang * cfg.radius;
-    let a_tan = v_ang.powi(2) * cfg.radius;
+    let ac = v_ang.powi(2) * cfg.radius;
 
     let actual = Actual {
         p_ang,
         v_ang,
         v_tan,
-        a_tan,
+        ac,
     };
 
     let mut sample = Data::default();
     sample.time = t_us;
     sample.time_baro = t_us;
-    sample.accel = array![0.0, 0.0, a_tan + math::GRAVITY * p_ang.cos()];
+    sample.accel = array![0.0, 0.0, ac + math::GRAVITY * p_ang.cos()];
     sample.gyro = array![v_ang, 0.0, 0.0];
     sample.actual = Some(Box::new(data::ActualData::Pendulum(actual)));
 

@@ -102,7 +102,7 @@ impl render::HudRenderer for Pendulum {
         if has_actual {
             plot.write(&DataSerializer::new(&samples, |_i, v| {
                 let actual = Self::get_actual(v).unwrap();
-                vec![actual.p_ang, actual.v_ang, actual.v_tan, actual.a_tan]
+                vec![actual.p_ang, actual.v_ang, actual.v_tan, actual.ac]
             }))?;
         }
 
