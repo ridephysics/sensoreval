@@ -14,6 +14,9 @@ impl Plot {
                  import pickle\n\
                  import numpy as np\n\
                  import matplotlib.pyplot as plt\n\
+                 ca = '#1f77b4'\n\
+                 cz = '#ff7f0e'\n\
+                 ce = '#2ca02c'\n\
                  def load_data():\n\
                      \treturn pickle.load(sys.stdin.buffer)\n\
                  exec(load_data())\n\
