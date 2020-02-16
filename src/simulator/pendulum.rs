@@ -42,7 +42,7 @@ impl EomFns {
     }
 
     pub fn from_radius(radius: f64) -> Self {
-        Self { radius: radius }
+        Self { radius }
     }
 }
 
