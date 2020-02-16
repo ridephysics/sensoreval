@@ -30,6 +30,8 @@ pub struct Config {
     /// unit: meters
     #[serde(default)]
     pub radius_override: Option<f64>,
+    #[serde(default)]
+    pub enable_rts_smoother: bool,
 }
 
 pub(crate) struct Pendulum {
@@ -194,6 +196,7 @@ impl Pendulum {
 }
 
 impl render::HudRenderer for Pendulum {
+    #[allow(non_snake_case)]
     fn data_changed(&mut self, ctx: &render::HudContext) {
         let samples = unwrap_opt_or!(ctx.get_dataset(), return);
         let fns = StateFunctions::new(&self.cfg);
@@ -221,7 +224,9 @@ impl render::HudRenderer for Pendulum {
             Some(v) => v.time,
             None => 0,
         };
-        let mut radius_sum = 0.0;
+        let mut Ps = Vec::new();
+        let mut Qs = Vec::new();
+        let mut dts = Vec::new();
         for sample in samples {
             let z = array![
                 sample.accel[0],
@@ -242,9 +247,24 @@ impl render::HudRenderer for Pendulum {
             ukf.update(&z);
 
             self.est.push(ukf.x.clone());
-            radius_sum += ukf.x[2];
+
+            if self.cfg.enable_rts_smoother {
+                Ps.push(ukf.P.clone());
+                Qs.push(ukf.Q.clone());
+                dts.push(dt);
+            }
 
             t_prev = sample.time;
+        }
+
+        if self.cfg.enable_rts_smoother {
+            let (xss, _) = ukf.rts_smoother(&self.est, &Ps, Some(&Qs), &dts);
+            self.est = xss;
+        }
+
+        let mut radius_sum = 0.0;
+        for x in &self.est {
+            radius_sum += x[2];
         }
 
         println!("average radius: {}", radius_sum / self.est.len() as f64);
