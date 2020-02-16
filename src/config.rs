@@ -3,12 +3,16 @@ use crate::*;
 use serde::Deserialize;
 use std::io::Read;
 
+/// video source information
 #[derive(Deserialize, Debug)]
 pub struct Video {
+    /// start offset in milli seconds
     #[serde(default)]
     pub startoff: u64,
+    /// end offset in milli seconds
     #[serde(default)]
     pub endoff: Option<u64>,
+    /// relative path to video file
     #[serde(default)]
     pub filename: Option<String>,
 }
@@ -23,6 +27,7 @@ impl Default for Video {
     }
 }
 
+/// map sensor axes. index: destination, value: source + 1, can be negative
 #[derive(Deserialize, Debug)]
 pub struct AxisMap(Vec<isize>);
 
@@ -33,6 +38,7 @@ impl Default for AxisMap {
 }
 
 impl AxisMap {
+    /// copy one axis
     #[inline(always)]
     pub fn copy_single<A, T>(&self, dst: &mut A, src: &[T], dstidx: usize)
     where
@@ -50,6 +56,7 @@ impl AxisMap {
         dst[dstidx] = tmp;
     }
 
+    /// copy all axes
     #[inline(always)]
     pub fn copy<A, T>(&self, dst: &mut A, src: &[T])
     where
@@ -62,54 +69,77 @@ impl AxisMap {
     }
 }
 
+/// sensordata data source
 #[derive(Deserialize, Debug)]
 pub struct SensorData {
+    /// time offset relative to the start of the video (ignoring it's startoff), unit: micro seconds
     #[serde(default)]
     pub video_off: i64,
+    /// axismap for accel, gyro and mag. They're not separate because
+    /// they're expected to be aligned to each other already
     #[serde(default)]
     pub axismap: AxisMap,
+    /// barometer pressure coefficient used for smoothing the data
     #[serde(default)]
     pub pressure_coeff: f64,
+    /// relative path to the IMU data. this will be passed to usfs_reader
     pub filename: String,
+    /// IMU data format. this will be passed to usfs_reader
     pub format: String,
+    /// relative path to the magnetometer calibration file, this will be passed to usfs_reader
     #[serde(default)]
     pub mag_cal: Option<String>,
+    /// relative path to the accel/gyro bias file, this will be passed to usfs_reader
     #[serde(default)]
     pub bias_ag: Option<String>,
 }
 
+/// data source type and information
 #[derive(Deserialize, Debug)]
 #[serde(tag = "type")]
 pub enum DataSource {
+    /// use actual sensor data
     #[serde(rename = "sensordata")]
     SensorData(SensorData),
+    /// use the pendulum simulator
     #[serde(rename = "sim_pendulum")]
     SimPendulum(simulator::pendulum::Config),
 }
 
+/// noise for X, Y and Z
 #[derive(Deserialize, Debug, Default)]
 pub struct NoiseXYZ {
+    /// range passed to [gen_range](../../rand/trait.Rng.html#method.gen_range)
     #[serde(default)]
     pub x: Option<std::ops::Range<f64>>,
+    /// range passed to [gen_range](../../rand/trait.Rng.html#method.gen_range)
     #[serde(default)]
     pub y: Option<std::ops::Range<f64>>,
+    /// range passed to [gen_range](../../rand/trait.Rng.html#method.gen_range)
     #[serde(default)]
     pub z: Option<std::ops::Range<f64>>,
 }
 
+/// noise for all sensor types
 #[derive(Deserialize, Debug, Default)]
 pub struct DataNoise {
+    /// accelerometer noise, unit: same as [Config.accel](../struct.Data.html#structfield.accel)
     #[serde(default)]
     pub accel: NoiseXYZ,
+    /// gyroscope noise, unit: same as [Config.gyro](../struct.Data.html#structfield.gyro)
     #[serde(default)]
     pub gyro: NoiseXYZ,
+    /// magnetometer noise, unit: same as [Config.mag](../struct.Data.html#structfield.mag)
     #[serde(default)]
     pub mag: NoiseXYZ,
 }
 
+/// data configuration
 #[derive(Deserialize, Debug)]
 pub struct Data {
+    /// data source type and information
     pub source: DataSource,
+    /// optionally add noise to the data using thread_rng
     #[serde(default)]
     pub noise: DataNoise,
 }
@@ -139,11 +169,14 @@ impl Default for Orientation {
     }
 }
 
+/// renderer type for the HUD and the data plot
 #[derive(Deserialize, Debug)]
 #[serde(tag = "type")]
 pub enum HudRenderer {
+    /// generic renderer which doesn't do anything
     #[serde(rename = "generic")]
     Generic,
+    /// pendulum renderer
     #[serde(rename = "pendulum")]
     Pendulum(hudrenderers::pendulum::Config),
 }
@@ -154,10 +187,13 @@ impl Default for HudRenderer {
     }
 }
 
+/// HUD config
 #[derive(Deserialize, Debug)]
 pub struct Hud {
+    /// renderer type and information
     #[serde(default)]
     pub renderer: HudRenderer,
+    /// pressure at ground level, unit: same as [Config.pressure](../struct.Data.html#structfield.pressure)
     #[serde(default)]
     pub altitude_ground: f64,
 }
@@ -171,17 +207,22 @@ impl Default for Hud {
     }
 }
 
+/// global configuration
 #[derive(Deserialize, Debug)]
 pub struct Config {
+    /// video config
     #[serde(default)]
     pub video: Video,
+    /// data config
     pub data: Data,
     #[serde(default)]
     pub orientation: Orientation,
+    // HUD config
     #[serde(default)]
     pub hud: Hud,
 }
 
+/// standard deviation for one sensor's XYZ axes
 #[derive(Deserialize, Debug, Clone)]
 pub struct SensorStdevXYZ {
     pub x: f64,
@@ -189,10 +230,14 @@ pub struct SensorStdevXYZ {
     pub z: f64,
 }
 
+/// standard deviation for all sensors
 #[derive(Deserialize, Debug, Clone)]
 pub struct SensorStdev {
+    /// unit: same as [Config.accel](../struct.Data.html#structfield.accel)
     pub accel: SensorStdevXYZ,
+    /// unit: same as [Config.gyro](../struct.Data.html#structfield.gyro)
     pub gyro: SensorStdevXYZ,
+    /// unit: same as [Config.mag](../struct.Data.html#structfield.mag)
     pub mag: SensorStdevXYZ,
 }
 
@@ -215,6 +260,7 @@ impl Config {
         }
     }
 
+    /// load data from configured source
     pub fn load_data(&self) -> Result<Vec<crate::Data>, Error> {
         let mut ret = match &self.data.source {
             DataSource::SensorData(_) => datareader::read_all_samples_cfg(self),
@@ -239,6 +285,7 @@ fn path2abs(dir: &std::path::Path, relpath: &str) -> String {
     String::from(dir.join(std::path::Path::new(&relpath)).to_str().unwrap())
 }
 
+/// load config file
 pub fn load<P: AsRef<std::path::Path>>(filename: P) -> Result<Config, Error> {
     let mut file = std::fs::File::open(filename.as_ref())?;
     let mut buffer = String::new();

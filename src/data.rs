@@ -2,32 +2,36 @@ use crate::*;
 
 use serde::ser::{Serialize, SerializeSeq, Serializer};
 
+/// type of actual data information
 #[derive(Debug)]
 pub enum ActualData {
+    /// unknown or unavailable
     None,
+    /// pendulum simulator
     Pendulum(simulator::pendulum::Actual),
 }
 
+/// processed data sample
 #[derive(Debug)]
 pub struct Data {
-    // unit: microseconds
+    /// timestamp for accel, gyro and mag. unit: micro seconds
     pub time: u64,
-    // unit: microseconds
+    /// timestamp for temperature and pressure, unit: micro seconds
     pub time_baro: u64,
 
-    // unit: m/s^2
+    /// accelerometer sample, unit: m/s^2
     pub accel: ndarray::Array1<f64>,
-    // unit: rad/s
+    /// gyroscope sample, unit: rad/s
     pub gyro: ndarray::Array1<f64>,
-    // unit: uT
+    /// magnetometer sample, unit: uT
     pub mag: ndarray::Array1<f64>,
 
-    // unit: degrees celsius
+    /// barometer temperature, unit: degrees celsius
     pub temperature: f64,
-    // unit: hPa
+    /// barometer pressure, unit: hPa
     pub pressure: f64,
 
-    // optional actual state data
+    /// optional actual state data, e.g. from the simulator that generated the sample
     pub actual: Option<Box<ActualData>>,
 }
 
@@ -116,6 +120,7 @@ where
     }
 }
 
+/// return dataset array index at or after the given time
 pub fn id_for_time(dataset: &[Data], startid: usize, us: u64) -> Option<usize> {
     if startid >= dataset.len() {
         return None;

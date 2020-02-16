@@ -5,22 +5,31 @@ use serde::Deserialize;
 
 #[derive(Deserialize, Debug)]
 pub struct Config {
+    /// unit: meters
     radius: f64,
+    /// unit: seconds
     dt: f64,
+    /// unit: seconds
     duration: f64,
+    /// unit: rad
     initial_angle: f64,
 }
 
 #[derive(Debug)]
 pub struct Actual {
+    /// angular position, unit: rad
     pub p_ang: f64,
+    /// angular velocity, unit: rad/s
     pub v_ang: f64,
+    /// tangential velocity, unit: m/s
     pub v_tan: f64,
+    /// centripedal acceleration, unit: m/s^2
     pub ac: f64,
 }
 
 #[derive(Clone)]
 pub struct EomFns {
+    /// unit: m/s^2
     radius: f64,
 }
 
