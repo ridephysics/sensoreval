@@ -99,17 +99,10 @@ pub fn generate(cfg: &Config) -> Result<Vec<Data>, Error> {
     let mut ret = Vec::new();
 
     let mut teo = eom::explicit::RK4::new(EomFns::new(cfg), cfg.dt);
-    let ts = eom::adaptor::time_series(
-        ndarray::arr1(&[cfg.initial_angle.to_radians(), 0.0]),
-        &mut teo,
-    );
+    let ts = eom::adaptor::time_series(ndarray::arr1(&[cfg.initial_angle, 0.0]), &mut teo);
     let nsamples = (cfg.duration / cfg.dt) as usize;
 
-    ret.push(build_sample(
-        cfg,
-        0.0,
-        &array![cfg.initial_angle.to_radians(), 0.0],
-    ));
+    ret.push(build_sample(cfg, 0.0, &array![cfg.initial_angle, 0.0]));
     for (_t, v) in ts.take(nsamples).enumerate() {
         let t = _t as f64 * cfg.dt;
         ret.push(build_sample(cfg, t, &v));
