@@ -28,6 +28,8 @@ pub struct Actual {
     pub v_tan: f64,
     /// centripedal acceleration, unit: m/s^2
     pub ac: f64,
+    /// unit: rad
+    pub orientation_offset: f64,
 }
 
 #[derive(Clone)]
@@ -86,6 +88,7 @@ where
         v_ang,
         v_tan,
         ac,
+        orientation_offset: cfg.orientation_offset,
     };
 
     let mut sample = Data::default();
