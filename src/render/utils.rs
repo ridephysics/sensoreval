@@ -3,21 +3,52 @@ use crate::*;
 use std::convert::TryFrom;
 use std::convert::TryInto;
 
-pub fn render_font(cr: &cairo::Context, font: &pango::FontDescription, text: &str) -> (i32, i32) {
-    let layout = pangocairo::functions::create_layout(&cr).unwrap();
-    layout.set_font_description(Some(&font));
-    layout.set_text(&text);
+pub struct Font<'a> {
+    pgfont: &'a pango::FontDescription,
+    pub color_fill: u32,
+    pub color_border: u32,
+    pub line_width: f64,
+}
 
-    set_source_rgba_u32(&cr, 0xffff_ffff);
-    pangocairo::functions::update_layout(&cr, &layout);
-    pangocairo::functions::show_layout(&cr, &layout);
+impl<'a> Font<'a> {
+    pub fn new(pgfont: &'a pango::FontDescription) -> Self {
+        Self {
+            pgfont,
+            color_fill: 0xffff_ffff,
+            color_border: 0x0000_00ff,
+            line_width: 1.0,
+        }
+    }
 
-    cr.set_line_width(1.0);
-    set_source_rgba_u32(&cr, 0x0000_00ff);
-    pangocairo::functions::layout_path(&cr, &layout);
-    cr.stroke();
+    pub fn layout(&self, cr: &cairo::Context, text: &str) -> pango::Layout {
+        let layout = pangocairo::functions::create_layout(cr).unwrap();
+        layout.set_font_description(Some(self.pgfont));
+        layout.set_text(text);
 
-    layout.get_pixel_size()
+        layout
+    }
+
+    pub fn draw_layout(&self, cr: &cairo::Context, layout: &pango::Layout) {
+        cr.save();
+
+        set_source_rgba_u32(cr, self.color_fill);
+        pangocairo::functions::update_layout(cr, &layout);
+        pangocairo::functions::show_layout(cr, &layout);
+
+        cr.set_line_width(self.line_width);
+        set_source_rgba_u32(cr, self.color_border);
+        pangocairo::functions::layout_path(cr, &layout);
+        cr.stroke();
+
+        cr.restore();
+    }
+
+    pub fn draw(&self, cr: &cairo::Context, text: &str) -> (i32, i32) {
+        let layout = self.layout(cr, text);
+        self.draw_layout(cr, &layout);
+
+        layout.get_pixel_size()
+    }
 }
 
 pub fn set_source_rgba_u32(cr: &cairo::Context, rgba: u32) {
