@@ -33,11 +33,6 @@ pub struct Config {
     pub enable_rts_smoother: bool,
 }
 
-pub(crate) struct Pendulum {
-    cfg: Config,
-    est: Vec<ndarray::Array1<f64>>,
-}
-
 pub struct StateFunctions<'a> {
     cfg: &'a Config,
 }
@@ -181,6 +176,11 @@ impl<'a> kalman::sigma_points::Functions for StateFunctions<'a> {
     {
         self.x_residual(a, b)
     }
+}
+
+pub(crate) struct Pendulum {
+    cfg: Config,
+    est: Vec<ndarray::Array1<f64>>,
 }
 
 impl Pendulum {
