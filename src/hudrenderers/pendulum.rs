@@ -16,6 +16,8 @@ pub struct Initial {
     velocity: f64,
     /// pendulum radius, unit: meters
     radius: f64,
+    /// unit: rad
+    orientation_offset: f64,
 }
 
 #[derive(Deserialize, Debug, Clone)]
@@ -24,9 +26,6 @@ pub struct Config {
     pub stdev: config::SensorStdev,
     /// initial conditions, used for vector x
     pub initial: Initial,
-    /// unit: rad
-    #[serde(default)]
-    pub orientation_offset: f64,
     /// unit: meters
     #[serde(default)]
     pub radius_override: Option<f64>,
@@ -66,13 +65,19 @@ impl<'a> kalman::ukf::Functions for StateFunctions<'a> {
             Some(v) => v,
             None => x[2],
         };
+        let orientation_offset = x[3];
 
         let mut teo =
             eom::explicit::RK4::new(crate::simulator::pendulum::EomFns::from_radius(r), dt);
         let mut ic = array![pa, va];
         let next = teo.iterate(&mut ic);
 
-        array![math::normalize_angle(next[0]), next[1], r]
+        array![
+            math::normalize_angle(next[0]),
+            next[1],
+            r,
+            orientation_offset
+        ]
     }
 
     #[allow(non_snake_case)]
@@ -123,12 +128,13 @@ impl<'a> kalman::ukf::Functions for StateFunctions<'a> {
         let pa = x[0];
         let va = x[1];
         let r = x[2];
+        let orientation_offset = x[3];
         let ac = va.powi(2) * r;
 
         array![
             0.0,
             0.0,
-            ac + math::GRAVITY * (pa + self.cfg.orientation_offset).cos(),
+            ac + math::GRAVITY * (pa + orientation_offset).cos(),
             va,
             0.0,
             0.0
@@ -193,6 +199,10 @@ impl Pendulum {
 
         None
     }
+
+    fn est_acceleration(x: &ndarray::Array1<f64>) -> f64 {
+        x[1].powi(2) * x[2] + math::GRAVITY * (x[0] + x[3]).cos()
+    }
 }
 
 impl render::HudRenderer for Pendulum {
@@ -200,15 +210,16 @@ impl render::HudRenderer for Pendulum {
     fn data_changed(&mut self, ctx: &render::HudContext) {
         let samples = unwrap_opt_or!(ctx.get_dataset(), return);
         let fns = StateFunctions::new(&self.cfg);
-        let points_fn = kalman::sigma_points::MerweScaledSigmaPoints::new(3, 0.1, 2.0, 0.0, &fns);
-        let mut ukf = kalman::ukf::UKF::new(3, 6, &points_fn, &fns);
+        let points_fn = kalman::sigma_points::MerweScaledSigmaPoints::new(4, 0.1, 2.0, 0.0, &fns);
+        let mut ukf = kalman::ukf::UKF::new(4, 6, &points_fn, &fns);
 
         ukf.x = array![
             self.cfg.initial.position,
             self.cfg.initial.velocity,
-            self.cfg.initial.radius
+            self.cfg.initial.radius,
+            self.cfg.initial.orientation_offset,
         ];
-        ukf.P = ndarray::Array::eye(3) * 0.0001;
+        ukf.P = ndarray::Array::eye(4) * 0.0001;
         ukf.R = ndarray::Array2::from_diag(&array![
             self.cfg.stdev.accel.x.powi(2),
             self.cfg.stdev.accel.y.powi(2),
@@ -242,6 +253,7 @@ impl render::HudRenderer for Pendulum {
                 .slice_mut(s![0..2, 0..2])
                 .assign(&kalman::discretization::Q_discrete_white_noise(2, dt, 0.1).unwrap());
             ukf.Q[[2, 2]] = 0.0001;
+            ukf.Q[[3, 3]] = 0.0001;
 
             ukf.predict(dt);
             ukf.update(&z);
@@ -308,7 +320,7 @@ impl render::HudRenderer for Pendulum {
             plots[3].plot(t, z[:, 2], cz)\n\
             if has_actual:\n\
                 \tplots[3].plot(t, actual[:, 3], ca)\n\
-            plots[3].plot(t, est[:, 3], ce)\n\
+            plots[3].plot(t, est[:, 4], ce)\n\
             \n\
             plots[4].set_title('r', x=-0.15, y=0.5)\n\
             plots[4].plot(t, (est[:, 2]), ce)\n\
@@ -329,10 +341,7 @@ impl render::HudRenderer for Pendulum {
         plot.write(&DataSerializer::new(&self.est, |_i, v| {
             let mut ret = v.to_vec();
 
-            ret.push(
-                ret[1].powi(2) * ret[2]
-                    + math::GRAVITY * (ret[0] + self.cfg.orientation_offset).cos(),
-            );
+            ret.push(Self::est_acceleration(&v));
 
             ret
         }))?;
@@ -350,7 +359,7 @@ impl render::HudRenderer for Pendulum {
                     actual.p_ang,
                     actual.v_ang,
                     actual.v_tan,
-                    actual.ac + math::GRAVITY * (actual.p_ang + self.cfg.orientation_offset).cos(),
+                    actual.ac + math::GRAVITY * (actual.p_ang + actual.orientation_offset).cos(),
                 ]
             }))?;
         }
