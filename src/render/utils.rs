@@ -73,6 +73,43 @@ pub fn surface_sz_user(cr: &cairo::Context) -> (f64, f64) {
     cr.device_to_user_distance(sw, sh)
 }
 
+pub fn clip_bottom(cr: &cairo::Context, h: f64) {
+    let ssz = render::utils::surface_sz_user(cr);
+    let p = cr.device_to_user(0., 0.);
+    let sz = (ssz.0, -p.1 + h);
+
+    cr.rectangle(p.0, p.1, sz.0, sz.1);
+    cr.clip();
+}
+
+pub fn circle_coords(r: f64, angle: f64) -> (f64, f64) {
+    (angle.cos() * r, angle.sin() * r)
+}
+
+pub fn move_to_circle(cr: &cairo::Context, r: f64, angle: f64) {
+    let (x, y) = circle_coords(r, angle);
+    cr.move_to(x, y)
+}
+
+pub fn rel_move_to_circle(cr: &cairo::Context, r: f64, angle: f64) {
+    let (x, y) = circle_coords(r, angle);
+    cr.rel_move_to(x, y)
+}
+
+pub fn line_to_circle(cr: &cairo::Context, r: f64, angle: f64) {
+    let (x, y) = circle_coords(r, angle);
+    cr.line_to(x, y)
+}
+
+pub fn stroke_arc_sides(cr: &cairo::Context, r: f64, angle_mid: f64, angle_sides: f64) {
+    let (cx, cy) = cr.get_current_point();
+
+    rel_move_to_circle(cr, r, angle_mid + angle_sides);
+    cr.line_to(cx, cy);
+    line_to_circle(cr, r, angle_mid - angle_sides);
+    cr.stroke();
+}
+
 pub struct Graph {
     pub width: f64,
     pub height: f64,
