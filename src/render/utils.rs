@@ -177,3 +177,47 @@ impl Graph {
         data_now
     }
 }
+
+pub struct GraphAndText<'a> {
+    font: &'a Font<'a>,
+    pub graph: Graph,
+    pub unit: &'a str,
+    pub precision: usize,
+    pub graph_x: f64,
+}
+
+impl<'a> GraphAndText<'a> {
+    pub fn new(font: &'a Font<'a>) -> Self {
+        Self {
+            font,
+            graph: Graph::default(),
+            unit: "",
+            precision: 0,
+            graph_x: 0.0,
+        }
+    }
+
+    pub fn draw<T: Iterator<Item = u64>, D: Iterator<Item = f64>>(
+        &self,
+        cr: &cairo::Context,
+        iter_time: &mut T,
+        iter_data: &mut D,
+    ) {
+        let (cx, cy) = cr.get_current_point();
+
+        cr.move_to(cx + self.graph_x, cy);
+        let value_now = self.graph.draw(cr, iter_time, iter_data);
+
+        // text
+        let layout = self.font.layout(
+            cr,
+            &format!("{:.*}{}", self.precision, value_now, self.unit),
+        );
+
+        cr.move_to(
+            cx,
+            cy + (self.graph.height - layout.get_pixel_size().1 as f64) / 2.0,
+        );
+        self.font.draw_layout(cr, &layout);
+    }
+}
