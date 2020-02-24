@@ -1,6 +1,7 @@
 pub mod utils;
 
 use crate::*;
+use approx::abs_diff_ne;
 
 /// data source type and info
 #[derive(Debug)]
@@ -80,13 +81,15 @@ impl<'b> HudContext<'b> {
 pub struct Context<'a, 'b> {
     cfg: &'a config::Config,
     hudrenderer: Option<Box<dyn HudRenderer>>,
-    hudctx: HudContext<'b>,
+    pub hudctx: HudContext<'b>,
 }
 
 /// HUD renderer trait
 pub trait HudRenderer {
     /// called when the data source has changed, also called directly after constructor
     fn data_changed(&mut self, ctx: &render::HudContext);
+    /// called when dpi or spi has changed
+    fn scale_changed(&mut self, ctx: &render::HudContext);
     /// render current state to cairo context
     fn render(&self, ctx: &render::HudContext, cr: &cairo::Context) -> Result<(), Error>;
     /// plot dataset using matplotlib, if available
@@ -172,7 +175,15 @@ impl<'a, 'b> Context<'a, 'b> {
         self.hudctx.get_dataset()
     }
 
-    pub fn render(&self, cr: &cairo::Context) -> Result<(), Error> {
+    pub fn render(&mut self, cr: &cairo::Context) -> Result<(), Error> {
+        let ssz = render::utils::surface_sz_user(cr);
+        let dpi = 160.0 * (ssz.0 / 1920.0);
+        let spi = dpi;
+        let scale_changed =
+            abs_diff_ne!(self.hudctx.dpi, dpi) || abs_diff_ne!(self.hudctx.spi, spi);
+        self.hudctx.dpi = dpi;
+        self.hudctx.spi = dpi;
+
         // clear
         cr.save();
         cr.set_source_rgba(0., 0., 0., 0.);
@@ -180,7 +191,11 @@ impl<'a, 'b> Context<'a, 'b> {
         cr.paint();
         cr.restore();
 
-        if let Some(renderer) = &self.hudrenderer {
+        if let Some(renderer) = &mut self.hudrenderer {
+            if scale_changed {
+                renderer.scale_changed(&self.hudctx);
+            }
+
             cr.save();
             let hudret = renderer.render(&self.hudctx, cr);
             cr.restore();
@@ -189,6 +204,56 @@ impl<'a, 'b> Context<'a, 'b> {
 
         Ok(())
     }
+
+    /*
+    extern "C" fn render_hud_cb(
+        context: *mut ::std::os::raw::c_void,
+        buf: *mut u8,
+        w: crate::bindings::size_t,
+        h: crate::bindings::size_t,
+    ) -> ::std::os::raw::c_int {
+        let renderctx = unsafe { (context as *mut Self).as_mut().unwrap() };
+
+        let surface = cairo::ImageSurface::create_for_data(
+            unsafe { std::slice::from_raw_parts_mut(buf, (w * h * 4) as usize) },
+            cairo::Format::ARgb32,
+            w as i32,
+            h as i32,
+            w as i32 * 4,
+        )
+        .expect("Can't create surface");
+        let cr = cairo::Context::new(&surface);
+        cr.set_antialias(cairo::Antialias::Best);
+        renderctx.render(&cr).expect("can't render");
+        surface.flush();
+
+        0
+    }
+
+    pub fn render_video(&mut self, dst: &str) -> Result<(), Error> {
+        let dst = std::ffi::CString::new(dst)?;
+        let src = std::ffi::CString::new(
+            self.cfg
+                .video
+                .filename
+                .as_ref()
+                .ok_or(Error::NoVideoFile)?
+                .as_str(),
+        )?;
+        let rc = unsafe {
+            crate::bindings::sensoreval_render_native_render_video(
+                dst.as_ptr(),
+                src.as_ptr(),
+                Some(Self::render_hud_cb),
+                self as *mut Self as *mut ::std::os::raw::c_void,
+            )
+        };
+        if rc == 0 {
+            Ok(())
+        } else {
+            Err(Error::from(rc))
+        }
+    }*/
 
     pub fn plot(&self) -> Result<(), Error> {
         if let Some(renderer) = &self.hudrenderer {

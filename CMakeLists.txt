@@ -21,6 +21,7 @@ pkg_check_modules(GOBJECT REQUIRED gobject-2.0)
 pkg_check_modules(CAIRO_GOBJECT REQUIRED cairo-gobject)
 pkg_check_modules(PANGO REQUIRED pango)
 pkg_check_modules(PANGOCAIRO REQUIRED pangocairo)
+pkg_check_modules(FFTW3 REQUIRED fftw3)
 
 # setup variables for rust
 set(RUST_SRC "${CMAKE_CURRENT_SOURCE_DIR}/src")
@@ -40,7 +41,7 @@ set(RUST_LIB "${RUST_TARGET_DIR}/libsensoreval.a")
 add_custom_command(
   OUTPUT "${RUST_LIB}"
   DEPENDS ${RUST_DEPS}
-  COMMAND ${Cargo_EXECUTABLE} build ${RUST_BUILD_FLAGS}
+  COMMAND unset DESTDIR && ${Cargo_EXECUTABLE} build ${RUST_BUILD_FLAGS}
   WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
 )
 add_custom_target(sensoreval_lib DEPENDS "${RUST_LIB}")
@@ -58,6 +59,7 @@ target_link_libraries(sensoreval INTERFACE
     ${CAIRO_GOBJECT_LIBRARIES}
     ${PANGO_LIBRARIES}
     ${PANGOCAIRO_LIBRARIES}
+    gfortran
 )
 
 add_compile_options(
@@ -68,11 +70,13 @@ add_compile_options(
 )
 
 add_subdirectory(dataviewer)
+add_subdirectory(videorenderer)
 
 install(TARGETS
     usfs_calc_quat
     usfs_reader
     dataviewer
+    videorenderer
 )
 
 function(paths_to_names var)

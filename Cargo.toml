@@ -7,6 +7,11 @@ edition = "2018"
 [lib]
 crate-type = ["staticlib", "rlib"]
 
+#[build-dependencies]
+#cc = "1.0"
+#bindgen = "0.53"
+#pkg-config = "0.3"
+
 [dependencies]
 serde = { version = "1.0", features = ["derive"] }
 serde-pickle = "0.6"
@@ -21,15 +26,18 @@ cairo-rs = { version = "0.8", features = ["png"] }
 ndarray = {version = "0.13", features = ["serde"] }
 ndarray-linalg = "0.12"
 rand = "0.7"
-eom = { git = "https://github.com/M1cha/eom", branch = "master" }
+eom = { git = "https://github.com/M1cha/eom", branch = "master", features=["static"] }
 clap = "2.33"
 num-traits = "0.2"
 blas-src = { version = "*", features = ["openblas"] }
 lapack-src = { version = "*", features = ["openblas"] }
 openblas-src = { version = "*", features = ["static"] }
-
-[dev-dependencies]
-assert_approx_eq = "1.1"
+#opencv = "0.29"
+approx = "0.3"
+ffmpeg4-sys = "4.2"
 
 [profile.dev]
 opt-level = 1
+
+[profile.release]
+debug = 2

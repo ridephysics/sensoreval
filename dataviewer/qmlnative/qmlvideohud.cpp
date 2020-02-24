@@ -60,7 +60,7 @@ void QmlVideoHUD::paint(QPainter *painter)
     painter->drawImage(0, 0, *m_qimg);
 }
 
-void QmlVideoHUD::setSensorEvalCtx(const struct sensoreval_ctx *ctx) {
+void QmlVideoHUD::setSensorEvalCtx(struct sensoreval_ctx *ctx) {
     m_sectx = ctx;
     update();
 }

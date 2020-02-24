@@ -51,7 +51,7 @@ where
 
 #[cfg(test)]
 mod tests {
-    use assert_approx_eq::assert_approx_eq;
+    use approx::assert_abs_diff_eq;
     use ndarray::array;
 
     #[test]
@@ -76,14 +76,15 @@ mod tests {
     fn pymod() {
         assert_eq!(super::pymod(-5, 4), 3);
         assert_eq!(super::pymod(5, 2), 1);
-        assert_approx_eq!(super::pymod(3.14f64, 0.7f64), 0.34f64);
+        assert_abs_diff_eq!(super::pymod(3.14f64, 0.7f64), 0.34f64, epsilon = 1.0e-6);
     }
 
     #[test]
     fn normalize_angle() {
-        assert_approx_eq!(
+        assert_abs_diff_eq!(
             super::normalize_angle((1.0f64 - 359.0f64).to_radians()),
-            (2.0f64).to_radians()
+            (2.0f64).to_radians(),
+            epsilon = 1.0e-6
         );
     }
 }

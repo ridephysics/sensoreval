@@ -77,7 +77,7 @@ class Se(WestCommand):
 
             self.run_cmake(args)
             self.run_cmd([
-                'ninja', 'install'
+                'ninja', 'videorenderer'
             ], env=env)
             return
 

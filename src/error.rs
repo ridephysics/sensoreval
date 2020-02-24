@@ -5,6 +5,8 @@ pub enum Error {
     ExitStatus(std::process::ExitStatus),
     BinCode(bincode::Error),
     TomlDe(toml::de::Error),
+    NativeRet(std::os::raw::c_int),
+    NulError(std::ffi::NulError),
 
     NoDataSet,
     SampleNotFound,
@@ -15,6 +17,7 @@ pub enum Error {
     NoHudRenderer,
     InvalidArgument,
     FloatConversion,
+    NoVideoFile,
 }
 
 impl From<std::io::Error> for Error {
@@ -49,5 +52,19 @@ impl From<toml::de::Error> for Error {
     #[inline]
     fn from(e: toml::de::Error) -> Self {
         Error::TomlDe(e)
+    }
+}
+
+impl From<std::os::raw::c_int> for Error {
+    #[inline]
+    fn from(e: std::os::raw::c_int) -> Self {
+        Error::NativeRet(e)
+    }
+}
+
+impl From<std::ffi::NulError> for Error {
+    #[inline]
+    fn from(e: std::ffi::NulError) -> Self {
+        Error::NulError(e)
     }
 }

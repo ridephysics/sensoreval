@@ -1,4 +1,5 @@
 use crate::kalman::ukf::Functions;
+use crate::render::HudRenderer;
 use crate::*;
 use eom::traits::Scheme;
 use eom::traits::TimeEvolution;
@@ -182,14 +183,20 @@ impl<'a> kalman::sigma_points::Functions for StateFunctions<'a> {
 pub(crate) struct Pendulum {
     cfg: Config,
     est: Vec<ndarray::Array1<f64>>,
+    font: pango::FontDescription,
 }
 
 impl Pendulum {
-    pub fn new(_ctx: &render::HudContext, cfg: &Config) -> Self {
-        Self {
+    pub fn new(ctx: &render::HudContext, cfg: &Config) -> Self {
+        let mut o = Self {
             cfg: (*cfg).clone(),
             est: Vec::new(),
-        }
+            font: pango::FontDescription::new(),
+        };
+
+        o.scale_changed(ctx);
+
+        o
     }
 
     #[inline]
@@ -456,6 +463,12 @@ impl Pendulum {
 }
 
 impl render::HudRenderer for Pendulum {
+    fn scale_changed(&mut self, ctx: &render::HudContext) {
+        self.font.set_family("Archivo Black");
+        self.font
+            .set_absolute_size(ctx.sp2px(100.0) * f64::from(pango::SCALE));
+    }
+
     #[allow(non_snake_case)]
     fn data_changed(&mut self, ctx: &render::HudContext) {
         let samples = unwrap_opt_or!(ctx.get_dataset(), return);
@@ -537,16 +550,13 @@ impl render::HudRenderer for Pendulum {
         let dataset = ctx.get_dataset().unwrap();
         let est = &self.est[dataid];
 
-        let mut font = pango::FontDescription::new();
-        font.set_family("Archivo Black");
-        font.set_absolute_size(ctx.sp2px(100.0) * f64::from(pango::SCALE));
-        let mut utilfont = render::utils::Font::new(&font);
-        utilfont.line_width = 3.0;
+        let mut utilfont = render::utils::Font::new(&self.font);
+        utilfont.line_width = ctx.dp2px(3.0);
 
         // swingboat
         let ssz = render::utils::surface_sz_user(cr);
         let ppm = 30.0;
-        cr.move_to(ssz.0 - (15.0 * ppm), ssz.1 - 16.5 * ppm);
+        cr.move_to(ssz.0 - ctx.dp2px(15.0 * ppm), ssz.1 - ctx.dp2px(16.5 * ppm));
         self.draw_swingboat(ctx, cr, ppm, est[0]);
 
         let dataslice = &self.est[0..dataid];
@@ -601,6 +611,33 @@ impl render::HudRenderer for Pendulum {
             &mut DataIterator::new(dataset.iter().rev(), |data| data.time),
             &mut DataIterator::new(dataslice.iter().rev(), |data| Self::est_altitude(&data)),
         );
+
+        /*
+                {
+                    let deg = (est[0] * -1.0).to_degrees().round() as i64;
+                    let mut f = std::fs::File::open(format!("/tmp/renders/out_{}.png", deg)).unwrap();
+                    let surface = cairo::ImageSurface::create_from_png(&mut f).unwrap();
+
+                    cr.save();
+                    cr.set_source_surface(&surface, 0.0, ssz.1 - surface.get_height() as f64);
+                    cr.paint();
+                    cr.restore();
+                }
+        */
+
+        {
+            let mut f = std::fs::File::open("/tmp/arrow.png").unwrap();
+            let surface = cairo::ImageSurface::create_from_png(&mut f).unwrap();
+
+            cr.save();
+            cr.set_source_surface(
+                &surface,
+                graph_at.graph_x - surface.get_width() as f64,
+                ctx.dp2px(10.0),
+            );
+            cr.paint();
+            cr.restore();
+        }
 
         Ok(())
     }

@@ -14,18 +14,21 @@ pub extern "C" fn sensoreval_create<'a>(
     path_ptr: *const std::os::raw::c_char,
     islive: bool,
 ) -> *mut CContext<'a> {
-    let path = unwrap_res_or!(
-        unsafe { std::ffi::CStr::from_ptr(path_ptr) }.to_str(),
-        return std::ptr::null_mut()
-    );
+    let path = unwrap_res_or!(unsafe { std::ffi::CStr::from_ptr(path_ptr) }.to_str(), {
+        println!("invalid path");
+        return std::ptr::null_mut();
+    });
     let cfg = unwrap_res_or!(config::load(&path), return std::ptr::null_mut());
     let dataset = if islive {
         None
     } else {
-        Some(unwrap_res_or!(
-            datareader::read_all_samples_cfg(&cfg),
-            return std::ptr::null_mut()
-        ))
+        Some(match cfg.load_data() {
+            Ok(v) => v,
+            Err(e) => {
+                println!("can't read all samples: {:?}", e);
+                return std::ptr::null_mut();
+            }
+        })
     };
 
     let cctx_ptr = Box::into_raw(Box::new(CContext {
@@ -48,12 +51,12 @@ pub extern "C" fn sensoreval_destroy(cctx_ptr: *mut CContext) {
 
 #[no_mangle]
 pub extern "C" fn sensoreval_render(
-    cctx_ptr: *const CContext,
+    cctx_ptr: *mut CContext,
     cr_ptr: *mut cairo_sys::cairo_t,
 ) -> std::os::raw::c_int {
-    let cctx = unwrap_opt_or!(unsafe { cctx_ptr.as_ref() }, return -1);
+    let cctx = unwrap_opt_or!(unsafe { cctx_ptr.as_mut() }, return -1);
     let cr = unsafe { cairo::Context::from_raw_borrow(cr_ptr) };
-    let renderctx = unwrap_opt_or!(&cctx.renderctx, return -2);
+    let renderctx = unwrap_opt_or!(&mut cctx.renderctx, return -2);
 
     unwrap_res_or!(renderctx.render(&cr), return -3);
 

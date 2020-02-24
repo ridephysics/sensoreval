@@ -1,3 +1,13 @@
+#![allow(dead_code)]
+
+/*mod bindings {
+    #![allow(non_upper_case_globals)]
+    #![allow(non_camel_case_types)]
+    #![allow(non_snake_case)]
+
+    include!(concat!(env!("OUT_DIR"), "/bindings_render_native.rs"));
+}*/
+
 macro_rules! unwrap_res_or {
     ($opt:expr, $default:expr) => {
         match $opt {
@@ -33,6 +43,7 @@ mod data;
 mod capi;
 mod datareader;
 mod error;
+pub mod ffmpeg;
 mod hudrenderers;
 mod kalman;
 mod math;
