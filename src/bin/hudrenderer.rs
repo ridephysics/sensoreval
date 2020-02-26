@@ -2,24 +2,7 @@ use sensoreval::*;
 //use std::ops::DerefMut;
 //use opencv::prelude::Vector;
 
-fn get_vaapi_format(
-    _codec: &mut ffmpeg::AVCodecContext,
-    formats: &[ffmpeg::AVPixelFormat],
-) -> ffmpeg::AVPixelFormat {
-    for format in formats {
-        if *format == ffmpeg::AVPixelFormat::AV_PIX_FMT_VAAPI {
-            return *format;
-        }
-    }
-
-    eprintln!("Unable to decode this file using VA-API.");
-    ffmpeg::AVPixelFormat::AV_PIX_FMT_NONE
-}
-
 fn open_input_file(filename: &str) -> (ffmpeg::AVFormatContext, usize, ffmpeg::AVCodecContext) {
-    let hw_device =
-        ffmpeg::AVBuffer::new_hw_device(ffmpeg::AVHWDeviceType::AV_HWDEVICE_TYPE_VAAPI).unwrap();
-
     let mut ifmt_ctx = ffmpeg::AVFormatContext::new_input(filename).unwrap();
     ifmt_ctx.find_stream_info().unwrap();
     let (video_stream, decoder) = ifmt_ctx
@@ -31,11 +14,58 @@ fn open_input_file(filename: &str) -> (ffmpeg::AVFormatContext, usize, ffmpeg::A
     decoder_ctx
         .parameters_to_context(&video.codecpar())
         .unwrap();
-    decoder_ctx.set_hw_device_ctx(hw_device).unwrap();
-    decoder_ctx.set_get_format(Some(get_vaapi_format));
     decoder_ctx.open2(&decoder).unwrap();
 
     (ifmt_ctx, video_stream, decoder_ctx)
+}
+
+struct FilterContext {
+    graph: ffmpeg::AVFilterGraph,
+    buffersrc_id: usize,
+    buffersink_id: usize,
+}
+
+fn init_filters(
+    video_stream: usize,
+    ifmt_ctx: &ffmpeg::AVFormatContext,
+    decoder_ctx: &ffmpeg::AVCodecContext,
+    filters_descr: &str,
+) -> Result<FilterContext, ffmpeg::Error> {
+    let buffersrc = ffmpeg::AVFilter::by_name("buffer")?;
+    let buffersink = ffmpeg::AVFilter::by_name("buffersink")?;
+    let mut outputs = ffmpeg::AVFilterInOut::new();
+    let mut inputs = ffmpeg::AVFilterInOut::new();
+    let mut filter_graph = ffmpeg::AVFilterGraph::new()?;
+
+    let time_base = ifmt_ctx.get_stream(video_stream)?.get_time_base();
+    let sample_aspect_ratio = decoder_ctx.get_sample_aspect_ratio();
+    let buffersrc_id = filter_graph.create_filter(
+        &buffersrc,
+        "in",
+        Some(&format!(
+            "video_size={}x{}:pix_fmt={}:time_base={}/{}:pixel_aspect={}/{}",
+            decoder_ctx.width(),
+            decoder_ctx.height(),
+            decoder_ctx.pix_fmt() as std::os::raw::c_int,
+            time_base.num,
+            time_base.den,
+            sample_aspect_ratio.num,
+            sample_aspect_ratio.den
+        )),
+    )?;
+    outputs.append("in", buffersrc_id, 0);
+
+    let buffersink_id = filter_graph.create_filter(&buffersink, "out", None)?;
+    inputs.append("out", buffersink_id, 0);
+
+    filter_graph.parse_ptr(filters_descr, &inputs, &outputs)?;
+    filter_graph.config()?;
+
+    Ok(FilterContext {
+        graph: filter_graph,
+        buffersrc_id,
+        buffersink_id,
+    })
 }
 
 struct FFMpegContext {
@@ -46,56 +76,98 @@ struct FFMpegContext {
     encoder_ctx: ffmpeg::AVCodecContext,
     ifmt_ctx: ffmpeg::AVFormatContext,
     ofmt_ctx: ffmpeg::AVFormatContext,
+    filterctx: FilterContext,
 }
 
-fn encode_write(ctx: &mut FFMpegContext, frame: Option<&ffmpeg::AVFrame>) {
+fn encode_write(
+    ctx: &mut FFMpegContext,
+    frame: Option<&ffmpeg::AVFrame>,
+) -> Result<(), ffmpeg::Error> {
     let mut enc_pkt = ffmpeg::AVPacket::default();
 
-    ctx.encoder_ctx.send_frame(frame).unwrap();
+    ctx.encoder_ctx.send_frame(frame)?;
 
     loop {
-        if !ctx.encoder_ctx.receive_packet(&mut enc_pkt).unwrap() {
-            break;
-        }
+        let res = ctx.encoder_ctx.receive_packet(&mut enc_pkt);
+        match res {
+            Err(ffmpeg::Error::AV(e))
+                if e == ffmpeg::AVERROR_EOF || e == ffmpeg::AVERROR(ffmpeg::EAGAIN) =>
+            {
+                break;
+            }
+            _ => res?,
+        };
 
         enc_pkt.set_stream_index(0);
         enc_pkt.rescale_ts(
-            ctx.ifmt_ctx
-                .get_stream(ctx.video_stream)
-                .unwrap()
-                .time_base(),
-            ctx.ofmt_ctx.get_stream(0).unwrap().time_base(),
+            ctx.ifmt_ctx.get_stream(ctx.video_stream)?.time_base(),
+            ctx.ofmt_ctx.get_stream(0)?.time_base(),
         );
-        ctx.ofmt_ctx.interleaved_write_frame(&mut enc_pkt).unwrap();
+        ctx.ofmt_ctx.interleaved_write_frame(&mut enc_pkt)?;
     }
+
+    Ok(())
 }
 
-fn dec_enc(ctx: &mut FFMpegContext, pkt: &ffmpeg::AVPacket) {
-    ctx.decoder_ctx.send_packet(pkt).unwrap();
+fn dec_enc(
+    ctx: &mut FFMpegContext,
+    pkt: &ffmpeg::AVPacket,
+    frame: &mut ffmpeg::AVFrame,
+) -> Result<(), ffmpeg::Error> {
+    ctx.decoder_ctx.send_packet(pkt)?;
 
     loop {
-        let mut frame = ffmpeg::AVFrame::new().unwrap();
-        if !ctx.decoder_ctx.receive_frame(&mut frame).unwrap() {
-            break;
-        }
+        let res = ctx.decoder_ctx.receive_frame(frame);
+        match res {
+            Err(ffmpeg::Error::AV(e))
+                if e == ffmpeg::AVERROR_EOF || e == ffmpeg::AVERROR(ffmpeg::EAGAIN) =>
+            {
+                break;
+            }
+            _ => res?,
+        };
 
         if !ctx.initialized {
             ctx.encoder_ctx
-                .init_encoder_from_decoder(&mut ctx.decoder_ctx, &ctx.enc_codec)
-                .unwrap();
-            ctx.encoder_ctx.open2(&ctx.enc_codec).unwrap();
+                .init_encoder_from_decoder(&mut ctx.decoder_ctx, &ctx.enc_codec)?;
+            ctx.encoder_ctx.open2(&ctx.enc_codec)?;
 
-            let mut ost = ctx.ofmt_ctx.new_stream(&ctx.enc_codec).unwrap();
+            let mut ost = ctx.ofmt_ctx.new_stream(&ctx.enc_codec)?;
             ost.set_time_base(ctx.encoder_ctx.get_time_base());
-            ost.codecpar().set_from_context(&ctx.encoder_ctx).unwrap();
+            ost.codecpar().set_from_context(&ctx.encoder_ctx)?;
 
-            ctx.ofmt_ctx.write_header().unwrap();
+            ctx.ofmt_ctx.write_header()?;
 
             ctx.initialized = true;
         }
 
-        encode_write(ctx, Some(&frame));
+        frame.set_pts(frame.get_best_effort_timestamp());
+
+        ctx.filterctx.graph.buffersrc_add_frame_flags(
+            ctx.filterctx.buffersrc_id,
+            frame,
+            ffmpeg::AV_BUFFERSRC_FLAG_KEEP_REF as std::os::raw::c_int,
+        )?;
+
+        loop {
+            let res = ctx
+                .filterctx
+                .graph
+                .buffersink_get_frame(ctx.filterctx.buffersink_id, frame);
+            match res {
+                Err(ffmpeg::Error::AV(e))
+                    if e == ffmpeg::AVERROR_EOF || e == ffmpeg::AVERROR(ffmpeg::EAGAIN) =>
+                {
+                    break;
+                }
+                _ => res?,
+            };
+
+            encode_write(ctx, Some(frame))?;
+        }
     }
+
+    Ok(())
 }
 
 fn main() {
@@ -136,32 +208,17 @@ fn main() {
             // plot
             //renderctx.plot().expect("can't plot");
         }
-        /*"frame" => {
-            renderctx.set_ts(0).expect("can't set timestamp");
-
-            // render
-            let surface = cairo::ImageSurface::create(cairo::Format::ARgb32, 2720, 1520)
-                .expect("Can't create surface");
-            let cr = cairo::Context::new(&surface);
-            cr.set_antialias(cairo::Antialias::Best);
-            renderctx.render(&cr).expect("can't render");
-            surface.flush();
-            let mut file = std::fs::File::create("/tmp/out.png").expect("can't create png file");
-            surface
-                .write_to_png(&mut file)
-                .expect("can't write png file");
-            drop(file);
-        }*/
         "video" => {
             let filename_in = &cfg.video.filename.as_ref().unwrap();
             let filename_out = "/home/m1cha/out.mp4";
             let (ifmt_ctx, video_stream, decoder_ctx) = open_input_file(filename_in);
-            let enc_codec = ffmpeg::AVCodec::by_name("h264_vaapi").unwrap();
+            let enc_codec = ffmpeg::AVCodec::by_name("libx264").unwrap();
             let mut ofmt_ctx = ffmpeg::AVFormatContext::new_output(filename_out).unwrap();
             let encoder_ctx = ffmpeg::AVCodecContext::new(&enc_codec).unwrap();
             ofmt_ctx
                 .set_pb(ffmpeg::AVIOContext::new(filename_out, ffmpeg::AVIO_FLAG_WRITE).unwrap());
 
+            let filterctx = init_filters(video_stream, &ifmt_ctx, &decoder_ctx, "negate").unwrap();
             let mut ctx = FFMpegContext {
                 initialized: false,
                 enc_codec,
@@ -170,180 +227,33 @@ fn main() {
                 encoder_ctx,
                 ifmt_ctx,
                 ofmt_ctx,
+                filterctx,
             };
 
+            let mut frame = ffmpeg::AVFrame::new().unwrap();
             let mut dec_pkt = ffmpeg::AVPacket::empty();
-            loop {
-                if !ctx.ifmt_ctx.read_frame(&mut dec_pkt).unwrap() {
-                    break;
-                }
+            for _ in 0..100 {
+                let res = ctx.ifmt_ctx.read_frame(&mut dec_pkt);
+                match res {
+                    Err(ffmpeg::Error::AV(e)) if e == ffmpeg::AVERROR_EOF => {
+                        break;
+                    }
+                    _ => res.unwrap(),
+                };
 
                 if dec_pkt.stream_index().unwrap() == video_stream {
-                    dec_enc(&mut ctx, &dec_pkt);
+                    dec_enc(&mut ctx, &dec_pkt, &mut frame).unwrap();
                 }
             }
 
             // flush decoder
-            dec_pkt.null_data();
-            dec_enc(&mut ctx, &dec_pkt);
+            dec_pkt = ffmpeg::AVPacket::default();
+            dec_enc(&mut ctx, &dec_pkt, &mut frame).unwrap();
 
             // flush encoder
-            encode_write(&mut ctx, None);
+            encode_write(&mut ctx, None).unwrap();
 
             ctx.ofmt_ctx.write_trailer().unwrap();
-
-            /*            let now = std::time::Instant::now();
-            if false {
-                renderctx.render_video("/tmp/out.mkv").unwrap();
-            } else {
-                let window = "video capture";
-                opencv::highgui::named_window(window, 1).unwrap();
-
-                // open videofile
-                let mut cap = opencv::videoio::VideoCapture::new_from_file_with_backend(
-                    &format!("{}", filename.unwrap()),
-                    opencv::videoio::CAP_ANY,
-                )
-                .unwrap();
-                let opened = opencv::videoio::VideoCapture::is_opened(&cap).unwrap();
-                if !opened {
-                    panic!("Unable to open default camera!");
-                }
-
-                // get basic video info
-                let frame_width = cap
-                    .get(opencv::videoio::CAP_PROP_FRAME_WIDTH)
-                    .unwrap()
-                    .ceil() as i32;
-                let frame_height = cap
-                    .get(opencv::videoio::CAP_PROP_FRAME_HEIGHT)
-                    .unwrap()
-                    .ceil() as i32;
-                let fps = cap.get(opencv::videoio::CAP_PROP_FPS).unwrap();
-                let fourcc = cap.get(opencv::videoio::CAP_PROP_FOURCC).unwrap() as i32;
-
-                let mut surface =
-                    cairo::ImageSurface::create(cairo::Format::ARgb32, frame_width, frame_height)
-                        .expect("Can't create surface");
-                let mut hud = opencv::core::Mat::new_rows_cols_with_data(
-                    frame_height,
-                    frame_width,
-                    opencv::core::CV_8UC4,
-                    unsafe {
-                        &mut *(surface.get_data().unwrap().as_mut_ptr()
-                            as *mut std::os::raw::c_void)
-                    },
-                    opencv::core::Mat_AUTO_STEP,
-                )
-                .unwrap();
-
-                // create writer
-                let mut videowriter = opencv::videoio::VideoWriter::new(
-                    "/tmp/out.mkv",
-                    fourcc,
-                    fps,
-                    opencv::core::Size::new(frame_width, frame_height),
-                    true,
-                )
-                .unwrap();
-
-                cap.set(
-                    opencv::videoio::CAP_PROP_POS_MSEC,
-                    cfg.video.startoff as f64,
-                )
-                .unwrap();
-
-                let now = std::time::Instant::now();
-                loop {
-                    let msec = cap.get(opencv::videoio::CAP_PROP_POS_MSEC).unwrap();
-                    let usec = (msec * 1000.0).round() as u64;
-                    if let Some(endoff) = cfg.video.endoff {
-                        if usec > endoff * 1000 {
-                            break;
-                        }
-                    }
-
-                    // read frame
-                    //let now = std::time::Instant::now();
-                    let mut frame = opencv::core::Mat::default().unwrap();
-                    cap.read(&mut frame).unwrap();
-                    //println!("READ: {}", now.elapsed().as_millis());
-                    assert_eq!(frame.rows().unwrap(), frame_height);
-                    assert_eq!(frame.cols().unwrap(), frame_width);
-
-                    // render HUD
-                    {
-                        renderctx.set_ts(usec).expect("can't set timestamp");
-
-                        let cr = cairo::Context::new(&surface);
-                        cr.set_antialias(cairo::Antialias::Best);
-                        renderctx.render(&cr).expect("can't render");
-                        surface.flush();
-                    }
-
-                    let mut hud_bgr = unsafe{opencv::core::Mat::new_rows_cols(frame_height, frame_width, opencv::core::CV_8UC3)}.unwrap();
-                    let mut hud_a = unsafe{opencv::core::Mat::new_rows_cols(frame_height, frame_width, opencv::core::CV_8UC1)}.unwrap();
-                    let mut dst = opencv::types::VectorOfMat::new();
-                    dst.push(hud_bgr);
-                    dst.push(hud_a);
-                    let mut from_to = opencv::types::VectorOfint::new();
-                    from_to.push(0);
-                    from_to.push(0);
-                    from_to.push(1);
-                    from_to.push(1);
-                    from_to.push(2);
-                    from_to.push(2);
-                    from_to.push(3);
-                    from_to.push(3);
-                    opencv::core::mix_channels(&hud, &mut dst, &from_to).unwrap();
-                    let mut hud_bgr = dst.get(0).unwrap();
-                    let mut hud_a = dst.get(1).unwrap();
-                    hud_a.add_scalar(hud_a.to_mat(), -255, );
-
-                    //opencv::imgproc::blend_linear(&frame, &hud, &1.0, &1.0, &vec![0, 1, 2, 3]).unwrap();
-
-                    /*
-                    #[inline]
-                    fn culma(c: u8, a: f64) -> u8 {
-                        let cn = (c as f64) * (1.0f64 - a);
-                        cn.round() as u8
-                    }
-
-                    //unsafe {frame.convert_to(&mut frame, 0, 0.0, 0.0)};
-
-
-                    let now = std::time::Instant::now();
-
-                    let surface_data = surface.get_data().unwrap();
-                    let framedata: &mut [opencv::core::Vec3b] = frame.data_typed_mut().unwrap();
-
-                    // blend HUD on video frame
-                    for k in 0..(frame_width * frame_height) as usize {
-                        let px_frame = &mut framedata[k];
-                        let px_cairo = &surface_data[k * 4..k * 4 + 4];
-                        //let a = 1.0f64 / 255.0f64 * (px_cairo[3] as f64);
-
-                        px_frame[0] = px_cairo[0] + ((px_frame[0] as f64 * (255 - px_cairo[3]) as f64) / 255.0).round() as u8;
-                        px_frame[1] = px_cairo[1] + ((px_frame[1] as f64 * (255 - px_cairo[3]) as f64) / 255.0).round() as u8;
-                        px_frame[2] = px_cairo[2] + ((px_frame[2] as f64 * (255 - px_cairo[3]) as f64) / 255.0).round() as u8;
-                    }
-
-                    println!("CONVERT: {}", now.elapsed().as_millis());*/
-
-                    // write
-                    //videowriter.write(&hud).unwrap();
-
-                    opencv::highgui::imshow(window, &hud_a).unwrap();
-                    if opencv::highgui::wait_key(10).unwrap() > 0 {
-                        break;
-                    }
-
-                    //break;
-                }
-                println!("TIME: {}", now.elapsed().as_millis());
-            }
-            println!("TOTAL: {}", now.elapsed().as_millis());
-            */
         }
         mode => {
             eprintln!("invalid mode: {}", mode);

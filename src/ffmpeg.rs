@@ -2,12 +2,35 @@ pub use ffmpeg4_sys::AVHWDeviceType;
 pub use ffmpeg4_sys::AVMediaType;
 pub use ffmpeg4_sys::AVPixelFormat;
 pub use ffmpeg4_sys::AVRational;
+pub use ffmpeg4_sys::AVERROR;
+pub use ffmpeg4_sys::AVERROR_EOF;
 pub use ffmpeg4_sys::AVIO_FLAG_READ;
 pub use ffmpeg4_sys::AVIO_FLAG_WRITE;
+pub use ffmpeg4_sys::AV_BUFFERSRC_FLAG_KEEP_REF;
+pub use ffmpeg4_sys::EAGAIN;
 
-#[derive(Debug)]
 pub struct AVError {
     pub code: std::os::raw::c_int,
+}
+
+impl std::fmt::Debug for AVError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let mut v = Vec::with_capacity(ffmpeg4_sys::AV_ERROR_MAX_STRING_SIZE);
+        let ptr = v.as_mut_ptr();
+        let rc = unsafe { ffmpeg4_sys::av_strerror(self.code, ptr, v.capacity()) };
+        if rc == 0 {
+            let cstr = unsafe { std::ffi::CStr::from_ptr(ptr) };
+            write!(f, "AVError({})", cstr.to_str().unwrap())
+        } else {
+            write!(f, "AVError({})", self.code)
+        }
+    }
+}
+
+impl PartialEq<std::os::raw::c_int> for AVError {
+    fn eq(&self, other: &std::os::raw::c_int) -> bool {
+        &self.code == other
+    }
 }
 
 impl From<std::os::raw::c_int> for AVError {
@@ -22,13 +45,18 @@ pub enum Error {
     Nul(std::ffi::NulError),
     StreamNotFound,
     NullReturnValue,
+    InvalidPacket,
 }
 
-impl From<AVError> for Error {
-    fn from(e: AVError) -> Self {
-        Self::AV(e)
+/*impl std::fmt::Debug for Error {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Error::AV(e) => write!(),
+            _ =>
+        }
+        write!(f, "Point {{ x: {}, y: {} }}", self.x, self.y)
     }
-}
+}*/
 
 impl From<std::ffi::NulError> for Error {
     fn from(e: std::ffi::NulError) -> Self {
@@ -193,18 +221,16 @@ impl AVFormatContext {
         ptr.pb = pb.into_raw();
     }
 
-    pub fn read_frame(&mut self, pkt: &mut AVPacket) -> Result<bool, Error> {
+    pub fn read_frame(&mut self, pkt: &mut AVPacket) -> Result<(), Error> {
         assert!(!self.ptr.is_null());
         assert!(!pkt.ptr.is_null());
 
         pkt.invalidate();
 
         let rc = unsafe { ffmpeg4_sys::av_read_frame(self.ptr, pkt.ptr) };
-        if rc == ffmpeg4_sys::AVERROR_EOF {
-            Ok(false)
-        } else if rc == 0 {
+        if rc == 0 {
             pkt.valid = true;
-            Ok(true)
+            Ok(())
         } else {
             Err(Error::AV(rc.into()))
         }
@@ -267,7 +293,6 @@ impl AVCodec {
         if ptr.is_null() {
             Err(Error::NullReturnValue)
         } else {
-            assert!(!ptr.is_null());
             Ok(Self { ptr })
         }
     }
@@ -304,6 +329,11 @@ impl<'a> AVStream<'a> {
 
         let ptr = unsafe { &mut *(self.ptr) };
         ptr.time_base = time_base;
+    }
+
+    pub fn get_time_base(&self) -> AVRational {
+        assert!(!self.ptr.is_null());
+        unsafe { &*(self.ptr) }.time_base
     }
 }
 
@@ -395,14 +425,8 @@ impl AVCodecContext {
         let raw_encoder = unsafe { &mut *(self.ptr) };
         let raw_decoder = unsafe { &mut *(decoder.ptr) };
 
-        let hw_frames_ctx = unsafe { ffmpeg4_sys::av_buffer_ref(raw_decoder.hw_frames_ctx) };
-        if hw_frames_ctx.is_null() {
-            return Err(Error::NullReturnValue);
-        }
-
-        raw_encoder.hw_frames_ctx = hw_frames_ctx;
         raw_encoder.time_base = unsafe { ffmpeg4_sys::av_inv_q(raw_decoder.framerate) };
-        raw_encoder.pix_fmt = ffmpeg4_sys::AVPixelFormat::AV_PIX_FMT_VAAPI;
+        raw_encoder.pix_fmt = raw_decoder.pix_fmt;
         raw_encoder.width = raw_decoder.width;
         raw_encoder.height = raw_decoder.height;
 
@@ -467,7 +491,10 @@ impl AVCodecContext {
     pub fn send_packet(&mut self, pkt: &AVPacket) -> Result<(), Error> {
         assert!(!self.ptr.is_null());
         assert!(!pkt.ptr.is_null());
-        assert!(pkt.valid);
+
+        if !pkt.valid {
+            return Err(Error::InvalidPacket);
+        }
 
         let rc = unsafe { ffmpeg4_sys::avcodec_send_packet(self.ptr, pkt.ptr) };
         if rc != 0 {
@@ -477,29 +504,28 @@ impl AVCodecContext {
         }
     }
 
-    pub fn receive_packet(&mut self, pkt: &mut AVPacket) -> Result<bool, Error> {
+    pub fn receive_packet(&mut self, pkt: &mut AVPacket) -> Result<(), Error> {
         assert!(!self.ptr.is_null());
         assert!(!pkt.ptr.is_null());
 
         let rc = unsafe { ffmpeg4_sys::avcodec_receive_packet(self.ptr, pkt.ptr) };
-        if rc == ffmpeg4_sys::AVERROR(ffmpeg4_sys::EAGAIN) || rc == ffmpeg4_sys::AVERROR_EOF {
-            Ok(false)
-        } else if rc == 0 {
-            Ok(true)
+        if rc == 0 {
+            Ok(())
         } else {
             Err(Error::AV(rc.into()))
         }
     }
 
-    pub fn receive_frame(&mut self, frame: &mut AVFrame) -> Result<bool, Error> {
+    pub fn receive_frame(&mut self, frame: &mut AVFrame) -> Result<(), Error> {
         assert!(!self.ptr.is_null());
         assert!(!frame.ptr.is_null());
 
+        frame.unref_data();
+
         let rc = unsafe { ffmpeg4_sys::avcodec_receive_frame(self.ptr, frame.ptr) };
-        if rc == ffmpeg4_sys::AVERROR(ffmpeg4_sys::EAGAIN) || rc == ffmpeg4_sys::AVERROR_EOF {
-            Ok(false)
-        } else if rc == 0 {
-            Ok(true)
+        if rc == 0 {
+            frame.refed = true;
+            Ok(())
         } else {
             Err(Error::AV(rc.into()))
         }
@@ -527,6 +553,26 @@ impl AVCodecContext {
     pub fn get_time_base(&self) -> AVRational {
         assert!(!self.ptr.is_null());
         unsafe { &*(self.ptr) }.time_base
+    }
+
+    pub fn width(&self) -> std::os::raw::c_int {
+        assert!(!self.ptr.is_null());
+        unsafe { &*(self.ptr) }.width
+    }
+
+    pub fn height(&self) -> std::os::raw::c_int {
+        assert!(!self.ptr.is_null());
+        unsafe { &*(self.ptr) }.height
+    }
+
+    pub fn pix_fmt(&self) -> ffmpeg4_sys::AVPixelFormat {
+        assert!(!self.ptr.is_null());
+        unsafe { &*(self.ptr) }.pix_fmt
+    }
+
+    pub fn get_sample_aspect_ratio(&self) -> AVRational {
+        assert!(!self.ptr.is_null());
+        unsafe { &*(self.ptr) }.sample_aspect_ratio
     }
 }
 
@@ -613,7 +659,7 @@ impl Drop for AVPacket {
 
 impl AVPacket {
     pub fn empty() -> Self {
-        let raw_box = Box::new(unsafe { std::mem::MaybeUninit::zeroed().assume_init() });
+        let raw_box = Box::new(unsafe { std::mem::zeroed() });
         Self {
             ptr: Box::into_raw(raw_box),
             valid: false,
@@ -626,14 +672,6 @@ impl AVPacket {
             unsafe { ffmpeg4_sys::av_packet_unref(self.ptr) }
             self.valid = false;
         }
-    }
-
-    pub fn null_data(&mut self) {
-        assert!(!self.ptr.is_null());
-
-        self.invalidate();
-        unsafe { ffmpeg4_sys::av_init_packet(self.ptr) };
-        self.valid = true;
     }
 
     pub fn stream_index(&self) -> Option<usize> {
@@ -659,6 +697,7 @@ impl AVPacket {
 
 pub struct AVFrame {
     ptr: *mut ffmpeg4_sys::AVFrame,
+    refed: bool,
 }
 
 impl AVFrame {
@@ -667,8 +706,30 @@ impl AVFrame {
         if ptr.is_null() {
             Err(Error::NullReturnValue)
         } else {
-            Ok(AVFrame { ptr })
+            Ok(AVFrame { ptr, refed: false })
         }
+    }
+
+    fn unref_data(&mut self) {
+        assert!(!self.ptr.is_null());
+
+        if self.refed {
+            unsafe { ffmpeg4_sys::av_frame_unref(self.ptr) };
+        }
+    }
+
+    pub fn get_best_effort_timestamp(&self) -> i64 {
+        assert!(!self.ptr.is_null());
+        assert!(self.refed);
+
+        unsafe { &*(self.ptr) }.best_effort_timestamp
+    }
+
+    pub fn set_pts(&self, pts: i64) {
+        assert!(!self.ptr.is_null());
+        assert!(self.refed);
+
+        unsafe { &mut *(self.ptr) }.pts = pts;
     }
 }
 
@@ -676,6 +737,232 @@ impl Drop for AVFrame {
     fn drop(&mut self) {
         if !self.ptr.is_null() {
             unsafe { ffmpeg4_sys::av_frame_free(&mut self.ptr) }
+        }
+    }
+}
+
+pub struct AVFilter {
+    ptr: *const ffmpeg4_sys::AVFilter,
+}
+
+impl AVFilter {
+    pub fn by_name(name: &str) -> Result<Self, Error> {
+        let name = std::ffi::CString::new(name)?;
+        let ptr = unsafe { ffmpeg4_sys::avfilter_get_by_name(name.as_ptr()) };
+
+        if ptr.is_null() {
+            Err(Error::NullReturnValue)
+        } else {
+            Ok(Self { ptr })
+        }
+    }
+}
+
+struct AVFilterInOutEntry {
+    io_name: std::ffi::CString,
+    filterid: usize,
+    pad_idx: std::os::raw::c_int,
+}
+
+pub struct AVFilterInOut {
+    list: Vec<AVFilterInOutEntry>,
+}
+
+impl AVFilterInOut {
+    pub fn new() -> Self {
+        Self { list: Vec::new() }
+    }
+
+    pub fn append(&mut self, io_name: &str, filterid: usize, pad_idx: std::os::raw::c_int) {
+        self.list.push(AVFilterInOutEntry {
+            io_name: std::ffi::CString::new(io_name).unwrap(),
+            filterid,
+            pad_idx,
+        });
+    }
+
+    fn to_raw_list(&self, graph: &AVFilterGraph) -> *mut ffmpeg4_sys::AVFilterInOut {
+        assert!(!graph.ptr.is_null());
+
+        let raw_graph = unsafe { &*(graph.ptr) };
+        let filters = unsafe {
+            std::slice::from_raw_parts_mut(raw_graph.filters, raw_graph.nb_filters as usize)
+        };
+
+        let mut raw_list: *mut ffmpeg4_sys::AVFilterInOut = std::ptr::null_mut();
+
+        for entry in self.list.iter().rev() {
+            let raw_entry = unsafe { ffmpeg4_sys::avfilter_inout_alloc() };
+            assert!(!raw_entry.is_null());
+
+            let raw_entry_ref = unsafe { &mut *raw_entry };
+            raw_entry_ref.name = unsafe { ffmpeg4_sys::av_strdup(entry.io_name.as_ptr()) };
+            assert!(!raw_entry_ref.name.is_null());
+            raw_entry_ref.filter_ctx = filters[entry.filterid];
+            assert!(!raw_entry_ref.filter_ctx.is_null());
+            raw_entry_ref.pad_idx = entry.pad_idx;
+            raw_entry_ref.next = raw_list;
+
+            raw_list = raw_entry;
+        }
+
+        raw_list
+    }
+}
+
+pub struct AVFilterGraph {
+    ptr: *mut ffmpeg4_sys::AVFilterGraph,
+}
+
+impl AVFilterGraph {
+    pub fn new() -> Result<Self, Error> {
+        let ptr = unsafe { ffmpeg4_sys::avfilter_graph_alloc() };
+
+        if ptr.is_null() {
+            Err(Error::NullReturnValue)
+        } else {
+            Ok(Self { ptr })
+        }
+    }
+
+    pub fn create_filter(
+        &mut self,
+        filter: &AVFilter,
+        name: &str,
+        args: Option<&str>,
+    ) -> Result<usize, Error> {
+        assert!(!self.ptr.is_null());
+        assert!(!filter.ptr.is_null());
+
+        println!("{:?}", args);
+
+        let name = std::ffi::CString::new(name)?;
+        let args = match args {
+            Some(v) => Some(std::ffi::CString::new(v)?),
+            None => None,
+        };
+        let args_ptr = match &args {
+            Some(v) => v.as_ptr(),
+            None => std::ptr::null(),
+        };
+
+        let mut ptr: *mut ffmpeg4_sys::AVFilterContext = std::ptr::null_mut();
+        let rc = unsafe {
+            ffmpeg4_sys::avfilter_graph_create_filter(
+                &mut ptr,
+                filter.ptr,
+                name.as_ptr(),
+                args_ptr,
+                std::ptr::null_mut(),
+                self.ptr,
+            )
+        };
+        if rc != 0 {
+            Err(Error::AV(rc.into()))
+        } else {
+            let raw_graph = unsafe { &*(self.ptr) };
+            assert!(!ptr.is_null());
+            assert!(raw_graph.nb_filters > 0);
+            let filterid = raw_graph.nb_filters as usize - 1;
+            assert_eq!(unsafe { *(raw_graph.filters.add(filterid)) }, ptr);
+            Ok(filterid)
+        }
+    }
+
+    pub fn parse_ptr(
+        &mut self,
+        filters: &str,
+        inputs: &AVFilterInOut,
+        outputs: &AVFilterInOut,
+    ) -> Result<(), Error> {
+        assert!(!self.ptr.is_null());
+        let filters = std::ffi::CString::new(filters)?;
+
+        let mut raw_inputs = inputs.to_raw_list(self);
+        let mut raw_outputs = outputs.to_raw_list(self);
+
+        let rc = unsafe {
+            ffmpeg4_sys::avfilter_graph_parse_ptr(
+                self.ptr,
+                filters.as_ptr(),
+                &mut raw_inputs,
+                &mut raw_outputs,
+                std::ptr::null_mut(),
+            )
+        };
+
+        unsafe { ffmpeg4_sys::avfilter_inout_free(&mut raw_inputs) };
+        unsafe { ffmpeg4_sys::avfilter_inout_free(&mut raw_outputs) };
+
+        if rc < 0 {
+            Err(Error::AV(rc.into()))
+        } else {
+            Ok(())
+        }
+    }
+
+    pub fn config(&mut self) -> Result<(), Error> {
+        assert!(!self.ptr.is_null());
+
+        let rc = unsafe { ffmpeg4_sys::avfilter_graph_config(self.ptr, std::ptr::null_mut()) };
+        if rc != 0 {
+            Err(Error::AV(rc.into()))
+        } else {
+            Ok(())
+        }
+    }
+
+    fn get_filter_slice(&self) -> &[*mut ffmpeg4_sys::AVFilterContext] {
+        assert!(!self.ptr.is_null());
+        let raw_graph = unsafe { &*(self.ptr) };
+        unsafe { std::slice::from_raw_parts_mut(raw_graph.filters, raw_graph.nb_filters as usize) }
+    }
+
+    pub fn buffersrc_add_frame_flags(
+        &mut self,
+        bufferid: usize,
+        frame: &mut AVFrame,
+        flags: std::os::raw::c_int,
+    ) -> Result<(), Error> {
+        assert!(!self.ptr.is_null());
+        assert!(!frame.ptr.is_null());
+        let filters = self.get_filter_slice();
+
+        let rc = unsafe {
+            ffmpeg4_sys::av_buffersrc_add_frame_flags(filters[bufferid], frame.ptr, flags)
+        };
+        if rc != 0 {
+            Err(Error::AV(rc.into()))
+        } else {
+            Ok(())
+        }
+    }
+
+    pub fn buffersink_get_frame(
+        &mut self,
+        bufferid: usize,
+        frame: &mut AVFrame,
+    ) -> Result<(), Error> {
+        assert!(!self.ptr.is_null());
+        assert!(!frame.ptr.is_null());
+        let filters = self.get_filter_slice();
+
+        frame.unref_data();
+
+        let rc = unsafe { ffmpeg4_sys::av_buffersink_get_frame(filters[bufferid], frame.ptr) };
+        if rc != 0 {
+            Err(Error::AV(rc.into()))
+        } else {
+            frame.refed = true;
+            Ok(())
+        }
+    }
+}
+
+impl Drop for AVFilterGraph {
+    fn drop(&mut self) {
+        if !self.ptr.is_null() {
+            unsafe { ffmpeg4_sys::avfilter_graph_free(&mut self.ptr) };
         }
     }
 }
