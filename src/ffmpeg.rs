@@ -12,8 +12,24 @@ pub use ffmpeg4_sys::AV_TIME_BASE;
 pub use ffmpeg4_sys::AV_TIME_BASE_Q;
 pub use ffmpeg4_sys::EAGAIN;
 
+#[inline]
 pub fn av_rescale_q(a: i64, bq: AVRational, cq: AVRational) -> i64 {
     unsafe { ffmpeg4_sys::av_rescale_q(a, bq, cq) }
+}
+
+#[inline]
+pub fn av_inv_q(q: AVRational) -> AVRational {
+    unsafe { ffmpeg4_sys::av_inv_q(q) }
+}
+
+#[inline]
+pub fn av_compare_ts(
+    ts_a: i64,
+    tb_a: AVRational,
+    ts_b: i64,
+    tb_b: AVRational,
+) -> std::os::raw::c_int {
+    unsafe { ffmpeg4_sys::av_compare_ts(ts_a, tb_a, ts_b, tb_b) }
 }
 
 pub struct AVError {
@@ -359,13 +375,6 @@ impl<'a> AVStream<'a> {
         }
     }
 
-    pub fn time_base(&self) -> ffmpeg4_sys::AVRational {
-        assert!(!self.ptr.is_null());
-
-        let ptr = unsafe { &mut *(self.ptr) };
-        ptr.time_base
-    }
-
     pub fn set_time_base(&mut self, time_base: ffmpeg4_sys::AVRational) {
         assert!(!self.ptr.is_null());
 
@@ -373,7 +382,7 @@ impl<'a> AVStream<'a> {
         ptr.time_base = time_base;
     }
 
-    pub fn get_time_base(&self) -> AVRational {
+    pub fn time_base(&self) -> AVRational {
         assert!(!self.ptr.is_null());
         unsafe { &*(self.ptr) }.time_base
     }
@@ -471,6 +480,9 @@ impl AVCodecContext {
         raw_encoder.width = raw_decoder.width;
         raw_encoder.height = raw_decoder.height;
         raw_encoder.pix_fmt = raw_decoder.pix_fmt;
+
+        // TODO decoder time_base vs stream time_base
+        println!("time_base={:?}", raw_encoder.time_base);
 
         Ok(())
     }
@@ -592,9 +604,14 @@ impl AVCodecContext {
         }
     }
 
-    pub fn get_time_base(&self) -> AVRational {
+    pub fn time_base(&self) -> AVRational {
         assert!(!self.ptr.is_null());
         unsafe { &*(self.ptr) }.time_base
+    }
+
+    pub fn set_time_base(&mut self, time_base: AVRational) {
+        assert!(!self.ptr.is_null());
+        unsafe { &mut *(self.ptr) }.time_base = time_base;
     }
 
     pub fn width(&self) -> std::os::raw::c_int {
@@ -602,9 +619,19 @@ impl AVCodecContext {
         unsafe { &*(self.ptr) }.width
     }
 
+    pub fn set_width(&mut self, width: std::os::raw::c_int) {
+        assert!(!self.ptr.is_null());
+        unsafe { &mut *(self.ptr) }.width = width;
+    }
+
     pub fn height(&self) -> std::os::raw::c_int {
         assert!(!self.ptr.is_null());
         unsafe { &*(self.ptr) }.height
+    }
+
+    pub fn set_height(&mut self, height: std::os::raw::c_int) {
+        assert!(!self.ptr.is_null());
+        unsafe { &mut *(self.ptr) }.height = height;
     }
 
     pub fn pix_fmt(&self) -> ffmpeg4_sys::AVPixelFormat {
@@ -612,9 +639,19 @@ impl AVCodecContext {
         unsafe { &*(self.ptr) }.pix_fmt
     }
 
-    pub fn get_sample_aspect_ratio(&self) -> AVRational {
+    pub fn set_pix_fmt(&mut self, pix_fmt: ffmpeg4_sys::AVPixelFormat) {
+        assert!(!self.ptr.is_null());
+        unsafe { &mut *(self.ptr) }.pix_fmt = pix_fmt;
+    }
+
+    pub fn sample_aspect_ratio(&self) -> AVRational {
         assert!(!self.ptr.is_null());
         unsafe { &*(self.ptr) }.sample_aspect_ratio
+    }
+
+    pub fn framerate(&self) -> AVRational {
+        assert!(!self.ptr.is_null());
+        unsafe { &*(self.ptr) }.framerate
     }
 }
 
@@ -736,12 +773,12 @@ impl AVPacket {
         unsafe { ffmpeg4_sys::av_packet_rescale_ts(self.ptr, tb_src, tb_dst) };
     }
 
-    pub fn get_pts(&self) -> i64 {
+    pub fn pts(&self) -> i64 {
         assert!(!self.ptr.is_null());
         unsafe { &*(self.ptr) }.pts
     }
 
-    pub fn get_dts(&self) -> i64 {
+    pub fn dts(&self) -> i64 {
         assert!(!self.ptr.is_null());
         unsafe { &*(self.ptr) }.dts
     }
@@ -780,18 +817,23 @@ impl AVFrame {
         }
     }
 
-    pub fn get_best_effort_timestamp(&self) -> i64 {
+    pub fn best_effort_timestamp(&self) -> i64 {
         assert!(!self.ptr.is_null());
         assert!(self.refed);
 
         unsafe { &*(self.ptr) }.best_effort_timestamp
     }
 
-    pub fn set_pts(&self, pts: i64) {
+    pub fn set_pts(&mut self, pts: i64) {
         assert!(!self.ptr.is_null());
         assert!(self.refed);
 
         unsafe { &mut *(self.ptr) }.pts = pts;
+    }
+
+    pub fn pts(&self) -> i64 {
+        assert!(!self.ptr.is_null());
+        unsafe { &*(self.ptr) }.pts
     }
 }
 
@@ -974,7 +1016,7 @@ impl AVFilterGraph {
         }
     }
 
-    fn get_filter_slice(&self) -> &[*mut ffmpeg4_sys::AVFilterContext] {
+    fn filter_slice(&self) -> &[*mut ffmpeg4_sys::AVFilterContext] {
         assert!(!self.ptr.is_null());
         let raw_graph = unsafe { &*(self.ptr) };
         unsafe { std::slice::from_raw_parts_mut(raw_graph.filters, raw_graph.nb_filters as usize) }
@@ -987,9 +1029,9 @@ impl AVFilterGraph {
         flags: std::os::raw::c_int,
     ) -> Result<(), Error> {
         assert!(!self.ptr.is_null());
-        let filters = self.get_filter_slice();
+        let filters = self.filter_slice();
 
-        let frame_ptr = match frame {
+        let frame_ptr = match frame.as_ref() {
             Some(frame) => {
                 assert!(!frame.ptr.is_null());
                 frame.ptr
@@ -1003,6 +1045,12 @@ impl AVFilterGraph {
         if rc != 0 {
             Err(Error::AV(rc.into()))
         } else {
+            if (flags & ffmpeg4_sys::AV_BUFFERSRC_FLAG_KEEP_REF as std::os::raw::c_int) != 0 {
+                if let Some(frame) = frame {
+                    frame.refed = false;
+                }
+            }
+
             Ok(())
         }
     }
@@ -1014,7 +1062,7 @@ impl AVFilterGraph {
     ) -> Result<(), Error> {
         assert!(!self.ptr.is_null());
         assert!(!frame.ptr.is_null());
-        let filters = self.get_filter_slice();
+        let filters = self.filter_slice();
 
         frame.unref_data();
 

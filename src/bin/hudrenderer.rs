@@ -7,6 +7,12 @@ struct BufferSrc {
     eof_ifmt: bool,
     eof_dec: bool,
     buffersrc_id: usize,
+    seek_target: i64,
+}
+
+struct Output {
+    encoder_ctx: ffmpeg::AVCodecContext,
+    ofmt_ctx: ffmpeg::AVFormatContext,
 }
 
 struct FilterContext {
@@ -14,15 +20,7 @@ struct FilterContext {
     buffersink_id: usize,
 }
 
-struct FFMpegContext {
-    initialized: bool,
-    enc_codec: ffmpeg::AVCodec,
-    encoder_ctx: ffmpeg::AVCodecContext,
-    ofmt_ctx: ffmpeg::AVFormatContext,
-    filterctx: FilterContext,
-}
-
-fn open_input_file(filename: &str) -> Result<BufferSrc, ffmpeg::Error> {
+fn open_input_file(filename: &str, startoff: u64) -> Result<BufferSrc, ffmpeg::Error> {
     let mut ifmt_ctx = ffmpeg::AVFormatContext::new_input(filename)?;
     ifmt_ctx.find_stream_info()?;
     let (video_stream, decoder) =
@@ -31,8 +29,21 @@ fn open_input_file(filename: &str) -> Result<BufferSrc, ffmpeg::Error> {
 
     let mut decoder_ctx = ffmpeg::AVCodecContext::new(&decoder)?;
     decoder_ctx.parameters_to_context(&video.codecpar())?;
-
     decoder_ctx.open2(&decoder)?;
+
+    println!("decoderctx: time_base={:?} framerate={:?}", decoder_ctx.time_base(), decoder_ctx.framerate());
+    println!("decodervid: time_base={:?}", video.time_base());
+
+    let mut seek_target = 0;
+    if startoff != 0 {
+        let time_base = ifmt_ctx.get_stream(video_stream).unwrap().time_base();
+        seek_target =
+            ffmpeg::av_rescale_q((startoff * 1000) as i64, ffmpeg::AV_TIME_BASE_Q, time_base);
+        ifmt_ctx
+            .seek_frame(video_stream as std::os::raw::c_int, seek_target)
+            .unwrap();
+        println!("seek_target={}", seek_target);
+    }
 
     Ok(BufferSrc {
         ifmt_ctx,
@@ -41,6 +52,43 @@ fn open_input_file(filename: &str) -> Result<BufferSrc, ffmpeg::Error> {
         eof_ifmt: false,
         eof_dec: false,
         buffersrc_id: 0,
+        seek_target,
+    })
+}
+
+fn open_output_file(filename: &str, codec_name: &str, source: &BufferSrc) -> Result<Output, ffmpeg::Error> {
+    let enc_codec = ffmpeg::AVCodec::by_name(codec_name)?;
+    let mut ofmt_ctx = ffmpeg::AVFormatContext::new_output(filename)?;
+    let mut encoder_ctx = ffmpeg::AVCodecContext::new(&enc_codec)?;
+    ofmt_ctx.set_pb(ffmpeg::AVIOContext::new(filename, ffmpeg::AVIO_FLAG_WRITE)?);
+
+    println!("encoderctx: time_base={:?} framerate={:?}", encoder_ctx.time_base(), encoder_ctx.framerate());
+
+    let ist = source.ifmt_ctx.get_stream(source.video_stream)?;
+
+    /*let dec_framerate = source.decoder_ctx.framerate();
+    if dec_framerate.num > 0 {
+        ctx.encoder_ctx.set_time_base(ffmpeg::av_inv_q(dec_framerate));
+    }*/
+    encoder_ctx.set_time_base(ist.time_base());
+    encoder_ctx.set_width(source.decoder_ctx.width());
+    encoder_ctx.set_height(source.decoder_ctx.height());
+    encoder_ctx.set_pix_fmt(source.decoder_ctx.pix_fmt());
+    encoder_ctx.open2(&enc_codec)?;
+
+    let mut ost = ofmt_ctx.new_stream(&enc_codec)?;
+    println!("encodervid: time_base={:?}", ost.time_base());
+    ost.set_time_base(ist.time_base());
+    ost.codecpar().set_from_context(&encoder_ctx)?;
+
+    println!("encoderctx: time_base={:?} framerate={:?}", encoder_ctx.time_base(), encoder_ctx.framerate());
+    println!("encodervid: time_base={:?}", ost.time_base());
+
+    ofmt_ctx.write_header()?;
+
+    Ok(Output {
+        encoder_ctx,
+        ofmt_ctx,
     })
 }
 
@@ -59,8 +107,8 @@ fn init_filters(
         let time_base = source
             .ifmt_ctx
             .get_stream(source.video_stream)?
-            .get_time_base();
-        let sample_aspect_ratio = source.decoder_ctx.get_sample_aspect_ratio();
+            .time_base();
+        let sample_aspect_ratio = source.decoder_ctx.sample_aspect_ratio();
         let buffersrc_id = filter_graph.create_filter(
             &buffersrc,
             &format!("in{}", vid),
@@ -94,16 +142,16 @@ fn init_filters(
 }
 
 fn encode_write(
-    ctx: &mut FFMpegContext,
+    output: &mut Output,
     time_base: ffmpeg::AVRational,
     frame: Option<&ffmpeg::AVFrame>,
 ) -> Result<(), ffmpeg::Error> {
     let mut enc_pkt = ffmpeg::AVPacket::default();
 
-    ctx.encoder_ctx.send_frame(frame)?;
+    output.encoder_ctx.send_frame(frame)?;
 
     loop {
-        let res = ctx.encoder_ctx.receive_packet(&mut enc_pkt);
+        let res = output.encoder_ctx.receive_packet(&mut enc_pkt);
         match res {
             Err(ffmpeg::Error::AV(e))
                 if e == ffmpeg::AVERROR_EOF || e == ffmpeg::AVERROR(ffmpeg::EAGAIN) =>
@@ -114,15 +162,17 @@ fn encode_write(
         };
 
         enc_pkt.set_stream_index(0);
-        enc_pkt.rescale_ts(time_base, ctx.ofmt_ctx.get_stream(0)?.time_base());
-        ctx.ofmt_ctx.interleaved_write_frame(&mut enc_pkt)?;
+        println!("rescale: {:?} -> {:?}", time_base, output.ofmt_ctx.get_stream(0)?.time_base());
+        enc_pkt.rescale_ts(time_base, output.ofmt_ctx.get_stream(0)?.time_base());
+        output.ofmt_ctx.interleaved_write_frame(&mut enc_pkt)?;
     }
 
     Ok(())
 }
 
 fn dec_to_buffersrc(
-    ctx: &mut FFMpegContext,
+    output: &mut Output,
+    graph: &mut ffmpeg::AVFilterGraph,
     source: &mut BufferSrc,
     frame: &mut ffmpeg::AVFrame,
 ) -> Result<(), ffmpeg::Error> {
@@ -131,10 +181,10 @@ fn dec_to_buffersrc(
         match res {
             Err(ffmpeg::Error::AV(e)) if e == ffmpeg::AVERROR_EOF => {
                 source.eof_dec = true;
-                ctx.filterctx.graph.buffersrc_add_frame_flags(
+                graph.buffersrc_add_frame_flags(
                     source.buffersrc_id,
                     None,
-                    ffmpeg::AV_BUFFERSRC_FLAG_PUSH as std::os::raw::c_int,
+                    ffmpeg::AV_BUFFERSRC_FLAG_KEEP_REF as std::os::raw::c_int,
                 )?;
                 break;
             }
@@ -144,23 +194,9 @@ fn dec_to_buffersrc(
             _ => res?,
         };
 
-        if !ctx.initialized {
-            ctx.encoder_ctx
-                .init_encoder_from_decoder(&mut source.decoder_ctx, &ctx.enc_codec)?;
-            ctx.encoder_ctx.open2(&ctx.enc_codec)?;
+        frame.set_pts(frame.best_effort_timestamp());
 
-            let mut ost = ctx.ofmt_ctx.new_stream(&ctx.enc_codec)?;
-            ost.set_time_base(ctx.encoder_ctx.get_time_base());
-            ost.codecpar().set_from_context(&ctx.encoder_ctx)?;
-
-            ctx.ofmt_ctx.write_header()?;
-
-            ctx.initialized = true;
-        }
-
-        frame.set_pts(frame.get_best_effort_timestamp());
-
-        ctx.filterctx.graph.buffersrc_add_frame_flags(
+        graph.buffersrc_add_frame_flags(
             source.buffersrc_id,
             Some(frame),
             ffmpeg::AV_BUFFERSRC_FLAG_KEEP_REF as std::os::raw::c_int,
@@ -211,49 +247,39 @@ fn main() {
         "video" => {
             let filename_in = &cfg.video.filename.as_ref().unwrap();
             let filename_out = "/home/m1cha/out.mp4";
-            let enc_codec =
-                ffmpeg::AVCodec::by_name(if false { "h264_vaapi" } else { "libx264" }).unwrap();
-            let mut ofmt_ctx = ffmpeg::AVFormatContext::new_output(filename_out).unwrap();
-            let encoder_ctx = ffmpeg::AVCodecContext::new(&enc_codec).unwrap();
-            ofmt_ctx
-                .set_pb(ffmpeg::AVIOContext::new(filename_out, ffmpeg::AVIO_FLAG_WRITE).unwrap());
-
             let mut sources = Vec::new();
 
-            let mut source = open_input_file(filename_in).unwrap();
+            let source = open_input_file(filename_in, 0/*cfg.video.startoff*/).unwrap();
+            let mut output = open_output_file(filename_out, "libx264", &source).unwrap();
             let time_base = source
                 .ifmt_ctx
                 .get_stream(source.video_stream)
                 .unwrap()
-                .get_time_base();
-            let seek_target = ffmpeg::av_rescale_q(
-                (cfg.video.startoff * 1000) as i64,
-                ffmpeg::AV_TIME_BASE_Q,
-                time_base,
-            );
-            source
-                .ifmt_ctx
-                .seek_frame(source.video_stream as i32, seek_target)
-                .unwrap();
+                .time_base();
             sources.push(source);
 
-            sources.push(open_input_file("/tmp/out.png").unwrap());
+            //sources.push(open_input_file("/tmp/out.png", 0).unwrap());
+            //sources.push(open_input_file(filename_in, 0).unwrap());
 
-            let filterctx = init_filters(&mut sources, "[in0]split[in0_0][in0_1];[in1]loop=loop=-1:size=1:start=0[in1l];[in0_0][in1l]alphamerge,boxblur=20[alf];[in0_1][alf]overlay[out]").unwrap();
-
-            let mut ctx = FFMpegContext {
-                initialized: false,
-                enc_codec,
-                encoder_ctx,
-                ofmt_ctx,
-                filterctx,
-            };
+            let mut filterctx = init_filters(
+                &mut sources,
+                "[in0]negate[out]"
+/*                "
+                [in0]split[in0_0][in0_1];\
+                [in1]loop=loop=-1:size=1:start=0[in1l];\
+                [in0_0][in1l]alphamerge,boxblur=20[alf];\
+                [in0_1][alf]overlay[out]\
+            ",
+*/
+            )
+            .unwrap();
 
             let mut frame = ffmpeg::AVFrame::new().unwrap();
             let mut dec_pkt = ffmpeg::AVPacket::empty();
             let mut buffersink_eof = false;
-            for _ in 0..100 {
-                // while !buffersink_eof {
+            let mut num_oframes: i64 = 0;
+            //for _ in 0..100 {
+            while !buffersink_eof {
                 for source in &mut sources {
                     if !source.eof_ifmt {
                         let res = source.ifmt_ctx.read_frame(&mut dec_pkt);
@@ -272,8 +298,10 @@ fn main() {
                             _ => res.unwrap(),
                         };
 
-                        dec_pkt.set_dts(dec_pkt.get_dts() - seek_target);
-                        dec_pkt.set_pts(dec_pkt.get_pts() - seek_target);
+                        if source.seek_target != 0 {
+                            dec_pkt.set_dts(dec_pkt.dts() - source.seek_target);
+                            dec_pkt.set_pts(dec_pkt.pts() - source.seek_target);
+                        }
 
                         if dec_pkt.stream_index().unwrap() == source.video_stream {
                             source.decoder_ctx.send_packet(&dec_pkt).unwrap();
@@ -281,32 +309,45 @@ fn main() {
                     }
 
                     if !source.eof_dec {
-                        dec_to_buffersrc(&mut ctx, source, &mut frame).unwrap();
+                        dec_to_buffersrc(&mut output, &mut filterctx.graph, source, &mut frame).unwrap();
                     }
                 }
 
                 loop {
-                    let res = ctx
-                        .filterctx
+                    let res = filterctx
                         .graph
-                        .buffersink_get_frame(ctx.filterctx.buffersink_id, &mut frame);
+                        .buffersink_get_frame(filterctx.buffersink_id, &mut frame);
                     match res {
-                        Err(ffmpeg::Error::AV(e))
-                            if e == ffmpeg::AVERROR_EOF || e == ffmpeg::AVERROR(ffmpeg::EAGAIN) =>
-                        {
+                        Err(ffmpeg::Error::AV(e)) if e == ffmpeg::AVERROR(ffmpeg::EAGAIN) => {
+                            break;
+                        }
+                        Err(ffmpeg::Error::AV(e)) if e == ffmpeg::AVERROR_EOF => {
                             buffersink_eof = true;
                             break;
                         }
                         _ => res.unwrap(),
                     };
 
-                    encode_write(&mut ctx, time_base, Some(&mut frame)).unwrap();
+                    encode_write(&mut output, time_base, Some(&mut frame)).unwrap();
+                    num_oframes += 1;
+
+                    if let Some(endoff) = cfg.video.endoff {
+                        let time_base = output.encoder_ctx.time_base();
+                        let endoff_target =
+                            ffmpeg::av_rescale_q(((endoff - cfg.video.startoff) * 1000) as i64, ffmpeg::AV_TIME_BASE_Q, time_base);
+                        if frame.pts() >= endoff_target
+                        {
+                            println!("endoff_target={} time_base={}/{}", endoff_target, time_base.num, time_base.den);
+                            buffersink_eof = true;
+                            break;
+                        }
+                    }
                 }
             }
 
             // flush encoder
-            encode_write(&mut ctx, time_base, None).unwrap();
-            ctx.ofmt_ctx.write_trailer().unwrap();
+            encode_write(&mut output, time_base, None).unwrap();
+            output.ofmt_ctx.write_trailer().unwrap();
 
             let mut do_panic = false;
             let mut n = 0;
