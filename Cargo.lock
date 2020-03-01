@@ -341,6 +341,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "itoa"
+version = "0.4.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b8b7a7c0c47db5545ed3fef7468ee7bb5b74691498139e4b3f6a20685dc6dd8e"
+
+[[package]]
 name = "lapack-src"
 version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -688,6 +694,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b28dfe3fe9badec5dbf0a79a9cccad2cfc2ab5484bdb3e44cbd1ae8b3ba2be06"
 
 [[package]]
+name = "ryu"
+version = "1.0.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "bfa8506c1de11c9c4e4c38863ccbe02a305c8188e85a05a784c9e11e1c3910c8"
+
+[[package]]
 name = "sensoreval"
 version = "0.1.0"
 dependencies = [
@@ -710,6 +722,7 @@ dependencies = [
  "serde",
  "serde-pickle",
  "serde_ignored",
+ "serde_json",
  "toml",
 ]
 
@@ -752,6 +765,17 @@ version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7248fdcbd17d3f2604fc2a02d0ecc844d9a7bf52bf95fc196d9f0a38f6da6a0e"
 dependencies = [
+ "serde",
+]
+
+[[package]]
+name = "serde_json"
+version = "1.0.48"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9371ade75d4c2d6cb154141b9752cf3781ec9c05e0e5cf35060e1e70ee7b9c25"
+dependencies = [
+ "itoa",
+ "ryu",
  "serde",
 ]
 
