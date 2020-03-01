@@ -58,6 +58,7 @@ target_link_libraries(sensoreval INTERFACE
     ${CAIRO_GOBJECT_LIBRARIES}
     ${PANGO_LIBRARIES}
     ${PANGOCAIRO_LIBRARIES}
+    gfortran
 )
 
 add_compile_options(
