@@ -551,10 +551,19 @@ impl render::HudRenderer for Pendulum {
         let dataset = ctx.get_dataset().unwrap();
         let sample = &dataset[dataid];
         let est_sampletime = &self.est[dataid];
-        let est = fns.fx(
-            est_sampletime,
-            (ctx.actual_ts - sample.time) as f64 / 1_000_000.0f64,
-        );
+        let est_now = if ctx.actual_ts > sample.time {
+            Some(fns.fx(
+                est_sampletime,
+                (ctx.actual_ts - sample.time) as f64 / 1_000_000.0f64,
+            ))
+        } else {
+            None
+        };
+        let est = if let Some(est_now) = &est_now {
+            est_now
+        } else {
+            est_sampletime
+        };
 
         let mut utilfont = render::utils::Font::new(&self.font);
         utilfont.line_width = ctx.dp2px(3.0);
