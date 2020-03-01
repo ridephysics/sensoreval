@@ -4,6 +4,7 @@ import QtMultimedia 5.0
 import Main 1.0
 
 Window {
+    id: window
     visible: true
     width: 640
     height: 480
@@ -24,6 +25,18 @@ Window {
             }
             else
                 player.pause();
+        }
+
+        Keys.onPressed: {
+            if (event.key == Qt.Key_F) {
+                if (window.visibility == Window.FullScreen) {
+                    window.visibility = Window.Maximized;
+                }
+                else {
+                    window.visibility = Window.FullScreen;
+                }
+                event.accepted = true;
+            }
         }
 
         MediaPlayer {
