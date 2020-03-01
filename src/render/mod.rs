@@ -21,6 +21,8 @@ pub struct HudContext<'b> {
     dataset: Option<&'b Vec<Data>>,
     /// data source type
     src: DataSrc,
+    /// the timestamp that was actually requested
+    pub actual_ts: u64,
     /// DPI, used for rendering graphics
     pub dpi: f64,
     /// SPI, used for rendering  text
@@ -118,6 +120,7 @@ impl<'a, 'b> Context<'a, 'b> {
                 dpi: 141.21,
                 spi: 141.21,
                 src: DataSrc::None,
+                actual_ts: 0,
             },
         };
 
@@ -137,6 +140,7 @@ impl<'a, 'b> Context<'a, 'b> {
         match id_for_time(self.hudctx.dataset.unwrap(), 0, us) {
             Some(id) => {
                 self.hudctx.src = DataSrc::Array { id };
+                self.hudctx.actual_ts = us;
                 Ok(())
             }
             None => Err(Error::SampleNotFound),
