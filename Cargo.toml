@@ -27,9 +27,7 @@ num-traits = "0.2"
 blas-src = { version = "*", features = ["openblas"] }
 lapack-src = { version = "*", features = ["openblas"] }
 openblas-src = { version = "*", features = ["static"] }
-
-[dev-dependencies]
-assert_approx_eq = "1.1"
+approx = "0.3"
 
 [profile.dev]
 opt-level = 1

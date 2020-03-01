@@ -1,4 +1,4 @@
-use assert_approx_eq::assert_approx_eq;
+use approx::assert_abs_diff_eq;
 use ndarray::azip;
 
 pub fn assert_arr1_eq<Sa, Sb>(
@@ -10,7 +10,7 @@ pub fn assert_arr1_eq<Sa, Sb>(
 {
     assert_eq!(a.dim(), b.dim());
 
-    azip!((a in a, b in b) assert_approx_eq!(a, b));
+    azip!((a in a, b in b) assert_abs_diff_eq!(a, b, epsilon=1.0e-6));
 }
 
 pub fn assert_arr2_eq<Sa, Sb>(
