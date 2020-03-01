@@ -621,7 +621,7 @@ impl render::HudRenderer for Pendulum {
         graph_at.graph.maxval = 15.0;
         graph_at.graph.redval = 70.0;
         graph_at.unit = "m";
-        graph_at.precision = 0;
+        graph_at.precision = 1;
         graph_at.draw(
             cr,
             &mut DataIterator::new(dataslice.iter().rev(), |data| data.time),
