@@ -109,51 +109,62 @@ fn main() {
             )
             .expect("Can't create surface");
 
-            let mut child = std::process::Command::new("ffmpeg")
-                .args(vec![
-                    "-y",
-                    // video
-                    "-ss",
-                    &format!("{}", cfg.video.startoff as f64 / 1000.0),
-                    "-i",
-                    &video_file,
-                    // blur mask
-                    "-i",
-                    "/tmp/out.png",
-                    // HUD
-                    "-f",
-                    "rawvideo",
-                    "-pix_fmt",
-                    "bgra",
-                    "-framerate",
-                    &stream_info.avg_frame_rate,
-                    "-video_size",
-                    &format!("{}x{}", stream_info.width, stream_info.height),
-                    "-i",
-                    "pipe:0",
-                    // filter
-                    "-filter_complex",
-                    "\
+            let mut args = Vec::new();
+            args.push("-y");
+
+            // video
+            let arg_ss = format!("{}", cfg.video.startoff as f64 / 1000.0);
+            args.extend_from_slice(&["-ss", &arg_ss, "-i", &video_file]);
+
+            // blur mask
+            args.extend_from_slice(&["-i", "/tmp/out.png"]);
+
+            // HUD
+            let arg_videosize = format!("{}x{}", stream_info.width, stream_info.height);
+            args.extend_from_slice(&[
+                "-f",
+                "rawvideo",
+                "-pix_fmt",
+                "bgra",
+                "-framerate",
+                &stream_info.avg_frame_rate,
+                "-video_size",
+                &arg_videosize,
+                "-i",
+                "pipe:0",
+            ]);
+
+            // filter
+            args.extend_from_slice(&[
+                "-filter_complex",
+                "\
                         [1]loop=loop=-1:size=1:start=0[1l];\
                         [0][1l]alphamerge,boxblur=20[0a];
                         [0][0a]overlay[0b];\
                         [0b][2]overlay\
                     ",
-                    // output
-                    "-codec:v",
-                    "libx264",
-                    "-pix_fmt",
-                    "yuv420p",
-                    "-crf",
-                    "17",
-                    "-t",
-                    &format!(
-                        "{}",
-                        (cfg.video.endoff.unwrap() - cfg.video.startoff) as f64 / 1000.0
-                    ),
-                    "-an",
-                    output_file,
-                ])
+            ]);
+
+            // output
+            let arg_t = format!(
+                "{}",
+                (cfg.video.endoff.unwrap() - cfg.video.startoff) as f64 / 1000.0
+            );
+            args.extend_from_slice(&[
+                "-codec:v",
+                "libx264",
+                "-pix_fmt",
+                "yuv420p",
+                "-crf",
+                "17",
+                "-t",
+                &arg_t,
+                "-an",
+                output_file,
+            ]);
+
+            let mut child = std::process::Command::new("ffmpeg")
+                .args(args)
                 .stdin(std::process::Stdio::piped())
                 .spawn()
                 .expect("can't spawn ffmpeg");
