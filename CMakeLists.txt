@@ -18,6 +18,9 @@ find_package (PkgConfig REQUIRED)
 find_library(DL_LIBRARY ${CMAKE_DL_LIBS})
 pkg_check_modules(GLIB REQUIRED glib-2.0)
 pkg_check_modules(GOBJECT REQUIRED gobject-2.0)
+pkg_check_modules(GIO REQUIRED gio-2.0)
+pkg_check_modules(GDK REQUIRED gdk-3.0)
+pkg_check_modules(LIBXML REQUIRED libxml-2.0)
 pkg_check_modules(CAIRO_GOBJECT REQUIRED cairo-gobject)
 pkg_check_modules(PANGO REQUIRED pango)
 pkg_check_modules(PANGOCAIRO REQUIRED pangocairo)
@@ -58,6 +61,9 @@ target_link_libraries(sensoreval INTERFACE
     ${CAIRO_GOBJECT_LIBRARIES}
     ${PANGO_LIBRARIES}
     ${PANGOCAIRO_LIBRARIES}
+    ${GIO_LIBRARIES}
+    ${GDK_LIBRARIES}
+    ${LIBXML_LIBRARIES}
     gfortran
 )
 
