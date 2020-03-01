@@ -1,6 +1,7 @@
 pub mod utils;
 
 use crate::*;
+use approx::abs_diff_ne;
 
 /// data source type and info
 #[derive(Debug)]
@@ -87,6 +88,8 @@ pub struct Context<'a, 'b> {
 pub trait HudRenderer {
     /// called when the data source has changed, also called directly after constructor
     fn data_changed(&mut self, ctx: &render::HudContext);
+    /// called when dpi or spi has changed
+    fn scale_changed(&mut self, ctx: &render::HudContext);
     /// render current state to cairo context
     fn render(&self, ctx: &render::HudContext, cr: &cairo::Context) -> Result<(), Error>;
     /// plot dataset using matplotlib, if available
@@ -173,6 +176,14 @@ impl<'a, 'b> Context<'a, 'b> {
     }
 
     pub fn render(&mut self, cr: &cairo::Context) -> Result<(), Error> {
+        let ssz = render::utils::surface_sz_user(cr);
+        let dpi = 160.0 * (ssz.0 / 1920.0);
+        let spi = dpi;
+        let scale_changed =
+            abs_diff_ne!(self.hudctx.dpi, dpi) || abs_diff_ne!(self.hudctx.spi, spi);
+        self.hudctx.dpi = dpi;
+        self.hudctx.spi = dpi;
+
         // clear
         cr.save();
         cr.set_source_rgba(0., 0., 0., 0.);
@@ -181,6 +192,10 @@ impl<'a, 'b> Context<'a, 'b> {
         cr.restore();
 
         if let Some(renderer) = &mut self.hudrenderer {
+            if scale_changed {
+                renderer.scale_changed(&self.hudctx);
+            }
+
             cr.save();
             let hudret = renderer.render(&self.hudctx, cr);
             cr.restore();

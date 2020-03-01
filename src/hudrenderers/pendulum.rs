@@ -1,4 +1,5 @@
 use crate::kalman::ukf::Functions;
+use crate::render::HudRenderer;
 use crate::*;
 use eom::traits::Scheme;
 use eom::traits::TimeEvolution;
@@ -182,14 +183,20 @@ impl<'a> kalman::sigma_points::Functions for StateFunctions<'a> {
 pub(crate) struct Pendulum {
     cfg: Config,
     est: Vec<ndarray::Array1<f64>>,
+    font: pango::FontDescription,
 }
 
 impl Pendulum {
-    pub fn new(_ctx: &render::HudContext, cfg: &Config) -> Self {
-        Self {
+    pub fn new(ctx: &render::HudContext, cfg: &Config) -> Self {
+        let mut o = Self {
             cfg: (*cfg).clone(),
             est: Vec::new(),
-        }
+            font: pango::FontDescription::new(),
+        };
+
+        o.scale_changed(ctx);
+
+        o
     }
 
     #[inline]
@@ -456,6 +463,12 @@ impl Pendulum {
 }
 
 impl render::HudRenderer for Pendulum {
+    fn scale_changed(&mut self, ctx: &render::HudContext) {
+        self.font.set_family("Archivo Black");
+        self.font
+            .set_absolute_size(ctx.sp2px(100.0) * f64::from(pango::SCALE));
+    }
+
     #[allow(non_snake_case)]
     fn data_changed(&mut self, ctx: &render::HudContext) {
         let samples = unwrap_opt_or!(ctx.get_dataset(), return);
@@ -537,10 +550,7 @@ impl render::HudRenderer for Pendulum {
         let dataset = ctx.get_dataset().unwrap();
         let est = &self.est[dataid];
 
-        let mut font = pango::FontDescription::new();
-        font.set_family("Archivo Black");
-        font.set_absolute_size(ctx.sp2px(100.0) * f64::from(pango::SCALE));
-        let mut utilfont = render::utils::Font::new(&font);
+        let mut utilfont = render::utils::Font::new(&self.font);
         utilfont.line_width = 3.0;
 
         // swingboat
