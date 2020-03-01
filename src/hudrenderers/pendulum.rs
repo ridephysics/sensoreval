@@ -184,6 +184,9 @@ pub(crate) struct Pendulum {
     cfg: Config,
     est: Vec<ndarray::Array1<f64>>,
     font: pango::FontDescription,
+    svg_speed: librsvg::SvgHandle,
+    svg_height: librsvg::SvgHandle,
+    svg_weight: librsvg::SvgHandle,
 }
 
 impl Pendulum {
@@ -192,6 +195,15 @@ impl Pendulum {
             cfg: (*cfg).clone(),
             est: Vec::new(),
             font: pango::FontDescription::new(),
+            svg_speed: render::utils::bytes_to_svghandle(include_bytes!(
+                "../../assets/icons/speed-24px.svg"
+            )),
+            svg_height: render::utils::bytes_to_svghandle(include_bytes!(
+                "../../assets/icons/height-24px.svg"
+            )),
+            svg_weight: render::utils::bytes_to_svghandle(include_bytes!(
+                "../../assets/icons/weight-24px.svg"
+            )),
         };
 
         o.scale_changed(ctx);
@@ -467,6 +479,42 @@ impl render::HudRenderer for Pendulum {
         self.font.set_family("Archivo Black");
         self.font
             .set_absolute_size(ctx.sp2px(100.0) * f64::from(pango::SCALE));
+
+        self.svg_speed
+            .set_stylesheet(
+                "\
+            path:nth-child(2) {\
+                fill: white;\
+                stroke: black;\
+                stroke-width: 0.5;\
+            }\
+        ",
+            )
+            .unwrap();
+
+        self.svg_height
+            .set_stylesheet(
+                "\
+            polygon {\
+                fill: white;\
+                stroke: black;\
+                stroke-width: 0.5;\
+            }\
+        ",
+            )
+            .unwrap();
+
+        self.svg_weight
+            .set_stylesheet(
+                "\
+            path:nth-child(2) {\
+                fill: white;\
+                stroke: black;\
+                stroke-width: 0.5;\
+            }\
+        ",
+            )
+            .unwrap();
     }
 
     #[allow(non_snake_case)]
@@ -583,10 +631,11 @@ impl render::HudRenderer for Pendulum {
         graph_at.graph.dt = 10_000_000;
         graph_at.graph.line_width = ctx.dp2px(6.0);
         graph_at.graph.border_width = ctx.dp2px(3.0);
-        graph_at.graph_x = ctx.dp2px(400.0);
+        graph_at.graph_x = ctx.dp2px(500.0);
 
         // acceleration
         cr.move_to(ctx.dp2px(10.0), ctx.dp2px(10.0));
+        graph_at.icon = Some(&self.svg_weight);
         graph_at.graph.maxval = 3.0;
         graph_at.graph.redval = 5.0;
         graph_at.unit = "g";
@@ -601,6 +650,7 @@ impl render::HudRenderer for Pendulum {
 
         // velocity
         cr.move_to(ctx.dp2px(10.0), ctx.dp2px(20.0) + graph_at.graph.height);
+        graph_at.icon = Some(&self.svg_speed);
         graph_at.graph.maxval = 50.0;
         graph_at.graph.redval = 100.0;
         graph_at.unit = "km/h";
@@ -618,6 +668,7 @@ impl render::HudRenderer for Pendulum {
             ctx.dp2px(10.0),
             ctx.dp2px(40.0) + graph_at.graph.height * 2.0,
         );
+        graph_at.icon = Some(&self.svg_height);
         graph_at.graph.maxval = 15.0;
         graph_at.graph.redval = 70.0;
         graph_at.unit = "m";
