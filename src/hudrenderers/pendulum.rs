@@ -546,9 +546,15 @@ impl render::HudRenderer for Pendulum {
     }
 
     fn render(&self, ctx: &render::HudContext, cr: &cairo::Context) -> Result<(), Error> {
+        let fns = StateFunctions::new(&self.cfg);
         let dataid = unwrap_opt_or!(ctx.current_data_id(), return Err(Error::SampleNotFound));
         let dataset = ctx.get_dataset().unwrap();
-        let est = &self.est[dataid];
+        let sample = &dataset[dataid];
+        let est_sampletime = &self.est[dataid];
+        let est = fns.fx(
+            est_sampletime,
+            (ctx.actual_ts - sample.time) as f64 / 1_000_000.0f64,
+        );
 
         let mut utilfont = render::utils::Font::new(&self.font);
         utilfont.line_width = ctx.dp2px(3.0);
