@@ -158,11 +158,11 @@ fn main() {
                     [1]loop=loop=-1:size=1:start=0[1l];\
                     [0][1l]alphamerge,boxblur=20[0a];
                     [0][0a]overlay[0b];\
-                    [0b][2]overlay\
+                    [0b][2]overlay=alpha=premultiplied:format=rgb\
                 "
             } else {
                 "\
-                    [0][1]overlay\
+                    [0][1]overlay=alpha=premultiplied:format=rgb\
                 "
             };
             args.extend_from_slice(&["-filter_complex", filter_str]);
