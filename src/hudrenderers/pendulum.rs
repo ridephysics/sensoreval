@@ -619,7 +619,7 @@ impl render::HudRenderer for Pendulum {
         // swingboat
         let ssz = render::utils::surface_sz_user(cr);
         let ppm = 30.0;
-        cr.move_to(ssz.0 - ctx.dp2px(15.0 * ppm), ssz.1 - ctx.dp2px(16.5 * ppm));
+        cr.move_to(ssz.0 - ctx.dp2px(16.0 * ppm), ssz.1 - ctx.dp2px(16.5 * ppm));
         self.draw_swingboat(ctx, cr, ppm, est[0]);
 
         let dataslice = &dataset[0..dataid];
