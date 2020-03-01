@@ -40,7 +40,7 @@ set(RUST_LIB "${RUST_TARGET_DIR}/libsensoreval.a")
 add_custom_command(
   OUTPUT "${RUST_LIB}"
   DEPENDS ${RUST_DEPS}
-  COMMAND ${Cargo_EXECUTABLE} build ${RUST_BUILD_FLAGS}
+  COMMAND unset DESTDIR && ${Cargo_EXECUTABLE} build ${RUST_BUILD_FLAGS}
   WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
 )
 add_custom_target(sensoreval_lib DEPENDS "${RUST_LIB}")
