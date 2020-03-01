@@ -172,7 +172,7 @@ impl<'a, 'b> Context<'a, 'b> {
         self.hudctx.get_dataset()
     }
 
-    pub fn render(&self, cr: &cairo::Context) -> Result<(), Error> {
+    pub fn render(&mut self, cr: &cairo::Context) -> Result<(), Error> {
         // clear
         cr.save();
         cr.set_source_rgba(0., 0., 0., 0.);
@@ -180,7 +180,7 @@ impl<'a, 'b> Context<'a, 'b> {
         cr.paint();
         cr.restore();
 
-        if let Some(renderer) = &self.hudrenderer {
+        if let Some(renderer) = &mut self.hudrenderer {
             cr.save();
             let hudret = renderer.render(&self.hudctx, cr);
             cr.restore();

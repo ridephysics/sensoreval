@@ -48,12 +48,12 @@ pub extern "C" fn sensoreval_destroy(cctx_ptr: *mut CContext) {
 
 #[no_mangle]
 pub extern "C" fn sensoreval_render(
-    cctx_ptr: *const CContext,
+    cctx_ptr: *mut CContext,
     cr_ptr: *mut cairo_sys::cairo_t,
 ) -> std::os::raw::c_int {
-    let cctx = unwrap_opt_or!(unsafe { cctx_ptr.as_ref() }, return -1);
+    let cctx = unwrap_opt_or!(unsafe { cctx_ptr.as_mut() }, return -1);
     let cr = unsafe { cairo::Context::from_raw_borrow(cr_ptr) };
-    let renderctx = unwrap_opt_or!(&cctx.renderctx, return -2);
+    let renderctx = unwrap_opt_or!(&mut cctx.renderctx, return -2);
 
     unwrap_res_or!(renderctx.render(&cr), return -3);
 
