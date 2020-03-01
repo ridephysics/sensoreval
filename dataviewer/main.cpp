@@ -60,7 +60,7 @@ int main(int argc, char *argv[])
         return -1;
     }
 
-    QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
+    QCoreApplication::setAttribute(Qt::AA_DisableHighDpiScaling);
     QGuiApplication app(argc, argv);
     QQmlApplicationEngine engine;
 
