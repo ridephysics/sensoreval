@@ -117,7 +117,9 @@ fn main() {
             args.extend_from_slice(&["-ss", &arg_ss, "-i", &video_file]);
 
             // blur mask
-            args.extend_from_slice(&["-i", "/tmp/out.png"]);
+            if let Some(path) = &cfg.video.blurmask {
+                args.extend_from_slice(&["-i", path]);
+            }
 
             // HUD
             let arg_videosize = format!("{}x{}", stream_info.width, stream_info.height);
@@ -135,15 +137,19 @@ fn main() {
             ]);
 
             // filter
-            args.extend_from_slice(&[
-                "-filter_complex",
+            let filter_str = if cfg.video.blurmask.is_some() {
                 "\
-                        [1]loop=loop=-1:size=1:start=0[1l];\
-                        [0][1l]alphamerge,boxblur=20[0a];
-                        [0][0a]overlay[0b];\
-                        [0b][2]overlay\
-                    ",
-            ]);
+                    [1]loop=loop=-1:size=1:start=0[1l];\
+                    [0][1l]alphamerge,boxblur=20[0a];
+                    [0][0a]overlay[0b];\
+                    [0b][2]overlay\
+                "
+            } else {
+                "\
+                    [0][1]overlay\
+                "
+            };
+            args.extend_from_slice(&["-filter_complex", filter_str]);
 
             // output
             let arg_t = format!(
