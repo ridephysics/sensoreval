@@ -215,15 +215,16 @@ impl Graph {
     }
 }
 
-pub struct GraphAndText<'a> {
+pub struct GraphAndText<'a, 'b, 'c> {
     font: &'a Font<'a>,
     pub graph: Graph,
-    pub unit: &'a str,
+    pub unit: &'b str,
     pub precision: usize,
     pub graph_x: f64,
+    pub icon: Option<&'c librsvg::SvgHandle>,
 }
 
-impl<'a> GraphAndText<'a> {
+impl<'a, 'b, 'c> GraphAndText<'a, 'b, 'c> {
     pub fn new(font: &'a Font<'a>) -> Self {
         Self {
             font,
@@ -231,6 +232,7 @@ impl<'a> GraphAndText<'a> {
             unit: "",
             precision: 0,
             graph_x: 0.0,
+            icon: None,
         }
     }
 
@@ -251,9 +253,28 @@ impl<'a> GraphAndText<'a> {
             &format!("{:.*}{}", self.precision, value_now, self.unit),
         );
 
+        let mut current_x = cx;
+        let current_y = cy;
+        if let Some(icon) = self.icon {
+            let svg_renderer = librsvg::CairoRenderer::new(icon);
+            svg_renderer
+                .render_document(
+                    cr,
+                    &cairo::Rectangle {
+                        x: current_x,
+                        y: current_y,
+                        width: self.graph.height,
+                        height: self.graph.height,
+                    },
+                )
+                .unwrap();
+
+            current_x += self.graph.height;
+        }
+
         cr.move_to(
-            cx,
-            cy + (self.graph.height - layout.get_pixel_size().1 as f64) / 2.0,
+            current_x,
+            current_y + (self.graph.height - layout.get_pixel_size().1 as f64) / 2.0,
         );
         self.font.draw_layout(cr, &layout);
     }
