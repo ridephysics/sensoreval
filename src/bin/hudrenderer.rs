@@ -43,6 +43,13 @@ fn get_video_stream_info(filename: &str) -> FFProbeStream {
     probe_info.streams[0].clone()
 }
 
+fn svg2png(png: &str, svg: &str) {
+    std::process::Command::new("inkscape")
+        .args(&["-z", "-e", png, svg])
+        .output()
+        .expect("inkscape failed");
+}
+
 fn main() {
     // parse args
     let matches = clap::App::new("hudrenderer")
@@ -60,7 +67,7 @@ fn main() {
                 .short("o")
                 .long("output")
                 .value_name("OUTPUT")
-                .help("output file"),
+                .help("output directory"),
         )
         .arg(
             clap::Arg::with_name("CONFIG")
@@ -88,10 +95,16 @@ fn main() {
             renderctx.plot().expect("can't plot");
         }
         "video" => {
-            let output_file = match matches.value_of("output") {
-                Some(v) => v,
-                None => panic!("no output file specified."),
-            };
+            let outdir = std::path::Path::new(
+                matches
+                    .value_of("output")
+                    .expect("no output file specified."),
+            );
+            let out_video = outdir.join("final.mkv");
+
+            if !outdir.is_dir() {
+                panic!("{} is not a directory", outdir.to_str().unwrap());
+            }
 
             let video_file = cfg.video.filename.clone().expect("no video URL");
             let stream_info = get_video_stream_info(&video_file);
@@ -117,8 +130,11 @@ fn main() {
             args.extend_from_slice(&["-ss", &arg_ss, "-i", &video_file]);
 
             // blur mask
-            if let Some(path) = &cfg.video.blurmask {
-                args.extend_from_slice(&["-i", path]);
+            let blurmask_png = outdir.join("blurmask.png");
+            if let Some(svg) = &cfg.video.blurmask {
+                let png_str = blurmask_png.as_path().to_str().unwrap();
+                svg2png(png_str, svg);
+                args.extend_from_slice(&["-i", png_str]);
             }
 
             // HUD
@@ -166,7 +182,7 @@ fn main() {
                 "-t",
                 &arg_t,
                 "-an",
-                output_file,
+                out_video.as_path().to_str().unwrap(),
             ]);
 
             let mut child = std::process::Command::new("ffmpeg")
