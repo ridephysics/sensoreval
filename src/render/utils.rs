@@ -279,3 +279,11 @@ impl<'a, 'b, 'c> GraphAndText<'a, 'b, 'c> {
         self.font.draw_layout(cr, &layout);
     }
 }
+
+pub fn bytes_to_svghandle(data: &'static [u8]) -> librsvg::SvgHandle {
+    let bytes = glib::Bytes::from_static(data);
+    let stream = gio::MemoryInputStream::new_from_bytes(&bytes);
+    librsvg::Loader::new()
+        .read_stream(&stream, None::<&gio::File>, None::<&gio::Cancellable>)
+        .unwrap()
+}
