@@ -4,6 +4,7 @@ from west import util
 import os
 import subprocess
 import shutil
+from pathlib import Path
 
 class Se(WestCommand):
     def __init__(self):
@@ -14,7 +15,7 @@ class Se(WestCommand):
 
         self.top_dir = util.west_topdir()
         self.build_dir = os.path.join(self.top_dir, 'build/sensoreval')
-        self.source_dir = os.path.join(self.top_dir, 'sensoreval')
+        self.source_dir = Path(os.path.dirname(os.path.realpath(__file__))).parent.parent
 
     def do_add_parser(self, parser_adder):
         parser = parser_adder.add_parser(self.name,
