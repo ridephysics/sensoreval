@@ -551,12 +551,12 @@ impl render::HudRenderer for Pendulum {
         let est = &self.est[dataid];
 
         let mut utilfont = render::utils::Font::new(&self.font);
-        utilfont.line_width = 3.0;
+        utilfont.line_width = ctx.dp2px(3.0);
 
         // swingboat
         let ssz = render::utils::surface_sz_user(cr);
         let ppm = 30.0;
-        cr.move_to(ssz.0 - (15.0 * ppm), ssz.1 - 16.5 * ppm);
+        cr.move_to(ssz.0 - ctx.dp2px(15.0 * ppm), ssz.1 - ctx.dp2px(16.5 * ppm));
         self.draw_swingboat(ctx, cr, ppm, est[0]);
 
         let dataslice = &self.est[0..dataid];
