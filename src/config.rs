@@ -15,6 +15,9 @@ pub struct Video {
     /// relative path to video file
     #[serde(default)]
     pub filename: Option<String>,
+    /// relative path to blur mask
+    #[serde(default)]
+    pub blurmask: Option<String>,
 }
 
 impl Default for Video {
@@ -23,6 +26,7 @@ impl Default for Video {
             startoff: 0,
             endoff: None,
             filename: None,
+            blurmask: None,
         }
     }
 }
@@ -321,6 +325,9 @@ pub fn load<P: AsRef<std::path::Path>>(filename: P) -> Result<Config, Error> {
 
     if let Some(v) = cfg.video.filename {
         cfg.video.filename = Some(path2abs(&cfgdir, &v));
+    }
+    if let Some(v) = cfg.video.blurmask {
+        cfg.video.blurmask = Some(path2abs(&cfgdir, &v));
     }
 
     Ok(cfg)
