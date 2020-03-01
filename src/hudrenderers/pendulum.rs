@@ -559,7 +559,8 @@ impl render::HudRenderer for Pendulum {
         cr.move_to(ssz.0 - ctx.dp2px(15.0 * ppm), ssz.1 - ctx.dp2px(16.5 * ppm));
         self.draw_swingboat(ctx, cr, ppm, est[0]);
 
-        let dataslice = &self.est[0..dataid];
+        let dataslice = &dataset[0..dataid];
+        let estslice = &self.est[0..dataid];
 
         let mut graph_at = render::utils::GraphAndText::new(&utilfont);
         graph_at.graph.width = ctx.dp2px(200.0);
@@ -577,8 +578,8 @@ impl render::HudRenderer for Pendulum {
         graph_at.precision = 1;
         graph_at.draw(
             cr,
-            &mut DataIterator::new(dataset.iter().rev(), |data| data.time),
-            &mut DataIterator::new(dataslice.iter().rev(), |data| {
+            &mut DataIterator::new(dataslice.iter().rev(), |data| data.time),
+            &mut DataIterator::new(estslice.iter().rev(), |data| {
                 Self::est_acceleration(&data) / math::GRAVITY
             }),
         );
@@ -591,8 +592,8 @@ impl render::HudRenderer for Pendulum {
         graph_at.precision = 0;
         graph_at.draw(
             cr,
-            &mut DataIterator::new(dataset.iter().rev(), |data| data.time),
-            &mut DataIterator::new(dataslice.iter().rev(), |data| {
+            &mut DataIterator::new(dataslice.iter().rev(), |data| data.time),
+            &mut DataIterator::new(estslice.iter().rev(), |data| {
                 Self::est_velocity(&data).abs() * 3.6
             }),
         );
@@ -608,8 +609,8 @@ impl render::HudRenderer for Pendulum {
         graph_at.precision = 0;
         graph_at.draw(
             cr,
-            &mut DataIterator::new(dataset.iter().rev(), |data| data.time),
-            &mut DataIterator::new(dataslice.iter().rev(), |data| Self::est_altitude(&data)),
+            &mut DataIterator::new(dataslice.iter().rev(), |data| data.time),
+            &mut DataIterator::new(estslice.iter().rev(), |data| Self::est_altitude(&data)),
         );
 
         Ok(())
