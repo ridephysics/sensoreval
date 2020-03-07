@@ -11,12 +11,11 @@ dependencies = [
 
 [[package]]
 name = "alga"
-version = "0.9.2"
+version = "0.9.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "658f9468113d34781f6ca9d014d174c74b73de870f1e0e3ad32079bbab253b19"
+checksum = "4f823d037a7ec6ea2197046bafd4ae150e6bc36f9ca347404f46a46823fa84f2"
 dependencies = [
  "approx",
- "libm",
  "num-complex",
  "num-traits",
 ]
@@ -161,6 +160,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "cc"
+version = "1.0.50"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "95e28fa049fda1c330bcf9d723be7663a899c4679724b34c81e9f5a326aab8cd"
+
+[[package]]
 name = "cfg-if"
 version = "0.1.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -188,6 +193,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ddfc5b9aa5d4507acaf872de71051dfd0e309860e88966e1051e462a077aac4f"
 dependencies = [
  "bitflags",
+]
+
+[[package]]
+name = "cmake"
+version = "0.1.42"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "81fb25b677f8bf1eb325017cb6bb8452f87969db0fedb4f757b297bee78a7c62"
+dependencies = [
+ "cc",
 ]
 
 [[package]]
@@ -711,14 +725,14 @@ checksum = "eb147597cdf94ed43ab7a9038716637d2d1bf2bc571da995d0028dec06bd3018"
 
 [[package]]
 name = "libm"
-version = "0.1.4"
+version = "0.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7fc7aa29613bd6a620df431842069224d8bc9011086b1db4c0e0cd47fa03ec9a"
+checksum = "c7d73b3f436185384286bd8098d17ec07c9a7d2388a6599f824d8502b529702a"
 
 [[package]]
 name = "librsvg"
 version = "2.49.0"
-source = "git+https://gitlab.gnome.org/GNOME/librsvg#76648e06cd81824a88331032e4e5c24003ff647e"
+source = "git+https://gitlab.gnome.org/GNOME/librsvg#a3b7cf912a023e2ea3000717f82fbc65f3f6c1c5"
 dependencies = [
  "cairo-rs",
  "gio",
@@ -931,6 +945,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c62be47e61d1842b9170f0fdeec8eba98e60e90e5446449a0545e5152acd7096"
 dependencies = [
  "autocfg",
+ "libm",
 ]
 
 [[package]]
@@ -1154,9 +1169,9 @@ dependencies = [
 
 [[package]]
 name = "quote"
-version = "1.0.2"
+version = "1.0.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "053a8c8bcc71fcce321828dc897a98ab9760bef03a4fc36693c231e5b3216cfe"
+checksum = "2bdc6c187c65bca4260c9011c9e3132efe4909da44726bad24cf7572ae338d7f"
 dependencies = [
  "proc-macro2",
 ]
@@ -1299,14 +1314,14 @@ dependencies = [
 
 [[package]]
 name = "regex-syntax"
-version = "0.6.15"
+version = "0.6.16"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7246cd0a0a6ec2239a5405b2b16e3f404fa0dcc6d28f5f5b877bf80e33e0f294"
+checksum = "1132f845907680735a84409c3bebc64d1364a5683ffbce899550cd09d5eaefc1"
 
 [[package]]
 name = "rsvg_internals"
 version = "0.0.1"
-source = "git+https://gitlab.gnome.org/GNOME/librsvg#76648e06cd81824a88331032e4e5c24003ff647e"
+source = "git+https://gitlab.gnome.org/GNOME/librsvg#a3b7cf912a023e2ea3000717f82fbc65f3f6c1c5"
 dependencies = [
  "cairo-rs",
  "cairo-sys-rs",
@@ -1355,6 +1370,15 @@ name = "ryu"
 version = "1.0.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "bfa8506c1de11c9c4e4c38863ccbe02a305c8188e85a05a784c9e11e1c3910c8"
+
+[[package]]
+name = "same-file"
+version = "1.0.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "93fc1dc3aaa9bfed95e02e6eadabb4baf7e3078b0bd1b4d7b6b0b68378900502"
+dependencies = [
+ "winapi-util",
+]
 
 [[package]]
 name = "scopeguard"
@@ -1407,6 +1431,7 @@ dependencies = [
  "cairo-rs",
  "cairo-sys-rs",
  "clap",
+ "cmake",
  "eom",
  "gio",
  "glib",
@@ -1418,6 +1443,7 @@ dependencies = [
  "openblas-src",
  "pango",
  "pangocairo",
+ "pkg-config",
  "rand 0.7.3",
  "regex",
  "serde",
@@ -1425,6 +1451,7 @@ dependencies = [
  "serde_ignored",
  "serde_json",
  "toml",
+ "walkdir",
 ]
 
 [[package]]
@@ -1660,6 +1687,17 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "05c78687fb1a80548ae3250346c3db86a80a7cdd77bda190189f2d0a0987c81a"
 
 [[package]]
+name = "walkdir"
+version = "2.3.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "777182bc735b6424e1a57516d35ed72cb8019d85c8c9bf536dccb3445c1a2f7d"
+dependencies = [
+ "same-file",
+ "winapi",
+ "winapi-util",
+]
+
+[[package]]
 name = "wasi"
 version = "0.9.0+wasi-snapshot-preview1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1680,6 +1718,15 @@ name = "winapi-i686-pc-windows-gnu"
 version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ac3b87c63620426dd9b991e5ce0329eff545bccbbb34f3be09ff6fb6ab51b7b6"
+
+[[package]]
+name = "winapi-util"
+version = "0.1.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4ccfbf554c6ad11084fb7517daca16cfdcaccbdadba4fc336f032a8b12c2ad80"
+dependencies = [
+ "winapi",
+]
 
 [[package]]
 name = "winapi-x86_64-pc-windows-gnu"
