@@ -1,3 +1,5 @@
+cmake_minimum_required(VERSION 3.1)
+
 project(dataviewer LANGUAGES C CXX)
 
 include(FindPkgConfig)
@@ -12,7 +14,14 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 pkg_check_modules(GLU REQUIRED glu)
 
-add_executable(dataviewer
+add_compile_options(
+    -Wall
+    -Wextra
+    -Wshadow
+    -Werror
+)
+
+add_library(dataviewer
     main.cpp
     qmlnative/qmlvideohud.cpp
     qmlnative/orientation.cpp
@@ -31,7 +40,12 @@ target_link_libraries(dataviewer PRIVATE
 )
 target_include_directories(dataviewer PRIVATE
     ${GLU_INCLUDE_DIRS}
+    ${CMAKE_SOURCE_DIR}/../include
 )
 target_compile_options(dataviewer PUBLIC
     ${GLU_CFLAGS_OTHER}
+)
+
+install(TARGETS
+    dataviewer
 )

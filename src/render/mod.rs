@@ -81,7 +81,7 @@ impl<'b> HudContext<'b> {
 
 /// rendering context
 pub struct Context<'a, 'b> {
-    cfg: &'a config::Config,
+    pub cfg: &'a config::Config,
     hudrenderer: Option<Box<dyn HudRenderer>>,
     hudctx: HudContext<'b>,
 }

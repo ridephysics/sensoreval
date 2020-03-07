@@ -50,6 +50,13 @@ fn svg2png(png: &str, svg: &str) {
         .expect("inkscape failed");
 }
 
+extern "C" {
+    fn dataviewer_main(
+        renderctx_ptr: *mut std::ffi::c_void,
+        readctx_ptr: *mut std::ffi::c_void,
+    ) -> std::os::raw::c_int;
+}
+
 fn main() {
     // parse args
     let matches = clap::App::new("hudrenderer")
@@ -93,6 +100,17 @@ fn main() {
         "plot" => {
             // plot
             renderctx.plot().expect("can't plot");
+        }
+        "dataviewer" => {
+            let rc = unsafe {
+                dataviewer_main(
+                    &mut renderctx as *mut render::Context as *mut std::ffi::c_void,
+                    std::ptr::null_mut(),
+                )
+            };
+            if rc != 0 {
+                panic!("dataviewer_main failed: {}", rc);
+            }
         }
         "video" => {
             let outdir = std::path::Path::new(

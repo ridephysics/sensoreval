@@ -15,14 +15,14 @@ extern "C" {
 #include <sensoreval.h>
 }
 
-static void set_sensordata(QQmlContext *ctx, const struct sensoreval_ctx *sectx)
+static void set_sensordata(QQmlContext *ctx, const struct sensoreval_render_ctx *render)
 {
     int rc;
     double raw[4];
     QQuaternion q;
 
-    if (sectx) {
-        rc = sensoreval_get_quat(sectx, raw);
+    if (render) {
+        rc = sensoreval_render_get_quat(render, raw);
         if (rc == 0) {
             q = QQuaternion(raw[0], raw[1], raw[2], raw[3]);
         }
@@ -31,32 +31,20 @@ static void set_sensordata(QQmlContext *ctx, const struct sensoreval_ctx *sectx)
     ctx->setContextProperty("main_quaternion", q);
 }
 
-int main(int argc, char *argv[])
+static int dataviewer_main_real(int argc, char **argv, struct sensoreval_render_ctx *render, struct sensoreval_datareader_ctx *reader)
 {
     int rc;
     QTimer *timer = nullptr;
     QSocketNotifier *notifier = nullptr;
-    struct sensoreval_ctx *sectx;
     char videopath[PATH_MAX];
     uint64_t startoff;
     uint64_t endoff;
 
-    if (argc != 3) {
-        fprintf(stderr, "Usage: %s LIVE CONFIG\n", argv[0]);
-        return -1;
-    }
-    bool islive = !!atoi(argv[1]);
-    const char *cfgpath = argv[2];
+    Q_INIT_RESOURCE(qml);
 
-    sectx = sensoreval_create(cfgpath, islive);
-    if (!sectx) {
-        fprintf(stderr, "sensoreval_create failed\n");
-        return -1;
-    }
-
-    rc = sensoreval_get_video_info(sectx, videopath, sizeof(videopath), &startoff, &endoff);
+    rc = sensoreval_render_get_video_info(render, videopath, sizeof(videopath), &startoff, &endoff);
     if (rc) {
-        fprintf(stderr, "sensoreval_get_video_info failed: %d\n", rc);
+        fprintf(stderr, "sensoreval_render_get_video_info failed: %d\n", rc);
         return -1;
     }
 
@@ -70,7 +58,7 @@ int main(int argc, char *argv[])
     engine.rootContext()->setContextProperty("main_videoPath", QUrl::fromLocalFile(QFileInfo(videopath).absoluteFilePath()));
     engine.rootContext()->setContextProperty("main_videoStartOffset", (double)startoff);
     engine.rootContext()->setContextProperty("main_videoEndOffset", (double)endoff);
-    set_sensordata(engine.rootContext(), NULL);
+    set_sensordata(engine.rootContext(), nullptr);
 
     engine.load(QUrl(QStringLiteral("qrc:/qml/main.qml")));
     if (engine.rootObjects().isEmpty())
@@ -87,8 +75,7 @@ int main(int argc, char *argv[])
     QMediaPlayer *player = qvariant_cast<QMediaPlayer *>(qmlplayer->property("mediaObject"));
     Q_ASSERT(player);
 
-    fprintf(stderr, "live: %d\n", islive);
-    if (islive) {
+    if (reader) {
         notifier = new QSocketNotifier(STDIN_FILENO, QSocketNotifier::Read, nullptr);
 
         rc = fcntl(notifier->socket(), F_GETFL, 0);
@@ -100,10 +87,10 @@ int main(int argc, char *argv[])
         Q_ASSERT(rc >= 0);
 
         auto conn = std::make_shared<QMetaObject::Connection>();
-        *conn = QObject::connect(notifier, &QSocketNotifier::activated, [sectx, conn, notifier, &engine, hud](int fd) {
+        *conn = QObject::connect(notifier, &QSocketNotifier::activated, [render, reader, conn, notifier, &engine, hud](int fd) {
             (void)(fd);
 
-            int notifyrc = sensoreval_notify_stdin(sectx);
+            int notifyrc = sensoreval_notify_stdin(render, reader);
             if (notifyrc < 0) {
                 fprintf(stderr, "sensoreval_notify_stdin failed: %d\n", notifyrc);
                 exit(1);
@@ -111,26 +98,38 @@ int main(int argc, char *argv[])
 
             if (notifyrc > 0) {
                 hud->update();
-                set_sensordata(engine.rootContext(), sectx); 
+                set_sensordata(engine.rootContext(), render);
             }
         });
     }
     else {
         timer = new QTimer();
-        QObject::connect(timer, &QTimer::timeout, [sectx, hud, player, &engine]() {
-            int settsrc = sensoreval_set_ts(sectx, player->position() * 1000);
+        QObject::connect(timer, &QTimer::timeout, [render, hud, player, &engine]() {
+            int settsrc = sensoreval_render_set_ts(render, player->position() * 1000);
             if (settsrc != 0) {
                 fprintf(stderr, "can't set ts: %d\n", settsrc);
                 return;
             }
 
             hud->update();
-            set_sensordata(engine.rootContext(), sectx);
+            set_sensordata(engine.rootContext(), render);
         });
         timer->start(30);
     }
 
-    hud->setSensorEvalCtx(sectx);
+    hud->setSensorEvalRenderCtx(render);
 
     return app.exec();
+}
+
+extern "C" int dataviewer_main(struct sensoreval_render_ctx *render, struct sensoreval_datareader_ctx *reader)
+{
+    char *arg0 = strdup("dataviewer");
+    if (!arg0)
+        return -1;
+    char *argv[] = {arg0, NULL};
+
+    int rc = dataviewer_main_real(1, argv, render, reader);
+    free(arg0);
+    return rc;
 }

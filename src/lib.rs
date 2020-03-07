@@ -31,7 +31,7 @@ pub mod config;
 #[macro_use]
 mod data;
 mod capi;
-mod datareader;
+pub mod datareader;
 mod error;
 mod hudrenderers;
 mod kalman;
