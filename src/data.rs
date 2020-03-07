@@ -127,14 +127,16 @@ pub fn id_for_time(dataset: &[Data], startid: usize, us: u64) -> Option<usize> {
     }
 
     for (i, sample) in (&dataset[startid..]).iter().enumerate() {
-        if sample.time == us {
-            return Some(i);
-        } else if sample.time > us {
-            if i == 0 {
-                return Some(0);
-            } else {
-                return Some(i - 1);
+        match sample.time.cmp(&us) {
+            std::cmp::Ordering::Equal => return Some(i),
+            std::cmp::Ordering::Greater => {
+                if i == 0 {
+                    return Some(0);
+                } else {
+                    return Some(i - 1);
+                }
             }
+            std::cmp::Ordering::Less => (),
         }
     }
 
