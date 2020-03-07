@@ -7,60 +7,38 @@
 #include <math.h>
 #include <QtMath>
 
-#define ARRAY_SIZE(a)                               \
-  ((sizeof(a) / sizeof(*(a))) /                     \
-  static_cast<size_t>(!(sizeof(a) % sizeof(*(a)))))
+#define ARRAY_SIZE(a)                                                                              \
+    ((sizeof(a) / sizeof(*(a))) / static_cast<size_t>(!(sizeof(a) % sizeof(*(a)))))
 
-static const GLdouble cam_pos[] = {0.2, 0.2, 0};
-static const GLdouble cam_target[] = {0, 0, -1};
-static const GLdouble cam_up[] = {0, 1, 0};
+static const GLdouble cam_pos[] = { 0.2, 0.2, 0 };
+static const GLdouble cam_target[] = { 0, 0, -1 };
+static const GLdouble cam_up[] = { 0, 1, 0 };
 
-static const GLfloat color_red[] = {0.8, 0, 0};
-static const GLfloat color_green[] = {0, 0.8, 0};
-static const GLfloat color_blue[] = {0, 0, 0.8};
-static const GLfloat color_gray[] = {0.7, 0.7, 0.6};
-static const GLfloat color_white[] = {1, 1, 1};
+static const GLfloat color_red[] = { 0.8, 0, 0 };
+static const GLfloat color_green[] = { 0, 0.8, 0 };
+static const GLfloat color_blue[] = { 0, 0, 0.8 };
+static const GLfloat color_gray[] = { 0.7, 0.7, 0.6 };
+static const GLfloat color_white[] = { 1, 1, 1 };
 
 static GLfloat delta = 0.01;
 static const GLfloat vertices[][3] = {
-    { -0.2,  delta, 0 },
-    {  0.2,  delta, 0 },
-    {  0,    delta, -0.6 },
-    { -0.2, -delta, 0 },
-    {  0.2, -delta, 0 },
-    {  0,   -delta, -0.6 },
+    { -0.2, delta, 0 },  { 0.2, delta, 0 },  { 0, delta, -0.6 },
+    { -0.2, -delta, 0 }, { 0.2, -delta, 0 }, { 0, -delta, -0.6 },
 };
-static const GLfloat* vertex_colors[] = {
-    color_red,
-    color_red,
-    color_red,
-    color_gray,
-    color_gray,
-    color_gray,
+static const GLfloat *vertex_colors[] = {
+    color_red, color_red, color_red, color_gray, color_gray, color_gray,
 };
 
 static size_t edges[][2] = {
-    {0,1},
-    {0,2},
-    {0,3},
-    {1,2},
-    {1,4},
-    {2,5},
-    {3,4},
-    {3,5},
-    {4,5},
+    { 0, 1 }, { 0, 2 }, { 0, 3 }, { 1, 2 }, { 1, 4 }, { 2, 5 }, { 3, 4 }, { 3, 5 }, { 4, 5 },
 };
 
 static const GLfloat axes_endpts[][3] = {
-    {-1,  0,  0 },
-    { 1,  0,  0 },
-    { 0, -1,  0 },
-    { 0,  1,  0 },
-    { 0,  0, -1 },
-    { 0,  0,  1 },
+    { -1, 0, 0 }, { 1, 0, 0 }, { 0, -1, 0 }, { 0, 1, 0 }, { 0, 0, -1 }, { 0, 0, 1 },
 };
 
-static void rotateVertex(const QQuaternion& q, GLfloat dst[3], const GLfloat src[3]) {
+static void rotateVertex(const QQuaternion &q, GLfloat dst[3], const GLfloat src[3])
+{
     QVector3D vin(src[0], -src[2], src[1]);
     QVector3D vout = q.rotatedVector(vin);
 
@@ -69,9 +47,7 @@ static void rotateVertex(const QQuaternion& q, GLfloat dst[3], const GLfloat src
     dst[2] = -vout.y();
 }
 
-Orientation::Orientation() :
-    m_renderer(nullptr),
-    m_quat(1, 0, 0, 0)
+Orientation::Orientation() : m_renderer(nullptr), m_quat(1, 0, 0, 0)
 {
     connect(this, &QQuickItem::windowChanged, this, &Orientation::handleWindowChanged);
 }
@@ -79,8 +55,10 @@ Orientation::Orientation() :
 void Orientation::handleWindowChanged(QQuickWindow *win)
 {
     if (win) {
-        connect(win, &QQuickWindow::beforeSynchronizing, this, &Orientation::sync, Qt::DirectConnection);
-        connect(win, &QQuickWindow::sceneGraphInvalidated, this, &Orientation::cleanup, Qt::DirectConnection);
+        connect(win, &QQuickWindow::beforeSynchronizing, this, &Orientation::sync,
+                Qt::DirectConnection);
+        connect(win, &QQuickWindow::sceneGraphInvalidated, this, &Orientation::cleanup,
+                Qt::DirectConnection);
     }
 }
 
@@ -88,7 +66,8 @@ void Orientation::sync()
 {
     if (!m_renderer) {
         m_renderer = new OrientationRenderer();
-        connect(window(), &QQuickWindow::afterRendering, m_renderer, &OrientationRenderer::paint, Qt::DirectConnection);
+        connect(window(), &QQuickWindow::afterRendering, m_renderer, &OrientationRenderer::paint,
+                Qt::DirectConnection);
     }
     m_renderer->setViewportSize(window()->size() * window()->devicePixelRatio());
     m_renderer->setQuaternion(m_quat);
@@ -103,7 +82,8 @@ void Orientation::cleanup()
     }
 }
 
-void Orientation::setQuat(QQuaternion quat) {
+void Orientation::setQuat(QQuaternion quat)
+{
     if (quat == m_quat)
         return;
 
@@ -114,9 +94,7 @@ void Orientation::setQuat(QQuaternion quat) {
         window()->update();
 }
 
-OrientationRenderer::~OrientationRenderer()
-{
-}
+OrientationRenderer::~OrientationRenderer() {}
 
 void OrientationRenderer::paint()
 {
@@ -144,10 +122,8 @@ void OrientationRenderer::paint()
     // camera position
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
-    gluLookAt(
-                cam_pos[0], cam_pos[1], cam_pos[2],
-                cam_target[0], cam_target[1], cam_target[2], 
-                cam_up[0], cam_up[1], cam_up[2] );
+    gluLookAt(cam_pos[0], cam_pos[1], cam_pos[2], cam_target[0], cam_target[1], cam_target[2],
+              cam_up[0], cam_up[1], cam_up[2]);
 
     // scene elements
     draw_pointer();
@@ -157,7 +133,8 @@ void OrientationRenderer::paint()
     m_window->resetOpenGLState();
 }
 
-void OrientationRenderer::draw_cone() {
+void OrientationRenderer::draw_cone()
+{
     GLUquadricObj *quadratic;
 
     quadratic = gluNewQuadric();
@@ -168,7 +145,8 @@ void OrientationRenderer::draw_cone() {
     gluDeleteQuadric(quadratic);
 }
 
-void OrientationRenderer::draw_pointer() {
+void OrientationRenderer::draw_pointer()
+{
     GLfloat tmpvertex[3];
 
     glBegin(GL_TRIANGLES);
@@ -192,7 +170,8 @@ void OrientationRenderer::draw_pointer() {
     glEnd();
 }
 
-void OrientationRenderer::draw_axes() {
+void OrientationRenderer::draw_axes()
+{
     glBegin(GL_LINES);
 
     glColor3fv(color_red);

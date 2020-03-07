@@ -31,7 +31,8 @@ static void set_sensordata(QQmlContext *ctx, const struct sensoreval_render_ctx 
     ctx->setContextProperty("main_quaternion", q);
 }
 
-static int dataviewer_main_real(int argc, char **argv, struct sensoreval_render_ctx *render, struct sensoreval_datareader_ctx *reader)
+static int dataviewer_main_real(int argc, char **argv, struct sensoreval_render_ctx *render,
+                                struct sensoreval_datareader_ctx *reader)
 {
     int rc;
     QTimer *timer = nullptr;
@@ -55,7 +56,8 @@ static int dataviewer_main_real(int argc, char **argv, struct sensoreval_render_
     qmlRegisterType<QmlVideoHUD>("Main", 1, 0, "VideoHUD");
     qmlRegisterType<Orientation>("Main", 1, 0, "Orientation");
 
-    engine.rootContext()->setContextProperty("main_videoPath", QUrl::fromLocalFile(QFileInfo(videopath).absoluteFilePath()));
+    engine.rootContext()->setContextProperty(
+            "main_videoPath", QUrl::fromLocalFile(QFileInfo(videopath).absoluteFilePath()));
     engine.rootContext()->setContextProperty("main_videoStartOffset", (double)startoff);
     engine.rootContext()->setContextProperty("main_videoEndOffset", (double)endoff);
     set_sensordata(engine.rootContext(), nullptr);
@@ -67,10 +69,10 @@ static int dataviewer_main_real(int argc, char **argv, struct sensoreval_render_
     QObject *root = engine.rootObjects().first();
     Q_ASSERT(root);
 
-    QmlVideoHUD *hud = root->findChild<QmlVideoHUD*>("hud");
+    QmlVideoHUD *hud = root->findChild<QmlVideoHUD *>("hud");
     Q_ASSERT(hud);
 
-    QObject *qmlplayer = root->findChild<QObject*>("player");
+    QObject *qmlplayer = root->findChild<QObject *>("player");
     Q_ASSERT(qmlplayer);
     QMediaPlayer *player = qvariant_cast<QMediaPlayer *>(qmlplayer->property("mediaObject"));
     Q_ASSERT(player);
@@ -87,22 +89,23 @@ static int dataviewer_main_real(int argc, char **argv, struct sensoreval_render_
         Q_ASSERT(rc >= 0);
 
         auto conn = std::make_shared<QMetaObject::Connection>();
-        *conn = QObject::connect(notifier, &QSocketNotifier::activated, [render, reader, conn, notifier, &engine, hud](int fd) {
-            (void)(fd);
+        *conn = QObject::connect(notifier, &QSocketNotifier::activated,
+                                 [render, reader, conn, notifier, &engine, hud](int fd) {
+                                     (void)(fd);
 
-            int notifyrc = sensoreval_notify_stdin(render, reader);
-            if (notifyrc < 0) {
-                fprintf(stderr, "sensoreval_notify_stdin failed: %d\n", notifyrc);
-                exit(1);
-            }
+                                     int notifyrc = sensoreval_notify_stdin(render, reader);
+                                     if (notifyrc < 0) {
+                                         fprintf(stderr, "sensoreval_notify_stdin failed: %d\n",
+                                                 notifyrc);
+                                         exit(1);
+                                     }
 
-            if (notifyrc > 0) {
-                hud->update();
-                set_sensordata(engine.rootContext(), render);
-            }
-        });
-    }
-    else {
+                                     if (notifyrc > 0) {
+                                         hud->update();
+                                         set_sensordata(engine.rootContext(), render);
+                                     }
+                                 });
+    } else {
         timer = new QTimer();
         QObject::connect(timer, &QTimer::timeout, [render, hud, player, &engine]() {
             int settsrc = sensoreval_render_set_ts(render, player->position() * 1000);
@@ -122,12 +125,13 @@ static int dataviewer_main_real(int argc, char **argv, struct sensoreval_render_
     return app.exec();
 }
 
-extern "C" int dataviewer_main(struct sensoreval_render_ctx *render, struct sensoreval_datareader_ctx *reader)
+extern "C" int dataviewer_main(struct sensoreval_render_ctx *render,
+                               struct sensoreval_datareader_ctx *reader)
 {
     char *arg0 = strdup("dataviewer");
     if (!arg0)
         return -1;
-    char *argv[] = {arg0, NULL};
+    char *argv[] = { arg0, NULL };
 
     int rc = dataviewer_main_real(1, argv, render, reader);
     free(arg0);

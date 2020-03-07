@@ -16,7 +16,7 @@ class QmlVideoHUD : public QQuickPaintedItem
 
 public:
     QmlVideoHUD(QQuickItem *parent = 0);
-    
+
     void paint(QPainter *painter);
 
     void setSensorEvalRenderCtx(struct sensoreval_render_ctx *render);
