@@ -85,6 +85,28 @@ extern "C" {
     ) -> std::os::raw::c_int;
 }
 
+fn run_blender<T: serde::ser::Serialize>(scene: &str, code: &T) -> Result<Python, Error> {
+    Python::new_args(
+        "blender",
+        &[
+            "-b",
+            "--factory-startup",
+            "--python-exit-code",
+            "255",
+            scene,
+            "--python-expr",
+            "\
+                import sys\n\
+                import pickle\n\
+                def load_data():\n\
+                    \treturn pickle.load(sys.stdin.buffer)\n\
+                exec(load_data())\n\
+                ",
+        ],
+        code,
+    )
+}
+
 struct DataTimestampIter {
     fps_num: f64,
     fps_den: f64,
@@ -141,6 +163,13 @@ fn main() {
                 .value_name("OUTPUT")
                 .help("output directory"),
         )
+        .arg(
+            clap::Arg::with_name("blenderscenes")
+                .short("b")
+                .long("blenderscenes")
+                .value_name("BLENDERSCENES")
+                .help("blender scene directory"),
+        )
         .get_matches();
 
     let cfgname = matches.value_of("CONFIG").unwrap();
@@ -184,6 +213,51 @@ fn main() {
             if rc != 0 {
                 panic!("dataviewer_main failed: {}", rc);
             }
+        }
+        "blender" => {
+            let blenderscenes = std::path::Path::new(
+                matches
+                    .value_of("blenderscenes")
+                    .expect("no blenderscenes specified"),
+            );
+            let outdir = outdir.expect("no output file specified.");
+            let video_file = cfg.video.filename.clone().expect("no video URL");
+            let stream_info = get_video_stream_info(&video_file);
+            let mut orientations = Vec::new();
+            for ts in DataTimestampIter::new(&cfg, &stream_info) {
+                let ret = renderctx.set_ts(ts);
+                match &ret {
+                    Err(Error::SampleNotFound) => break,
+                    _ => ret.unwrap(),
+                }
+
+                orientations.push(renderctx.orientation().unwrap());
+            }
+
+            let mut blender = run_blender(
+                blenderscenes
+                    .join("mannequin/mannequin.blend")
+                    .as_path()
+                    .to_str()
+                    .unwrap(),
+                &include_str!("../python/blender_common.py"),
+            )
+            .unwrap();
+            blender
+                .write(&include_str!("../python/blender_mannequin.py"))
+                .unwrap();
+            blender.write(&outdir.join("mannequin")).unwrap();
+            blender.write(&"mannequin").unwrap();
+            blender
+                .write(&DataSerializer::new(&orientations, |_i, v| {
+                    let v = render::Context::process_quat_for_name(v.as_vector());
+                    [v[3], v[0], v[1], v[2]]
+                }))
+                .unwrap();
+            blender
+                .write(&[stream_info.width, stream_info.height])
+                .unwrap();
+            blender.wait().unwrap();
         }
         "video" => {
             let outdir = outdir.expect("no output file specified.");
