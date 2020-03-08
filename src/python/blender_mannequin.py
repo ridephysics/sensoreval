@@ -30,8 +30,8 @@ scene.render.tile_x = 16
 scene.render.tile_y = 16
 camera_obj.location[1] = -12.000
 
-for q in orientations:
-    filename = '%s_%.3f_%.3f_%.3f_%.3f.png' % (prefix, q[0], q[1], q[2], q[3])
+for (fid, q) in orientations:
+    filename = '%s_%s.png' % (prefix, fid)
     path = os.path.join(outdir, filename)
 
     if not os.path.exists(path):
