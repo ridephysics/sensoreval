@@ -200,6 +200,23 @@ impl<'a, 'b, 'c> Context<'a, 'b, 'c> {
         self.hudctx.get_dataset()
     }
 
+    fn process_number_for_name(n: f64) -> f64 {
+        let n = (n * 1000.0) as i64;
+        match n.cmp(&0) {
+            std::cmp::Ordering::Equal => 0.0,
+            std::cmp::Ordering::Greater | std::cmp::Ordering::Less => (n as f64) / 1000.0,
+        }
+    }
+
+    pub fn process_quat_for_name(q: &nalgebra::Vector4<f64>) -> nalgebra::Vector4<f64> {
+        nalgebra::Vector4::new(
+            Self::process_number_for_name(q[0]),
+            Self::process_number_for_name(q[1]),
+            Self::process_number_for_name(q[2]),
+            Self::process_number_for_name(q[3]),
+        )
+    }
+
     pub fn render(&mut self, cr: &cairo::Context) -> Result<(), Error> {
         let ssz = render::utils::surface_sz_user(cr);
         let dpi = 160.0 * (ssz.0 / 1920.0);
@@ -225,6 +242,37 @@ impl<'a, 'b, 'c> Context<'a, 'b, 'c> {
             let hudret = renderer.render(&self.hudctx, cr);
             cr.restore();
             hudret?;
+
+            if let Some(blenderdir) = &self.blenderdir {
+                cr.save();
+
+                // scale blender graphics if the cairo surface size doesn't match the video resolution
+                if let Some(videosz) = self.videosz {
+                    if videosz != (ssz.0 as usize, ssz.1 as usize) {
+                        cr.scale(
+                            1.0 * ssz.0 / videosz.0 as f64,
+                            1.0 * ssz.1 / videosz.1 as f64,
+                        );
+                    }
+                }
+                let ssz = render::utils::surface_sz_user(cr);
+
+                let qo = self.orientation()?;
+                let q = render::Context::process_quat_for_name(qo.as_vector());
+                let path = blenderdir.join(format!(
+                    "mannequin/mannequin_{:.3}_{:.3}_{:.3}_{:.3}.png",
+                    q[3], q[0], q[1], q[2]
+                ));
+
+                if let Ok(surface) = utils::png_to_surface(&path) {
+                    cr.set_source_surface(&surface, 0.0, ssz.1 - surface.get_height() as f64);
+                    cr.paint();
+                } else if !self.allow_missing_renders {
+                    return Err(Error::BlenderRenderNotFound);
+                }
+
+                cr.restore();
+            }
         }
 
         Ok(())
