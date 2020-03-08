@@ -62,12 +62,16 @@ fn main() {
     let matches = clap::App::new("hudrenderer")
         .version("0.1")
         .arg(
-            clap::Arg::with_name("mode")
-                .short("m")
-                .long("mode")
-                .value_name("MODE")
-                .default_value("video")
-                .help("plot data instead of rendering"),
+            clap::Arg::with_name("CONFIG")
+                .help("config file to use")
+                .required(true)
+                .index(1),
+        )
+        .arg(
+            clap::Arg::with_name("MODE")
+                .help("render mode")
+                .required(true)
+                .index(2),
         )
         .arg(
             clap::Arg::with_name("output")
@@ -75,12 +79,6 @@ fn main() {
                 .long("output")
                 .value_name("OUTPUT")
                 .help("output directory"),
-        )
-        .arg(
-            clap::Arg::with_name("CONFIG")
-                .help("config file to use")
-                .required(true)
-                .index(1),
         )
         .get_matches();
 
@@ -96,7 +94,7 @@ fn main() {
     // init render context
     let mut renderctx = render::Context::new(&cfg, Some(&samples));
 
-    match matches.value_of("mode").unwrap() {
+    match matches.value_of("MODE").unwrap() {
         "plot" => {
             // plot
             renderctx.plot().expect("can't plot");
