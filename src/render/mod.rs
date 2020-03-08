@@ -86,6 +86,7 @@ pub struct Context<'a, 'b, 'c> {
     hudctx: HudContext<'b>,
     blenderdir: Option<&'c std::path::Path>,
     videosz: Option<(usize, usize)>,
+    allow_missing_renders: bool,
 }
 
 /// HUD renderer trait
@@ -129,6 +130,7 @@ impl<'a, 'b, 'c> Context<'a, 'b, 'c> {
             },
             blenderdir: None,
             videosz: None,
+            allow_missing_renders: false,
         };
 
         ctx.hudrenderer = renderer_from_ctx(&ctx);
@@ -144,6 +146,10 @@ impl<'a, 'b, 'c> Context<'a, 'b, 'c> {
 
     pub fn set_videosz(&mut self, videosz: Option<(usize, usize)>) {
         self.videosz = videosz;
+    }
+
+    pub fn set_allow_missing_renders(&mut self, allow_missing_renders: bool) {
+        self.allow_missing_renders = allow_missing_renders;
     }
 
     /// set timestamp in dataset, if available
