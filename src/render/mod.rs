@@ -80,10 +80,11 @@ impl<'b> HudContext<'b> {
 }
 
 /// rendering context
-pub struct Context<'a, 'b> {
+pub struct Context<'a, 'b, 'c> {
     pub cfg: &'a config::Config,
     hudrenderer: Option<Box<dyn HudRenderer>>,
     hudctx: HudContext<'b>,
+    blenderdir: Option<&'c std::path::Path>,
 }
 
 /// HUD renderer trait
@@ -110,7 +111,7 @@ fn renderer_from_ctx(ctx: &Context) -> Option<Box<dyn HudRenderer>> {
     Some(Box::new(renderer))
 }
 
-impl<'a, 'b> Context<'a, 'b> {
+impl<'a, 'b, 'c> Context<'a, 'b, 'c> {
     pub fn new(cfg: &'a config::Config, dataset: Option<&'b Vec<Data>>) -> Self {
         let mut ctx = Self {
             cfg,
@@ -122,6 +123,7 @@ impl<'a, 'b> Context<'a, 'b> {
                 src: DataSrc::None,
                 actual_ts: 0,
             },
+            blenderdir: None,
         };
 
         ctx.hudrenderer = renderer_from_ctx(&ctx);
@@ -129,6 +131,10 @@ impl<'a, 'b> Context<'a, 'b> {
         ctx.set_dataset(dataset);
 
         ctx
+    }
+
+    pub fn set_blenderdir(&mut self, blenderdir: Option<&'c std::path::Path>) {
+        self.blenderdir = blenderdir;
     }
 
     /// set timestamp in dataset, if available
