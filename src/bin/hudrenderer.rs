@@ -84,6 +84,39 @@ extern "C" {
     ) -> std::os::raw::c_int;
 }
 
+struct DataTimestampIter {
+    fps_num: f64,
+    fps_den: f64,
+    /// unit: us
+    startoff: u64,
+
+    frameid: u64,
+}
+
+impl DataTimestampIter {
+    pub fn new(cfg: &config::Config, stream_info: &FFProbeStream) -> Self {
+        let (fps_num, fps_den) = stream_info.get_fps();
+        Self {
+            fps_num,
+            fps_den,
+            startoff: cfg.video.startoff * 1000,
+            frameid: 0,
+        }
+    }
+}
+
+impl Iterator for DataTimestampIter {
+    type Item = u64;
+
+    fn next(&mut self) -> Option<u64> {
+        let ts = self.startoff
+            + ((self.frameid * 1_000_000) as f64 * self.fps_den / self.fps_num) as u64;
+        self.frameid += 1;
+
+        Some(ts)
+    }
+}
+
 fn main() {
     // parse args
     let matches = clap::App::new("hudrenderer")
@@ -142,7 +175,6 @@ fn main() {
             let out_video = outdir.join("final.mkv");
             let video_file = cfg.video.filename.clone().expect("no video URL");
             let stream_info = get_video_stream_info(&video_file);
-            let (fps_num, fps_den) = stream_info.get_fps();
 
             let mut surface = cairo::ImageSurface::create(
                 cairo::Format::ARgb32,
@@ -221,12 +253,9 @@ fn main() {
                 .expect("can't spawn ffmpeg");
 
             let mut child_stdin = child.stdin.take().unwrap();
-            let mut frameid: u64 = 0;
-            let frame_time = 1_000_000.0f64 * fps_den / fps_num;
-            loop {
+            for ts in DataTimestampIter::new(&cfg, &stream_info) {
                 // render
                 {
-                    let ts = cfg.video.startoff * 1000 + (frameid as f64 * frame_time) as u64;
                     let ret = renderctx.set_ts(ts);
                     match &ret {
                         Err(Error::SampleNotFound) => break,
@@ -246,8 +275,6 @@ fn main() {
                     Err(e) if e.kind() == std::io::ErrorKind::BrokenPipe => break,
                     _ => ret.unwrap(),
                 }
-
-                frameid += 1;
             }
 
             println!("DONE RENDERING");
