@@ -85,6 +85,7 @@ pub struct Context<'a, 'b, 'c> {
     hudrenderer: Option<Box<dyn HudRenderer>>,
     hudctx: HudContext<'b>,
     blenderdir: Option<&'c std::path::Path>,
+    videosz: Option<(usize, usize)>,
 }
 
 /// HUD renderer trait
@@ -124,6 +125,7 @@ impl<'a, 'b, 'c> Context<'a, 'b, 'c> {
                 actual_ts: 0,
             },
             blenderdir: None,
+            videosz: None,
         };
 
         ctx.hudrenderer = renderer_from_ctx(&ctx);
@@ -135,6 +137,10 @@ impl<'a, 'b, 'c> Context<'a, 'b, 'c> {
 
     pub fn set_blenderdir(&mut self, blenderdir: Option<&'c std::path::Path>) {
         self.blenderdir = blenderdir;
+    }
+
+    pub fn set_videosz(&mut self, videosz: Option<(usize, usize)>) {
+        self.videosz = videosz;
     }
 
     /// set timestamp in dataset, if available
