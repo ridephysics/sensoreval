@@ -56,6 +56,20 @@ fn get_video_stream_info(filename: &str) -> FFProbeStream {
     probe_info.streams[0].clone()
 }
 
+fn get_check_outdir<'a>(matches: &'a clap::ArgMatches) -> &'a std::path::Path {
+    let outdir = std::path::Path::new(
+        matches
+            .value_of("output")
+            .expect("no output file specified."),
+    );
+
+    if !outdir.is_dir() {
+        panic!("{} is not a directory", outdir.to_str().unwrap());
+    }
+
+    outdir
+}
+
 fn svg2png(png: &str, svg: &str) {
     std::process::Command::new("inkscape")
         .args(&["-z", "-e", png, svg])
@@ -124,17 +138,8 @@ fn main() {
             }
         }
         "video" => {
-            let outdir = std::path::Path::new(
-                matches
-                    .value_of("output")
-                    .expect("no output file specified."),
-            );
+            let outdir = get_check_outdir(&matches);
             let out_video = outdir.join("final.mkv");
-
-            if !outdir.is_dir() {
-                panic!("{} is not a directory", outdir.to_str().unwrap());
-            }
-
             let video_file = cfg.video.filename.clone().expect("no video URL");
             let stream_info = get_video_stream_info(&video_file);
             let (fps_num, fps_den) = stream_info.get_fps();
