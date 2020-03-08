@@ -9,6 +9,19 @@ struct FFProbeStream {
     avg_frame_rate: std::string::String,
 }
 
+impl FFProbeStream {
+    pub fn get_fps(&self) -> (f64, f64) {
+        let fps_numden: Vec<&str> = self.avg_frame_rate.split('/').collect();
+        if fps_numden.len() != 2 {
+            panic!("invalid avg_frame_rate: {}", self.avg_frame_rate);
+        }
+        let fps_num: f64 = fps_numden[0].parse().unwrap();
+        let fps_den: f64 = fps_numden[1].parse().unwrap();
+
+        (fps_num, fps_den)
+    }
+}
+
 #[derive(Deserialize, Debug)]
 struct FFProbeInfo {
     streams: Vec<FFProbeStream>,
@@ -124,12 +137,7 @@ fn main() {
 
             let video_file = cfg.video.filename.clone().expect("no video URL");
             let stream_info = get_video_stream_info(&video_file);
-            let fps_numden: Vec<&str> = stream_info.avg_frame_rate.split('/').collect();
-            if fps_numden.len() != 2 {
-                panic!("invalid avg_frame_rate: {}", stream_info.avg_frame_rate);
-            }
-            let fps_num: f64 = fps_numden[0].parse().unwrap();
-            let fps_den: f64 = fps_numden[1].parse().unwrap();
+            let (fps_num, fps_den) = stream_info.get_fps();
 
             let mut surface = cairo::ImageSurface::create(
                 cairo::Format::ARgb32,
