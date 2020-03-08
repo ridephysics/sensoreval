@@ -200,28 +200,6 @@ impl<'a, 'b, 'c> Context<'a, 'b, 'c> {
         self.hudctx.get_dataset()
     }
 
-    fn process_number_for_name(n: f64) -> f64 {
-        let n = (n * 1000.0) as i64;
-        match n.cmp(&0) {
-            std::cmp::Ordering::Equal => 0.0,
-            std::cmp::Ordering::Greater | std::cmp::Ordering::Less => (n as f64) / 1000.0,
-        }
-    }
-
-    pub fn process_quat_for_name(q: &nalgebra::Vector4<f64>) -> nalgebra::Vector4<f64> {
-        nalgebra::Vector4::new(
-            Self::process_number_for_name(q[0]),
-            Self::process_number_for_name(q[1]),
-            Self::process_number_for_name(q[2]),
-            Self::process_number_for_name(q[3]),
-        )
-    }
-
-    pub fn quat_to_fid(q: &nalgebra::Quaternion<f64>) -> String {
-        let q = render::Context::process_quat_for_name(q.as_vector());
-        format!("{:.3}_{:.3}_{:.3}_{:.3}", q[3], q[0], q[1], q[2])
-    }
-
     pub fn render(&mut self, cr: &cairo::Context) -> Result<(), Error> {
         let ssz = render::utils::surface_sz_user(cr);
         let dpi = 160.0 * (ssz.0 / 1920.0);
@@ -263,7 +241,7 @@ impl<'a, 'b, 'c> Context<'a, 'b, 'c> {
                 let ssz = render::utils::surface_sz_user(cr);
 
                 let q = self.orientation()?;
-                let fid = Self::quat_to_fid(&q);
+                let fid = quat_to_fid(&q);
                 let path = blenderdir.join(format!("mannequin/mannequin_{}.png", fid));
 
                 if let Ok(surface) = utils::png_to_surface(&path) {
@@ -305,4 +283,26 @@ impl<'a, 'b, 'c> Context<'a, 'b, 'c> {
     pub fn sp2px(&self, sp: f64) -> f64 {
         self.hudctx.sp2px(sp)
     }
+}
+
+fn process_number_for_name(n: f64) -> f64 {
+    let n = (n * 1000.0) as i64;
+    match n.cmp(&0) {
+        std::cmp::Ordering::Equal => 0.0,
+        std::cmp::Ordering::Greater | std::cmp::Ordering::Less => (n as f64) / 1000.0,
+    }
+}
+
+pub fn process_quat_for_name(q: &nalgebra::Vector4<f64>) -> nalgebra::Vector4<f64> {
+    nalgebra::Vector4::new(
+        process_number_for_name(q[0]),
+        process_number_for_name(q[1]),
+        process_number_for_name(q[2]),
+        process_number_for_name(q[3]),
+    )
+}
+
+pub fn quat_to_fid(q: &nalgebra::Quaternion<f64>) -> String {
+    let q = process_quat_for_name(q.as_vector());
+    format!("{:.3}_{:.3}_{:.3}_{:.3}", q[3], q[0], q[1], q[2])
 }
