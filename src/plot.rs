@@ -1,51 +1,29 @@
 use crate::*;
 
-pub struct Plot {
-    child: std::process::Child,
-}
+pub struct Plot(Python);
 
 impl Plot {
-    pub fn new(code: &str) -> Result<Plot, Error> {
-        let mut child = std::process::Command::new("python")
-            .args(&[
-                "-c",
-                "\
-                 import sys\n\
-                 import pickle\n\
-                 import numpy as np\n\
-                 import matplotlib.pyplot as plt\n\
-                 ca = '#1f77b4'\n\
-                 cz = '#ff7f0e'\n\
-                 ce = '#2ca02c'\n\
-                 def load_data():\n\
-                     \treturn pickle.load(sys.stdin.buffer)\n\
-                 exec(load_data())\n\
-                 ",
-            ])
-            .stdin(std::process::Stdio::piped())
-            .stdout(std::process::Stdio::inherit())
-            .spawn()?;
-
-        let stdin = child.stdin.as_mut().unwrap();
-        serde_pickle::to_writer(stdin, &code, true)?;
-
-        Ok(Plot { child })
+    pub fn new<T: serde::ser::Serialize>(code: &T) -> Result<Plot, Error> {
+        let mut plot = Self(Python::new(
+            "\
+            import numpy as np\n\
+            import matplotlib.pyplot as plt\n\
+            ca = '#1f77b4'\n\
+            cz = '#ff7f0e'\n\
+            ce = '#2ca02c'\n\
+            exec(load_data())\n\
+        ",
+        )?);
+        plot.0.write(code)?;
+        Ok(plot)
     }
 
     pub fn write<T: serde::ser::Serialize>(&mut self, value: &T) -> Result<(), Error> {
-        let stdin = self.child.stdin.as_mut().unwrap();
-        serde_pickle::to_writer(stdin, value, true)?;
-
-        Ok(())
+        self.0.write(value)
     }
 
     pub fn wait(&mut self) -> Result<(), Error> {
-        let status = self.child.wait()?;
-        if !status.success() {
-            return Err(Error::from(status));
-        }
-
-        Ok(())
+        self.0.wait()
     }
 }
 
@@ -53,7 +31,7 @@ pub struct TimeDataPlot(Plot);
 
 impl TimeDataPlot {
     pub fn new<T: serde::ser::Serialize>(time: &T) -> Result<TimeDataPlot, Error> {
-        let mut plot = Self(Plot::new(include_str!("python/plot_time_data.py"))?);
+        let mut plot = Self(Plot::new(&include_str!("python/plot_time_data.py"))?);
         plot.0.write(time)?;
         Ok(plot)
     }

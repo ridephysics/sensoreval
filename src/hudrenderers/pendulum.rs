@@ -686,7 +686,7 @@ impl render::HudRenderer for Pendulum {
         let samples = ctx.get_dataset().ok_or(Error::NoDataSet)?;
 
         let mut plot = Plot::new(
-            "\
+            &"\
             t = np.array(load_data())\n\
             z = np.array(load_data())\n\
             est = np.array(load_data())\n\
