@@ -1,9 +1,11 @@
 import os
 import bpy
 
+
 def robot_set_quat(q):
     set_bpy_quat(robot.rotation_quaternion, q)
     set_bpy_quat(robot_skeleton.rotation_quaternion, q)
+
 
 # get data from rust
 outdir = load_data()

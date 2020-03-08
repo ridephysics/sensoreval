@@ -1,5 +1,6 @@
 import bpy
 
+
 def get_pose_index(o, name):
     idx = 0
 
@@ -9,7 +10,8 @@ def get_pose_index(o, name):
 
         idx += 1
 
-    raise Exception('pose \'%s\' not found' %  (name))
+    raise Exception('pose \'%s\' not found' % (name))
+
 
 def get_context_by_type(typename):
     for window in bpy.context.window_manager.windows:
@@ -28,8 +30,9 @@ def get_context_by_type(typename):
                             'selected_objects': bpy.context.selected_objects
                         }
                         return context
-                    
+
     raise Exception("not found")
+
 
 def apply_pose(o, name):
     bones = [pose_bone for pose_bone in o.pose.bones if pose_bone.bone.select]
@@ -37,8 +40,9 @@ def apply_pose(o, name):
     context = get_context_by_type('PROPERTIES')
     context['active_object'] = o
     context['selected_pose_bones'] = bones
-    
+
     bpy.ops.poselib.apply_pose(context, pose_index=get_pose_index(o, name))
+
 
 def set_bpy_quat(o, q):
     o[0] = q[0]
@@ -46,8 +50,10 @@ def set_bpy_quat(o, q):
     o[2] = q[2]
     o[3] = q[3]
 
+
 def render(path):
     bpy.context.scene.render.filepath = path
     bpy.ops.render.render(write_still=True)
+
 
 exec(load_data())
