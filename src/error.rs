@@ -1,6 +1,7 @@
 #[derive(Debug)]
 pub enum Error {
     Io(std::io::Error),
+    CairoIo(cairo::IoError),
     SerdePickle(serde_pickle::error::Error),
     ExitStatus(std::process::ExitStatus),
     BinCode(bincode::Error),
@@ -21,6 +22,13 @@ impl From<std::io::Error> for Error {
     #[inline]
     fn from(e: std::io::Error) -> Self {
         Error::Io(e)
+    }
+}
+
+impl From<cairo::IoError> for Error {
+    #[inline]
+    fn from(e: cairo::IoError) -> Self {
+        Error::CairoIo(e)
     }
 }
 
