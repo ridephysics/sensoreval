@@ -236,6 +236,32 @@ impl Pendulum {
         x[2] - (x[0] + x[3]).cos() * x[2]
     }
 
+    fn est(
+        &self,
+        ctx: &render::HudContext,
+        dataset: &[Data],
+        dataid: usize,
+    ) -> ndarray::Array1<f64> {
+        let sample = &dataset[dataid];
+        let est_sampletime = &self.est[dataid];
+
+        let est_now = if ctx.actual_ts > sample.time {
+            let fns = StateFunctions::new(&self.cfg);
+            Some(fns.fx(
+                est_sampletime,
+                (ctx.actual_ts - sample.time) as f64 / 1_000_000.0f64,
+            ))
+        } else {
+            None
+        };
+
+        if let Some(est_now) = est_now {
+            est_now
+        } else {
+            est_sampletime.clone()
+        }
+    }
+
     /// draws to pointy end of a boat
     fn swingboat_head_line(
         cr: &cairo::Context,
@@ -594,24 +620,9 @@ impl render::HudRenderer for Pendulum {
     }
 
     fn render(&self, ctx: &render::HudContext, cr: &cairo::Context) -> Result<(), Error> {
-        let fns = StateFunctions::new(&self.cfg);
         let dataid = unwrap_opt_or!(ctx.current_data_id(), return Err(Error::SampleNotFound));
         let dataset = ctx.get_dataset().unwrap();
-        let sample = &dataset[dataid];
-        let est_sampletime = &self.est[dataid];
-        let est_now = if ctx.actual_ts > sample.time {
-            Some(fns.fx(
-                est_sampletime,
-                (ctx.actual_ts - sample.time) as f64 / 1_000_000.0f64,
-            ))
-        } else {
-            None
-        };
-        let est = if let Some(est_now) = &est_now {
-            est_now
-        } else {
-            est_sampletime
-        };
+        let est = self.est(ctx, dataset, dataid);
 
         let mut utilfont = render::utils::Font::new(&self.font);
         utilfont.line_width = ctx.dp2px(3.0);
