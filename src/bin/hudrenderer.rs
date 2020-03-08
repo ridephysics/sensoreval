@@ -173,6 +173,8 @@ fn main() {
             renderctx.plot().expect("can't plot");
         }
         "dataviewer" => {
+            renderctx.set_allow_missing_renders(true);
+
             let rc = unsafe {
                 dataviewer_main(
                     &mut renderctx as *mut render::Context as *mut std::ffi::c_void,
