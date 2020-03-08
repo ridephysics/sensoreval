@@ -16,6 +16,7 @@ pub enum Error {
     NoHudRenderer,
     InvalidArgument,
     FloatConversion,
+    BlenderRenderNotFound,
 }
 
 impl From<std::io::Error> for Error {
