@@ -64,13 +64,14 @@ pub extern "C" fn sensoreval_render_get_quat(
     renderctx_ptr: *const render::Context,
     quat_ptr: *mut std::os::raw::c_double,
 ) -> std::os::raw::c_int {
-    let _renderctx = unwrap_opt_or!(unsafe { renderctx_ptr.as_ref() }, return -1);
+    let renderctx = unwrap_opt_or!(unsafe { renderctx_ptr.as_ref() }, return -1);
     let quat = unsafe { std::slice::from_raw_parts_mut(quat_ptr, 4) };
+    let q = unwrap_res_or!(renderctx.orientation(), return -2);
 
-    quat[0] = 1.0;
-    quat[1] = 0.0;
-    quat[2] = 0.0;
-    quat[3] = 0.0;
+    quat[0] = q[3] as std::os::raw::c_double;
+    quat[1] = q[0] as std::os::raw::c_double;
+    quat[2] = q[1] as std::os::raw::c_double;
+    quat[3] = q[2] as std::os::raw::c_double;
 
     0
 }
