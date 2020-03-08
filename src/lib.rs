@@ -44,7 +44,7 @@ mod simulator;
 mod test;
 
 mod python;
-use python::*;
+pub use python::*;
 
 mod drain_filter;
 use drain_filter::*;
