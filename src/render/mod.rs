@@ -217,6 +217,11 @@ impl<'a, 'b, 'c> Context<'a, 'b, 'c> {
         )
     }
 
+    pub fn quat_to_fid(q: &nalgebra::Quaternion<f64>) -> String {
+        let q = render::Context::process_quat_for_name(q.as_vector());
+        format!("{:.3}_{:.3}_{:.3}_{:.3}", q[3], q[0], q[1], q[2])
+    }
+
     pub fn render(&mut self, cr: &cairo::Context) -> Result<(), Error> {
         let ssz = render::utils::surface_sz_user(cr);
         let dpi = 160.0 * (ssz.0 / 1920.0);
@@ -257,12 +262,9 @@ impl<'a, 'b, 'c> Context<'a, 'b, 'c> {
                 }
                 let ssz = render::utils::surface_sz_user(cr);
 
-                let qo = self.orientation()?;
-                let q = render::Context::process_quat_for_name(qo.as_vector());
-                let path = blenderdir.join(format!(
-                    "mannequin/mannequin_{:.3}_{:.3}_{:.3}_{:.3}.png",
-                    q[3], q[0], q[1], q[2]
-                ));
+                let q = self.orientation()?;
+                let fid = Self::quat_to_fid(&q);
+                let path = blenderdir.join(format!("mannequin/mannequin_{}.png", fid));
 
                 if let Ok(surface) = utils::png_to_surface(&path) {
                     cr.set_source_surface(&surface, 0.0, ssz.1 - surface.get_height() as f64);
