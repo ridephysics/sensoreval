@@ -5,7 +5,7 @@ pub struct Plot(Python);
 impl Plot {
     pub fn new<T: serde::ser::Serialize>(code: &T) -> Result<Plot, Error> {
         let mut plot = Self(Python::new(
-            "\
+            &"\
             import numpy as np\n\
             import matplotlib.pyplot as plt\n\
             ca = '#1f77b4'\n\

@@ -5,7 +5,7 @@ pub struct Python {
 }
 
 impl Python {
-    pub fn new(code: &str) -> Result<Self, Error> {
+    pub fn new<T: serde::ser::Serialize>(code: &T) -> Result<Self, Error> {
         let mut child = std::process::Command::new("python")
             .args(&[
                 "-c",
