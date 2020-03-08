@@ -56,18 +56,19 @@ fn get_video_stream_info(filename: &str) -> FFProbeStream {
     probe_info.streams[0].clone()
 }
 
-fn get_check_outdir<'a>(matches: &'a clap::ArgMatches) -> &'a std::path::Path {
-    let outdir = std::path::Path::new(
-        matches
-            .value_of("output")
-            .expect("no output file specified."),
-    );
+fn get_check_outdir<'a>(matches: &'a clap::ArgMatches) -> Option<&'a std::path::Path> {
+    let outdir = if let Some(v) = matches.value_of("output") {
+        v
+    } else {
+        return None;
+    };
 
+    let outdir = std::path::Path::new(outdir);
     if !outdir.is_dir() {
         panic!("{} is not a directory", outdir.to_str().unwrap());
     }
 
-    outdir
+    Some(outdir)
 }
 
 fn svg2png(png: &str, svg: &str) {
@@ -154,6 +155,18 @@ fn main() {
     // init render context
     let mut renderctx = render::Context::new(&cfg, Some(&samples));
 
+    // give videosz to renderctx
+    if let Some(video_filename) = &cfg.video.filename {
+        let stream_info = get_video_stream_info(&video_filename);
+        renderctx.set_videosz(Some((stream_info.width, stream_info.height)));
+    }
+
+    // give blenderdir to renderctx
+    let outdir = get_check_outdir(&matches);
+    if let Some(outdir) = &outdir {
+        renderctx.set_blenderdir(Some(outdir));
+    }
+
     match matches.value_of("MODE").unwrap() {
         "plot" => {
             // plot
@@ -171,7 +184,7 @@ fn main() {
             }
         }
         "video" => {
-            let outdir = get_check_outdir(&matches);
+            let outdir = outdir.expect("no output file specified.");
             let out_video = outdir.join("final.mkv");
             let video_file = cfg.video.filename.clone().expect("no video URL");
             let stream_info = get_video_stream_info(&video_file);
