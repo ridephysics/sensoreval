@@ -257,7 +257,9 @@ fn main() {
                     let q =
                         q * nalgebra::UnitQuaternion::from_axis_angle(&axis, std::f64::consts::PI);
 
-                    let q = render::process_quat_for_name(q.as_vector());
+                    let q = nalgebra::UnitQuaternion::from_quaternion(
+                        render::process_quat_for_name(q.as_vector()).into(),
+                    );
                     (fid, [q[3], q[0], q[1], q[2]])
                 }))
                 .unwrap();
