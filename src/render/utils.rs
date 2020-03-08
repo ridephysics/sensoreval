@@ -287,3 +287,8 @@ pub fn bytes_to_svghandle(data: &'static [u8]) -> librsvg::SvgHandle {
         .read_stream(&stream, None::<&gio::File>, None::<&gio::Cancellable>)
         .unwrap()
 }
+
+pub fn png_to_surface(path: &std::path::Path) -> Result<cairo::ImageSurface, Error> {
+    let mut file = std::fs::File::open(path)?;
+    Ok(cairo::ImageSurface::create_from_png(&mut file)?)
+}
