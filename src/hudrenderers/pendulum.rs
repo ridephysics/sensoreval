@@ -693,6 +693,18 @@ impl render::HudRenderer for Pendulum {
         Ok(())
     }
 
+    fn orientation(
+        &self,
+        ctx: &render::HudContext,
+    ) -> Result<nalgebra::UnitQuaternion<f64>, Error> {
+        let dataid = unwrap_opt_or!(ctx.current_data_id(), return Err(Error::SampleNotFound));
+        let dataset = ctx.get_dataset().unwrap();
+        let est = self.est(ctx, dataset, dataid);
+
+        let axis = nalgebra::Unit::new_normalize(nalgebra::Vector3::new(1.0, 0.0, 0.0));
+        Ok(nalgebra::UnitQuaternion::from_axis_angle(&axis, -est[0]))
+    }
+
     fn plot(&self, ctx: &render::HudContext) -> Result<(), Error> {
         let samples = ctx.get_dataset().ok_or(Error::NoDataSet)?;
 

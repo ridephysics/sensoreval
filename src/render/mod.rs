@@ -98,6 +98,9 @@ pub trait HudRenderer {
     fn render(&self, ctx: &render::HudContext, cr: &cairo::Context) -> Result<(), Error>;
     /// plot dataset using matplotlib, if available
     fn plot(&self, ctx: &render::HudContext) -> Result<(), Error>;
+    /// get current orientation of the person sitting in the ride
+    fn orientation(&self, ctx: &render::HudContext)
+        -> Result<nalgebra::UnitQuaternion<f64>, Error>;
 }
 
 /// create a new HUD renderer
@@ -224,6 +227,18 @@ impl<'a, 'b, 'c> Context<'a, 'b, 'c> {
     pub fn plot(&self) -> Result<(), Error> {
         if let Some(renderer) = &self.hudrenderer {
             renderer.plot(&self.hudctx)
+        } else {
+            Err(Error::NoHudRenderer)
+        }
+    }
+
+    pub fn orientation(&self) -> Result<nalgebra::UnitQuaternion<f64>, Error> {
+        if let Some(renderer) = &self.hudrenderer {
+            let axis = nalgebra::Unit::new_normalize(nalgebra::Vector3::new(0.0, 0.0, 1.0));
+            let mut q = nalgebra::UnitQuaternion::from_axis_angle(&axis, std::f64::consts::PI);
+            q *= renderer.orientation(&self.hudctx)?;
+
+            Ok(q)
         } else {
             Err(Error::NoHudRenderer)
         }
