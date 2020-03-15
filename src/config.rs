@@ -148,31 +148,6 @@ pub struct Data {
     pub noise: DataNoise,
 }
 
-#[derive(Deserialize, Debug)]
-pub enum OrientationMode {
-    Normal,
-}
-
-impl Default for OrientationMode {
-    fn default() -> Self {
-        Self::Normal
-    }
-}
-
-#[derive(Deserialize, Debug)]
-pub struct Orientation {
-    #[serde(default)]
-    pub mode: OrientationMode,
-}
-
-impl Default for Orientation {
-    fn default() -> Self {
-        Self {
-            mode: OrientationMode::Normal,
-        }
-    }
-}
-
 /// renderer type for the HUD and the data plot
 #[derive(Deserialize, Debug)]
 #[serde(tag = "type")]
@@ -191,18 +166,33 @@ impl Default for HudRenderer {
     }
 }
 
+#[derive(Deserialize, Debug)]
+pub enum OrientationMode {
+    Normal,
+}
+
+impl Default for OrientationMode {
+    fn default() -> Self {
+        Self::Normal
+    }
+}
+
 /// HUD config
 #[derive(Deserialize, Debug)]
 pub struct Hud {
     /// renderer type and information
     #[serde(default)]
     pub renderer: HudRenderer,
+    /// mannequin orientation mode
+    #[serde(default)]
+    pub orientation_mode: OrientationMode,
 }
 
 impl Default for Hud {
     fn default() -> Self {
         Self {
             renderer: HudRenderer::Generic,
+            orientation_mode: OrientationMode::default(),
         }
     }
 }
@@ -215,8 +205,6 @@ pub struct Config {
     pub video: Video,
     /// data config
     pub data: Data,
-    #[serde(default)]
-    pub orientation: Orientation,
     // HUD config
     #[serde(default)]
     pub hud: Hud,
