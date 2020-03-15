@@ -197,16 +197,12 @@ pub struct Hud {
     /// renderer type and information
     #[serde(default)]
     pub renderer: HudRenderer,
-    /// pressure at ground level, unit: same as [Config.pressure](../struct.Data.html#structfield.pressure)
-    #[serde(default)]
-    pub altitude_ground: f64,
 }
 
 impl Default for Hud {
     fn default() -> Self {
         Self {
             renderer: HudRenderer::Generic,
-            altitude_ground: 0.,
         }
     }
 }
