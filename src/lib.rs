@@ -35,7 +35,7 @@ pub mod datareader;
 mod error;
 mod hudrenderers;
 mod kalman;
-mod math;
+pub mod math;
 mod plot;
 pub mod render;
 mod simulator;
