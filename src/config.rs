@@ -96,6 +96,9 @@ pub struct SensorData {
     /// relative path to the accel/gyro bias file, this will be passed to usfs_reader
     #[serde(default)]
     pub bias_ag: Option<String>,
+    /// relative path to calibration info
+    #[serde(default)]
+    pub calibration: Option<String>,
 }
 
 /// data source type and information
@@ -304,6 +307,9 @@ pub fn load<P: AsRef<std::path::Path>>(filename: P) -> Result<Config, Error> {
         }
         if let Some(v) = &sd.bias_ag {
             sd.bias_ag = Some(path2abs(&cfgdir, &v));
+        }
+        if let Some(v) = &sd.calibration {
+            sd.calibration = Some(path2abs(&cfgdir, &v));
         }
     }
 
