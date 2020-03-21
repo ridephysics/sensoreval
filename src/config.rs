@@ -270,6 +270,26 @@ impl Config {
 
         ret
     }
+
+    pub fn for_calibration(path: &str) -> Config {
+        Config {
+            video: Video::default(),
+            data: Data {
+                source: DataSource::SensorData(SensorData {
+                    video_off: 0,
+                    axismap: AxisMap::default(),
+                    pressure_coeff: 0.0,
+                    filename: path.to_string(),
+                    format: "sentral-pt".to_string(),
+                    mag_cal: None,
+                    bias_ag: None,
+                    calibration: None,
+                }),
+                noise: DataNoise::default(),
+            },
+            hud: Hud::default(),
+        }
+    }
 }
 
 fn path2abs(dir: &std::path::Path, relpath: &str) -> String {
