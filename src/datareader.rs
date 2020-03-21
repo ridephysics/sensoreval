@@ -1,6 +1,8 @@
 use crate::*;
 
+use ndarray::array;
 use serde::Deserialize;
+use serde::Serialize;
 use std::convert::TryInto;
 use std::mem;
 
@@ -30,6 +32,33 @@ struct RawData {
     _quat: [f64; 4],
 }
 
+/// sensor calibration info
+#[derive(Serialize, Deserialize, Debug)]
+pub struct Calibration {
+    pub gyro_offs: ndarray::Array1<f64>,
+    pub accel_offs: ndarray::Array1<f64>,
+    pub accel_t: ndarray::Array2<f64>,
+}
+
+impl Calibration {
+    pub fn new(
+        gyro_offs: ndarray::Array1<f64>,
+        accel_offs: ndarray::Array1<f64>,
+        accel_t: ndarray::Array2<f64>,
+    ) -> Self {
+        Self {
+            gyro_offs,
+            accel_offs,
+            accel_t,
+        }
+    }
+
+    pub fn load(path: &str) -> Result<Self, Error> {
+        let mut file = std::fs::File::open(path)?;
+        Ok(bincode::deserialize_from(&mut file)?)
+    }
+}
+
 /// datareader context
 pub struct Context {
     /// buffer for current raw sample
@@ -38,6 +67,8 @@ pub struct Context {
     bufpos: usize,
     /// pressure of previous sample
     pressure_prev: Option<f64>,
+    /// calibration info
+    calibration: Option<Calibration>,
 }
 
 impl Default for Context {
@@ -54,7 +85,12 @@ impl Context {
             buf: [0; mem::size_of::<RawData>()],
             bufpos: 0,
             pressure_prev: None,
+            calibration: None,
         }
+    }
+
+    pub fn set_calibration(&mut self, calibration: Option<Calibration>) {
+        self.calibration = calibration;
     }
 
     /// read a single sample from source and process it using cfg
@@ -103,9 +139,30 @@ impl Context {
             data.temperature = rawdata.temperature;
             data.pressure = rawdata.pressure;
 
+            let mut accel = array![rawdata.accel[0], rawdata.accel[1], rawdata.accel[2]];
+            let mut gyro = array![rawdata.gyro[0], rawdata.gyro[1], rawdata.gyro[2]];
+
+            // g -> m/s^2
+            for a in &mut accel {
+                *a *= math::GRAVITY;
+            }
+
+            // dps -> rad/s
+            for g in &mut gyro {
+                *g = (*g).to_radians();
+            }
+
+            // we calibrated using the output of this function, so we have to do
+            // this after the unit conversion.
+            // we did disable axix-mapping though.
+            if let Some(calibration) = &self.calibration {
+                gyro -= &calibration.gyro_offs;
+                accel = calibration.accel_t.dot(&(&accel - &calibration.accel_offs));
+            }
+
             // copy axis data using mappping
-            cfg.axismap.copy(&mut data.accel, &rawdata.accel);
-            cfg.axismap.copy(&mut data.gyro, &rawdata.gyro);
+            cfg.axismap.copy(&mut data.accel, accel.as_slice().unwrap());
+            cfg.axismap.copy(&mut data.gyro, gyro.as_slice().unwrap());
             cfg.axismap.copy(&mut data.mag, &rawdata.mag);
 
             // apply pressure coefficient
@@ -114,16 +171,6 @@ impl Context {
                     data.pressure = (pressure_prev * (cfg.pressure_coeff - 1.0) + data.pressure)
                         / cfg.pressure_coeff;
                 }
-            }
-
-            // g -> m/s^2
-            for a in &mut data.accel {
-                *a *= math::GRAVITY;
-            }
-
-            // dps -> rad/s
-            for g in &mut data.gyro {
-                *g = (*g).to_radians();
             }
 
             self.pressure_prev = Some(data.pressure);
@@ -164,6 +211,9 @@ pub fn read_all_samples_input<S: std::io::Read>(
 
     let mut samples: Vec<Data> = Vec::new();
     let mut readctx = Context::new();
+    if let Some(calfile) = &datacfg.calibration {
+        readctx.set_calibration(Some(Calibration::load(&calfile)?));
+    }
 
     loop {
         let sample = match readctx.read_sample(source, datacfg) {
