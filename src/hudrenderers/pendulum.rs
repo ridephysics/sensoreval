@@ -8,30 +8,45 @@ use ndarray::azip;
 use ndarray::s;
 use serde::Deserialize;
 
-#[derive(Deserialize, Debug, Clone)]
-/// initial conditions for UKF
-pub struct Initial {
-    /// angular position, unit: rad
-    position: f64,
-    /// angular velocity, unit: rad/s
-    velocity: f64,
-    /// pendulum radius, unit: meters
-    radius: f64,
+#[derive(Deserialize, Debug, Clone, Default)]
+pub struct Override {
+    /// unit: meters
+    #[serde(default)]
+    pub radius: Option<f64>,
+
     /// unit: rad
-    orientation_offset: f64,
+    #[serde(default)]
+    pub orientation_offset: Option<f64>,
+
+    /// unit: rad
+    #[serde(default)]
+    pub rot_east: Option<f64>,
+
+    /// unit: rad
+    #[serde(default)]
+    pub rot_north: Option<f64>,
+
+    /// unit: rad
+    #[serde(default)]
+    pub rot_up: Option<f64>,
 }
 
 #[derive(Deserialize, Debug, Clone)]
 pub struct Config {
     /// standard deviation of the measurements, used for matrix R
     pub stdev: config::SensorStdev,
+
     /// initial conditions, used for vector x
-    pub initial: Initial,
-    /// unit: meters
+    pub initial: Vec<f64>,
+
+    /// override with known values in fx
     #[serde(default)]
-    pub radius_override: Option<f64>,
+    #[serde(rename = "override")]
+    pub override_: Override,
+
     #[serde(default)]
     pub enable_rts_smoother: bool,
+
     pub active_row: usize,
 }
 
@@ -58,11 +73,26 @@ impl<'a> kalman::ukf::Functions for StateFunctions<'a> {
     {
         let pa = x[0];
         let va = x[1];
-        let r = match self.cfg.radius_override {
+        let r = match self.cfg.override_.radius {
             Some(v) => v,
             None => x[2],
         };
-        let orientation_offset = x[3];
+        let orientation_offset = match self.cfg.override_.orientation_offset {
+            Some(v) => v,
+            None => x[3],
+        };
+        let rot_east = match self.cfg.override_.rot_east {
+            Some(v) => v,
+            None => x[4],
+        };
+        let rot_north = match self.cfg.override_.rot_north {
+            Some(v) => v,
+            None => x[5],
+        };
+        let rot_up = match self.cfg.override_.rot_up {
+            Some(v) => v,
+            None => x[6],
+        };
 
         let mut teo =
             eom::explicit::RK4::new(crate::simulator::pendulum::EomFns::from_radius(r), dt);
@@ -73,7 +103,10 @@ impl<'a> kalman::ukf::Functions for StateFunctions<'a> {
             math::normalize_angle(next[0]),
             next[1],
             r,
-            orientation_offset
+            orientation_offset,
+            rot_east,
+            rot_north,
+            rot_up,
         ]
     }
 
@@ -91,15 +124,43 @@ impl<'a> kalman::ukf::Functions for StateFunctions<'a> {
 
         let mut pa_sin = 0.0;
         let mut pa_cos = 0.0;
+        let mut o_sin = 0.0;
+        let mut o_cos = 0.0;
+        let mut re_sin = 0.0;
+        let mut re_cos = 0.0;
+        let mut rn_sin = 0.0;
+        let mut rn_cos = 0.0;
+        let mut ru_sin = 0.0;
+        let mut ru_cos = 0.0;
 
         azip!((sp in sigmas.genrows(), w in Wm) {
             assert!(sp[0] >= -std::f64::consts::PI && sp[0] <= std::f64::consts::PI);
+            assert!(sp[3] >= -std::f64::consts::PI && sp[3] <= std::f64::consts::PI);
+            assert!(sp[4] >= -std::f64::consts::PI && sp[4] <= std::f64::consts::PI);
+            assert!(sp[5] >= -std::f64::consts::PI && sp[5] <= std::f64::consts::PI);
+            assert!(sp[6] >= -std::f64::consts::PI && sp[6] <= std::f64::consts::PI);
 
             pa_sin += sp[0].sin() * w;
             pa_cos += sp[0].cos() * w;
+
+            o_sin += sp[3].sin() * w;
+            o_cos += sp[3].cos() * w;
+
+            re_sin += sp[4].sin() * w;
+            re_cos += sp[4].cos() * w;
+
+            rn_sin += sp[5].sin() * w;
+            rn_cos += sp[5].cos() * w;
+
+            ru_sin += sp[6].sin() * w;
+            ru_cos += sp[6].cos() * w;
         });
 
         ret[0] = pa_sin.atan2(pa_cos);
+        ret[3] = o_sin.atan2(o_cos);
+        ret[4] = re_sin.atan2(re_cos);
+        ret[5] = rn_sin.atan2(rn_cos);
+        ret[6] = ru_sin.atan2(ru_cos);
 
         ret
     }
@@ -115,6 +176,10 @@ impl<'a> kalman::ukf::Functions for StateFunctions<'a> {
     {
         let mut res = a - b;
         res[0] = math::normalize_angle(res[0]);
+        res[3] = math::normalize_angle(res[3]);
+        res[4] = math::normalize_angle(res[4]);
+        res[5] = math::normalize_angle(res[5]);
+        res[6] = math::normalize_angle(res[6]);
         res
     }
 
@@ -126,16 +191,34 @@ impl<'a> kalman::ukf::Functions for StateFunctions<'a> {
         let va = x[1];
         let r = x[2];
         let orientation_offset = x[3];
+        let rot_east = x[4];
+        let rot_north = x[5];
+        let rot_up = x[6];
         let ac = va.powi(2) * r;
 
-        array![
+        let accel = nalgebra::Vector3::new(
             0.0,
             0.0,
             ac + math::GRAVITY * (pa + orientation_offset).cos(),
-            va,
-            0.0,
-            0.0
-        ]
+        );
+        let gyro = nalgebra::Vector3::new(va, 0.0, 0.0);
+
+        let axis_east = nalgebra::Unit::new_normalize(nalgebra::Vector3::new(1.0, 0.0, 0.0));
+        let q = nalgebra::UnitQuaternion::from_axis_angle(&axis_east, rot_east);
+        let accel = q * accel;
+        let gyro = q * gyro;
+
+        let axis_north = nalgebra::Unit::new_normalize(nalgebra::Vector3::new(0.0, 1.0, 0.0));
+        let q = nalgebra::UnitQuaternion::from_axis_angle(&axis_north, rot_north);
+        let accel = q * accel;
+        let gyro = q * gyro;
+
+        let axis_up = nalgebra::Unit::new_normalize(nalgebra::Vector3::new(0.0, 0.0, 1.0));
+        let q = nalgebra::UnitQuaternion::from_axis_angle(&axis_up, rot_up);
+        let accel = q * accel;
+        let gyro = q * gyro;
+
+        array![accel[0], accel[1], accel[2], gyro[0], gyro[1], gyro[2]]
     }
 
     #[allow(non_snake_case)]
@@ -211,15 +294,6 @@ impl Pendulum {
         o
     }
 
-    #[inline]
-    fn get_actual(data: &'_ Data) -> Option<&'_ simulator::pendulum::Actual> {
-        if let data::ActualData::Pendulum(p) = data.actual.as_ref()?.as_ref() {
-            return Some(p);
-        }
-
-        None
-    }
-
     fn est_acceleration(x: &ndarray::Array1<f64>) -> f64 {
         x[1].powi(2) * x[2] + math::GRAVITY * (x[0] + x[3]).cos()
     }
@@ -236,20 +310,15 @@ impl Pendulum {
         x[2] - (x[0] + x[3]).cos() * x[2]
     }
 
-    fn est(
-        &self,
-        ctx: &render::HudContext,
-        dataset: &[Data],
-        dataid: usize,
-    ) -> ndarray::Array1<f64> {
+    fn est(&self, actual_ts: u64, dataset: &[Data], dataid: usize) -> ndarray::Array1<f64> {
         let sample = &dataset[dataid];
         let est_sampletime = &self.est[dataid];
 
-        let est_now = if ctx.actual_ts > sample.time {
+        let est_now = if actual_ts > sample.time {
             let fns = StateFunctions::new(&self.cfg);
             Some(fns.fx(
                 est_sampletime,
-                (ctx.actual_ts - sample.time) as f64 / 1_000_000.0f64,
+                (actual_ts - sample.time) as f64 / 1_000_000.0f64,
             ))
         } else {
             None
@@ -547,16 +616,11 @@ impl render::HudRenderer for Pendulum {
     fn data_changed(&mut self, ctx: &render::HudContext) {
         let samples = unwrap_opt_or!(ctx.get_dataset(), return);
         let fns = StateFunctions::new(&self.cfg);
-        let points_fn = kalman::sigma_points::MerweScaledSigmaPoints::new(4, 0.1, 2.0, 0.0, &fns);
-        let mut ukf = kalman::ukf::UKF::new(4, 6, &points_fn, &fns);
+        let points_fn = kalman::sigma_points::MerweScaledSigmaPoints::new(7, 0.1, 2.0, 0.0, &fns);
+        let mut ukf = kalman::ukf::UKF::new(7, 6, &points_fn, &fns);
 
-        ukf.x = array![
-            self.cfg.initial.position,
-            self.cfg.initial.velocity,
-            self.cfg.initial.radius,
-            self.cfg.initial.orientation_offset,
-        ];
-        ukf.P = ndarray::Array::eye(4) * 0.0001;
+        ukf.x = ndarray::Array::from(self.cfg.initial.clone());
+        ukf.P = ndarray::Array::eye(7) * 0.0001;
         ukf.R = ndarray::Array2::from_diag(&array![
             self.cfg.stdev.accel.x.powi(2),
             self.cfg.stdev.accel.y.powi(2),
@@ -591,6 +655,9 @@ impl render::HudRenderer for Pendulum {
                 .assign(&kalman::discretization::Q_discrete_white_noise(2, dt, 0.1).unwrap());
             ukf.Q[[2, 2]] = 0.0001;
             ukf.Q[[3, 3]] = 0.0001;
+            ukf.Q
+                .slice_mut(s![4..7, 4..7])
+                .assign(&kalman::discretization::Q_discrete_white_noise(3, dt, 0.0001).unwrap());
 
             ukf.predict(dt);
             ukf.update(&z);
@@ -611,18 +678,36 @@ impl render::HudRenderer for Pendulum {
             self.est = xss;
         }
 
-        let mut radius_sum = 0.0;
+        // stats
+        let mut avg = ndarray::Array::zeros(ukf.x.dim());
+        let mut min = ndarray::Array::from_elem(ukf.x.dim(), std::f64::MAX);
+        let mut max = ndarray::Array::from_elem(ukf.x.dim(), std::f64::MIN);
+        let mut max_ang = 0.0f64;
+        let mut max_vel = 0.0f64;
+        let mut max_acc = 0.0f64;
         for x in &self.est {
-            radius_sum += x[2];
-        }
+            avg += x;
+            azip!((dst in &mut min, &x in x) *dst = dst.min(x));
+            azip!((dst in &mut max, &x in x) *dst = dst.max(x));
 
-        println!("average radius: {}", radius_sum / self.est.len() as f64);
+            max_ang = max_ang.max(Self::est_human_angle(x).abs());
+            max_vel = max_vel.max(Self::est_velocity(x).abs());
+            max_acc = max_acc.max(Self::est_acceleration(x).abs());
+        }
+        avg /= self.est.len() as f64;
+
+        println!("avg x: {:.8}", avg);
+        println!("min x: {:.8}", min);
+        println!("max x: {:.8}", max);
+        println!("max h_ang: {}", max_ang);
+        println!("max h_acc: {}", max_acc);
+        println!("max vel: {}", max_vel);
     }
 
     fn render(&self, ctx: &render::HudContext, cr: &cairo::Context) -> Result<(), Error> {
         let dataid = unwrap_opt_or!(ctx.current_data_id(), return Err(Error::SampleNotFound));
         let dataset = ctx.get_dataset().unwrap();
-        let est = self.est(ctx, dataset, dataid);
+        let est = self.est(ctx.actual_ts, dataset, dataid);
 
         let mut utilfont = render::utils::Font::new(&self.font);
         utilfont.line_width = ctx.dp2px(3.0);
@@ -699,7 +784,7 @@ impl render::HudRenderer for Pendulum {
     ) -> Result<nalgebra::UnitQuaternion<f64>, Error> {
         let dataid = unwrap_opt_or!(ctx.current_data_id(), return Err(Error::SampleNotFound));
         let dataset = ctx.get_dataset().unwrap();
-        let est = self.est(ctx, dataset, dataid);
+        let est = self.est(ctx.actual_ts, dataset, dataid);
 
         let axis = nalgebra::Unit::new_normalize(nalgebra::Vector3::new(1.0, 0.0, 0.0));
         Ok(nalgebra::UnitQuaternion::from_axis_angle(&axis, est[0]))
@@ -707,82 +792,26 @@ impl render::HudRenderer for Pendulum {
 
     fn plot(&self, ctx: &render::HudContext) -> Result<(), Error> {
         let samples = ctx.get_dataset().ok_or(Error::NoDataSet)?;
+        let mut plot = AMEPlot::new(8, &samples, &self.est)?;
 
-        let mut plot = Plot::new(
-            &"\
-            t = np.array(load_data())\n\
-            z = np.array(load_data())\n\
-            est = np.array(load_data())\n\
-            has_actual = load_data()\n\
-            if has_actual:\n\
-                \tactual = np.array(load_data())\n\
-            \n\
-            fig, plots = plt.subplots(5, sharex=True)\n\
-            \n\
-            plots[0].set_title('p_a', x=-0.15, y=0.5)\n\
-            if has_actual:\n\
-                \tplots[0].plot(t, np.degrees(actual[:, 0]), ca)\n\
-            plots[0].plot(t, np.degrees(est[:, 0]), ce)\n\
-            \n\
-            plots[1].set_title('v_a', x=-0.15, y=0.5)\n\
-            plots[1].plot(t, np.degrees(z[:, 3]), cz)\n\
-            if has_actual:\n\
-                \tplots[1].plot(t, np.degrees(actual[:, 1]), ca)\n\
-            plots[1].plot(t, np.degrees(est[:, 1]), ce)\n\
-            \n\
-            plots[2].set_title('v_t', x=-0.15, y=0.5)\n\
-            if has_actual:\n\
-                \tplots[2].plot(t, actual[:, 2], ca)\n\
-            plots[2].plot(t, est[:, 1] * est[:, 2], ce)\n\
-            \n\
-            plots[3].set_title('a', x=-0.15, y=0.5)\n\
-            plots[3].plot(t, z[:, 2], cz)\n\
-            if has_actual:\n\
-                \tplots[3].plot(t, actual[:, 3], ca)\n\
-            plots[3].plot(t, est[:, 4], ce)\n\
-            \n\
-            plots[4].set_title('r', x=-0.15, y=0.5)\n\
-            plots[4].plot(t, (est[:, 2]), ce)\n\
-            \n\
-            fig.tight_layout()\n\
-            plt.show()\n\
-            ",
-        )?;
+        let fns = StateFunctions::new(&self.cfg);
+        plot.add("z_a0", |v| v.accel[0], |x| fns.hx(&x)[0])?;
+        plot.add("z_a1", |v| v.accel[1], |x| fns.hx(&x)[1])?;
+        plot.add("z_a2", |v| v.accel[2], |x| fns.hx(&x)[2])?;
 
-        plot.write(&DataSerializer::new(&samples, |_i, v| v.time_seconds()))?;
+        plot.add("z_g0", |v| v.gyro[0], |x| fns.hx(&x)[3])?;
+        plot.add("z_g1", |v| v.gyro[1], |x| fns.hx(&x)[4])?;
+        plot.add("z_g2", |v| v.gyro[2], |x| fns.hx(&x)[5])?;
 
-        plot.write(&DataSerializer::new(&samples, |_i, v| {
-            vec![
-                v.accel[0], v.accel[1], v.accel[2], v.gyro[0], v.gyro[1], v.gyro[2],
-            ]
-        }))?;
+        plot.add_nm("x_pa", |x| x[1])?;
+        //plot.add("x_va", |v| v.gyro[0], |x| x[1])?;
+        plot.add_nm("x_r", |x| x[2])?;
+        //plot.add_nm("x_o", |x| x[3])?;
+        //plot.add_nm("x_re", |x| x[4])?;
+        //plot.add_nm("x_rn", |x| x[5])?;
 
-        plot.write(&DataSerializer::new(&self.est, |_i, v| {
-            let mut ret = v.to_vec();
+        plot.show()?;
 
-            ret.push(Self::est_acceleration(&v));
-
-            ret
-        }))?;
-
-        let has_actual = match samples.first() {
-            Some(sample) => Self::get_actual(&sample).is_some(),
-            None => false,
-        };
-        plot.write(&has_actual)?;
-
-        if has_actual {
-            plot.write(&DataSerializer::new(&samples, |_i, v| {
-                let actual = Self::get_actual(v).unwrap();
-                vec![
-                    actual.p_ang,
-                    actual.v_ang,
-                    actual.v_tan,
-                    actual.ac + math::GRAVITY * (actual.p_ang + actual.orientation_offset).cos(),
-                ]
-            }))?;
-        }
-
-        plot.wait()
+        Ok(())
     }
 }

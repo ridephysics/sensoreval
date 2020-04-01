@@ -2,15 +2,6 @@ use crate::*;
 
 use serde::ser::{Serialize, SerializeSeq, Serializer};
 
-/// type of actual data information
-#[derive(Debug)]
-pub enum ActualData {
-    /// unknown or unavailable
-    None,
-    /// pendulum simulator
-    Pendulum(simulator::pendulum::Actual),
-}
-
 /// processed data sample
 #[derive(Debug)]
 pub struct Data {
@@ -32,7 +23,7 @@ pub struct Data {
     pub pressure: f64,
 
     /// optional actual state data, e.g. from the simulator that generated the sample
-    pub actual: Option<Box<ActualData>>,
+    pub actual: Option<ndarray::Array1<f64>>,
 }
 
 impl Default for Data {

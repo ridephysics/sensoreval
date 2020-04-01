@@ -33,23 +33,34 @@ fn main() {
     }
 
     // plot
-    let mut plot = TimeDataPlot::new(&DataSerializer::new(&samples, |i, _data| i)).unwrap();
-    plot.add(&DataSerializer::new(&samples, |_i, data| {
-        data.accel.as_slice().unwrap()
-    }))
+    let mut plot = TimeDataPlot::new(3, &DataSerializer::new(&samples, |i, _data| i)).unwrap();
+
+    plot.set_title(0, "a").unwrap();
+    plot.plot_sample(0, COLOR_A, &samples, |v| v.accel[0])
+        .unwrap();
+    plot.plot_sample(0, COLOR_M, &samples, |v| v.accel[1])
+        .unwrap();
+    plot.plot_sample(0, COLOR_E, &samples, |v| v.accel[2])
+        .unwrap();
+
+    plot.set_title(1, "a_n").unwrap();
+    plot.plot_sample(1, COLOR_A, &samples, |v| v.accel.norm_l2())
+        .unwrap();
+
+    plot.set_title(2, "dt").unwrap();
+    plot.plot(
+        2,
+        COLOR_A,
+        &DataSerializer::new(&samples, |i, data| {
+            if i > 0 {
+                (data.time - samples[i - 1].time) as f64 / 1_000_000.0f64
+            } else {
+                0.0f64
+            }
+        }),
+    )
     .unwrap();
-    plot.add(&DataSerializer::new(&samples, |_i, data| {
-        data.accel.norm_l2()
-    }))
-    .unwrap();
-    plot.add(&DataSerializer::new(&samples, |i, data| {
-        if i > 0 {
-            (data.time - samples[i - 1].time) as f64 / 1_000_000.0f64
-        } else {
-            0.0f64
-        }
-    }))
-    .unwrap();
+
     plot.show().unwrap();
 
     // read index from stdin
