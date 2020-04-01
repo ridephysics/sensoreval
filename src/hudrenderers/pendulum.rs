@@ -814,4 +814,44 @@ impl render::HudRenderer for Pendulum {
 
         Ok(())
     }
+
+    fn serialize_forweb(
+        &self,
+        ctx: &render::HudContext,
+        cfg: &config::Config,
+        path: &std::path::Path,
+    ) -> Result<(), Error> {
+        const TIMESTEP: u64 = 15000;
+        let dataset = ctx.get_dataset().unwrap();
+        let out_est = path.join("est.bin");
+        let mut file = std::fs::File::create(&out_est)?;
+
+        bincode::config()
+            .big_endian()
+            .serialize_into(&mut file, &(self.cfg.override_.radius.unwrap() as f32))?;
+
+        bincode::config()
+            .big_endian()
+            .serialize_into(&mut file, &(self.cfg.override_.orientation_offset.unwrap() as f32))?;
+
+        bincode::config()
+            .big_endian()
+            .serialize_into(&mut file, &TIMESTEP)?;
+
+        let mut us = cfg.video.startoff * 1000;
+        while let Some(dataid) = id_for_time(&dataset, 0, us) {
+            let est = self.est(us, &dataset, dataid);
+            bincode::config().big_endian().serialize_into(
+                &mut file,
+                &[
+                    half::f16::from_f64(est[0]),
+                    half::f16::from_f64(est[1]),
+                ],
+            )?;
+
+            us += TIMESTEP;
+        }
+
+        Ok(())
+    }
 }

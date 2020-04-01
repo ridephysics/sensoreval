@@ -214,6 +214,10 @@ fn main() {
                 panic!("dataviewer_main failed: {}", rc);
             }
         }
+        "webdata" => {
+            let outdir = outdir.expect("no output file specified.");
+            renderctx.serialize_forweb(&outdir).unwrap();
+        }
         "blender" => {
             let blenderscenes = std::path::Path::new(
                 matches

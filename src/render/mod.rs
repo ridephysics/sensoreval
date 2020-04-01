@@ -102,6 +102,13 @@ pub trait HudRenderer {
     /// get current orientation of the person sitting in the ride
     fn orientation(&self, ctx: &render::HudContext)
         -> Result<nalgebra::UnitQuaternion<f64>, Error>;
+    /// serialize state into webdata
+    fn serialize_forweb(
+        &self,
+        ctx: &render::HudContext,
+        cfg: &config::Config,
+        path: &std::path::Path,
+    ) -> Result<(), Error>;
 }
 
 /// create a new HUD renderer
@@ -269,6 +276,14 @@ impl<'a, 'b, 'c> Context<'a, 'b, 'c> {
     pub fn orientation(&self) -> Result<nalgebra::UnitQuaternion<f64>, Error> {
         if let Some(renderer) = &self.hudrenderer {
             renderer.orientation(&self.hudctx)
+        } else {
+            Err(Error::NoHudRenderer)
+        }
+    }
+
+    pub fn serialize_forweb(&self, path: &std::path::Path) -> Result<(), Error> {
+        if let Some(renderer) = &self.hudrenderer {
+            renderer.serialize_forweb(&self.hudctx, &self.cfg, &path)
         } else {
             Err(Error::NoHudRenderer)
         }
