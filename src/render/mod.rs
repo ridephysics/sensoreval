@@ -4,6 +4,7 @@ use crate::*;
 use approx::abs_diff_ne;
 
 /// data source type and info
+#[allow(clippy::large_enum_variant)]
 #[derive(Debug)]
 enum DataSrc {
     /// no data available
