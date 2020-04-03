@@ -170,6 +170,13 @@ fn main() {
                 .value_name("BLENDERSCENES")
                 .help("blender scene directory"),
         )
+        .arg(
+            clap::Arg::with_name("range")
+                .short("r")
+                .long("range")
+                .value_name("RANGE")
+                .help("render range"),
+        )
         .get_matches();
 
     let cfgname = matches.value_of("CONFIG").unwrap();
@@ -238,6 +245,21 @@ fn main() {
                 orientations.push(renderctx.orientation().unwrap());
             }
 
+            let mut id_start = 0;
+            let mut id_end = orientations.len();
+
+            if let Some(range) = matches.value_of("range") {
+                let range: Vec<&str> = range.split(':').collect();
+                if range.len() != 2 {
+                    panic!("invalid range");
+                }
+
+                id_start = range[0].parse().unwrap();
+                id_end = range[1].parse().unwrap();
+            }
+
+            eprintln!("num_orientations: {}", orientations.len());
+
             let mut blender = run_blender(
                 blenderscenes
                     .join("mannequin/mannequin.blend")
@@ -254,18 +276,23 @@ fn main() {
             blender.write(&"mannequin").unwrap();
             let axis = nalgebra::Unit::new_normalize(nalgebra::Vector3::new(0.0, 0.0, 1.0));
             blender
-                .write(&DataSerializer::new(&orientations, |_i, q| {
-                    let fid = render::quat_to_fid(q);
+                .write(&DataSerializer::new(
+                    &orientations[id_start..id_end],
+                    |_i, q| {
+                        let fid = render::quat_to_fid(q);
 
-                    // the mannequin looks toward the camera, fix that
-                    let q =
-                        q * nalgebra::UnitQuaternion::from_axis_angle(&axis, std::f64::consts::PI);
+                        // the mannequin looks toward the camera, fix that
+                        let q = q * nalgebra::UnitQuaternion::from_axis_angle(
+                            &axis,
+                            std::f64::consts::PI,
+                        );
 
-                    let q = nalgebra::UnitQuaternion::from_quaternion(
-                        render::process_quat_for_name(q.as_vector()).into(),
-                    );
-                    (fid, [q[3], q[0], q[1], q[2]])
-                }))
+                        let q = nalgebra::UnitQuaternion::from_quaternion(
+                            render::process_quat_for_name(q.as_vector()).into(),
+                        );
+                        (fid, [q[3], q[0], q[1], q[2]])
+                    },
+                ))
                 .unwrap();
             blender
                 .write(&[stream_info.width, stream_info.height])
