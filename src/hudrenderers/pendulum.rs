@@ -830,9 +830,10 @@ impl render::HudRenderer for Pendulum {
             .big_endian()
             .serialize_into(&mut file, &(self.cfg.override_.radius.unwrap() as f32))?;
 
-        bincode::config()
-            .big_endian()
-            .serialize_into(&mut file, &(self.cfg.override_.orientation_offset.unwrap() as f32))?;
+        bincode::config().big_endian().serialize_into(
+            &mut file,
+            &(self.cfg.override_.orientation_offset.unwrap() as f32),
+        )?;
 
         bincode::config()
             .big_endian()
@@ -843,10 +844,7 @@ impl render::HudRenderer for Pendulum {
             let est = self.est(us, &dataset, dataid);
             bincode::config().big_endian().serialize_into(
                 &mut file,
-                &[
-                    half::f16::from_f64(est[0]),
-                    half::f16::from_f64(est[1]),
-                ],
+                &[half::f16::from_f64(est[0]), half::f16::from_f64(est[1])],
             )?;
 
             us += TIMESTEP;
