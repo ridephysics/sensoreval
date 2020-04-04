@@ -126,6 +126,10 @@ impl DataTimestampIter {
             frameid: 0,
         }
     }
+
+    pub fn set_startoff(&mut self, us: u64) {
+        self.startoff = us;
+    }
 }
 
 impl Iterator for DataTimestampIter {
@@ -312,11 +316,27 @@ fn main() {
             )
             .expect("Can't create surface");
 
+            let mut t_start: u64 = cfg.video.startoff;
+            let mut t_end: u64 = cfg.video.endoff.unwrap();
+            if let Some(range) = matches.value_of("range") {
+                let range: Vec<&str> = range.split(':').collect();
+                if range.len() != 2 {
+                    panic!("invalid range");
+                }
+
+                let x: u64 = range[1].parse().unwrap();
+                t_end = t_start + x;
+
+                let x: u64 = range[0].parse().unwrap();
+                t_start += x;
+            }
+            println!("start:{} end:{}", t_start, t_end);
+
             let mut args = Vec::new();
             args.push("-y");
 
             // video
-            let arg_ss = format!("{}", cfg.video.startoff as f64 / 1000.0);
+            let arg_ss = format!("{}", t_start as f64 / 1000.0);
             args.extend_from_slice(&["-ss", &arg_ss, "-i", &video_file]);
 
             // blur mask
@@ -358,10 +378,7 @@ fn main() {
             args.extend_from_slice(&["-filter_complex", filter_str]);
 
             // output
-            let arg_t = format!(
-                "{}",
-                (cfg.video.endoff.unwrap() - cfg.video.startoff) as f64 / 1000.0
-            );
+            let arg_t = format!("{}", (t_end - t_start) as f64 / 1000.0);
             args.extend_from_slice(&[
                 "-codec:v",
                 "libx264",
@@ -382,7 +399,10 @@ fn main() {
                 .expect("can't spawn ffmpeg");
 
             let mut child_stdin = child.stdin.take().unwrap();
-            for ts in DataTimestampIter::new(&cfg, &stream_info) {
+
+            let mut dtiter = DataTimestampIter::new(&cfg, &stream_info);
+            dtiter.set_startoff(t_start * 1000);
+            for ts in dtiter {
                 // render
                 {
                     let ret = renderctx.set_ts(ts);
