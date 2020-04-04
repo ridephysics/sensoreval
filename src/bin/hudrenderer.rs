@@ -251,7 +251,6 @@ fn main() {
 
             let mut id_start = 0;
             let mut id_end = orientations.len();
-
             if let Some(range) = matches.value_of("range") {
                 let range: Vec<&str> = range.split(':').collect();
                 if range.len() != 2 {
