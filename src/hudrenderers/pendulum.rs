@@ -809,7 +809,7 @@ impl render::HudRenderer for Pendulum {
         plot.add("z_g1", |v| v.gyro[1], |x| fns.hx(&x)[4])?;
         plot.add("z_g2", |v| v.gyro[2], |x| fns.hx(&x)[5])?;
 
-        plot.add_nm("x_pa", |x| x[1])?;
+        plot.add_nm("x_pa", |x| x[0])?;
         //plot.add("x_va", |v| v.gyro[0], |x| x[1])?;
         plot.add_nm("x_r", |x| x[2])?;
         //plot.add_nm("x_o", |x| x[3])?;
