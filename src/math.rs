@@ -49,6 +49,26 @@ where
     x
 }
 
+#[derive(Default)]
+pub struct SinCosSum<A> {
+    pub sin: A,
+    pub cos: A,
+}
+
+impl<A> SinCosSum<A>
+where
+    A: std::ops::AddAssign + num_traits::float::Float,
+{
+    pub fn add(&mut self, x: A, w: A) {
+        self.sin += x.sin() * w;
+        self.cos += x.cos() * w;
+    }
+
+    pub fn avg(&self) -> A {
+        self.sin.atan2(self.cos)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use approx::assert_abs_diff_eq;
@@ -86,5 +106,25 @@ mod tests {
             (2.0f64).to_radians(),
             epsilon = 1.0e-6
         );
+    }
+
+    #[test]
+    fn sincossum() {
+        let mut sum = super::SinCosSum::default();
+        sum.add(0.0f64, 1.0);
+        sum.add(0.0f64, 1.0);
+        sum.add((90.0f64).to_radians(), 1.0);
+        assert_abs_diff_eq!(sum.avg(), (26.565f64).to_radians(), epsilon = 1.0e-6);
+
+        let mut sum = super::SinCosSum::default();
+        sum.add(0.0f64, 0.25);
+        sum.add(0.0f64, 0.25);
+        sum.add((90.0f64).to_radians(), 0.5);
+        assert_abs_diff_eq!(sum.avg(), (45.0f64).to_radians(), epsilon = 1.0e-6);
+
+        let mut sum = super::SinCosSum::default();
+        sum.add((359.0f64).to_radians(), 1.0);
+        sum.add((3.0f64).to_radians(), 1.0);
+        assert_abs_diff_eq!(sum.avg(), (1.0f64).to_radians(), epsilon = 1.0e-6);
     }
 }
