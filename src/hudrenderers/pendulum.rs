@@ -401,7 +401,13 @@ impl Pendulum {
             cr,
             gondola_radius,
             std::f64::consts::PI / 2.0,
-            gondola_angle / 2.0,
+            gondola_angle / 2.0
+                + math::tri_solve_sas(
+                    frame_thickness / 2.0,
+                    gondola_radius,
+                    std::f64::consts::FRAC_PI_2,
+                )
+                .0,
         );
 
         // gondola
