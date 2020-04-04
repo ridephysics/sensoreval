@@ -5,12 +5,12 @@ use std::io::Write;
 
 fn main() {
     // parse args
-    let mut args = std::env::args();
+    let args: Vec<String> = std::env::args().collect();
     if args.len() != 2 {
-        println!("Usage: {} CONFIG", args.nth(0).unwrap());
+        println!("Usage: {} CONFIG", args[0]);
         std::process::exit(1);
     }
-    let cfgname = args.nth(1).unwrap();
+    let cfgname = &args[1];
 
     // load config
     let mut cfg = config::load(&cfgname).expect("can't load config");
