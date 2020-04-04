@@ -380,6 +380,8 @@ impl Pendulum {
         let section_divider_color: u32 = 0x0000_00e5;
         let section_divider_width: f64 = 0.2;
         let section_dark_color: u32 = 0x0000_0033;
+        let border_width: f64 = 0.1;
+        let border_color: u32 = 0x0000_00ff;
 
         let (cx, cy) = cr.get_current_point();
 
@@ -408,6 +410,8 @@ impl Pendulum {
                     std::f64::consts::FRAC_PI_2,
                 )
                 .0,
+            border_width,
+            border_color,
         );
 
         // gondola
@@ -425,9 +429,7 @@ impl Pendulum {
             let radius_ship_inner = gondola_radius - gondola_thickness / 2.0;
             let gondola_line_width = gondola_thickness / 6.0;
 
-            render::utils::set_source_rgba_u32(cr, gondola_color);
             cr.set_operator(cairo::Operator::Source);
-            cr.set_line_width(gondola_line_width);
             cr.set_line_join(cairo::LineJoin::Round);
 
             let (x0, y0) = render::utils::circle_coords(radius_ship_outer, angle_right);
@@ -457,8 +459,15 @@ impl Pendulum {
             cr.arc_negative(0.0, 0.0, radius_ship_outer, angle_left, angle_right);
             cr.close_path();
 
-            cr.fill_preserve();
-            cr.stroke();
+            cr.set_line_width(gondola_line_width + border_width);
+            render::utils::set_source_rgba_u32(cr, border_color);
+            cr.stroke_preserve();
+
+            render::utils::set_source_rgba_u32(cr, gondola_color);
+            cr.set_line_width(gondola_line_width);
+            cr.stroke_preserve();
+
+            cr.fill();
             cr.restore();
 
             // sections
@@ -545,6 +554,8 @@ impl Pendulum {
             frame_radius * 2.0,
             std::f64::consts::PI / 2.0,
             frame_angle / 2.0,
+            border_width,
+            border_color,
         );
         cr.restore();
 

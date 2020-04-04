@@ -101,13 +101,29 @@ pub fn line_to_circle(cr: &cairo::Context, r: f64, angle: f64) {
     cr.line_to(x, y)
 }
 
-pub fn stroke_arc_sides(cr: &cairo::Context, r: f64, angle_mid: f64, angle_sides: f64) {
+pub fn stroke_arc_sides(
+    cr: &cairo::Context,
+    r: f64,
+    angle_mid: f64,
+    angle_sides: f64,
+    border_width: f64,
+    border_color: u32,
+) {
     let (cx, cy) = cr.get_current_point();
 
+    cr.save();
+    cr.set_line_width(cr.get_line_width() + border_width);
+    render::utils::set_source_rgba_u32(cr, border_color);
     rel_move_to_circle(cr, r, angle_mid + angle_sides);
     cr.line_to(cx, cy);
     line_to_circle(cr, r, angle_mid - angle_sides);
+    cr.stroke_preserve();
+    cr.restore();
+
+    cr.save();
+    cr.set_operator(cairo::Operator::Source);
     cr.stroke();
+    cr.restore();
 }
 
 pub struct Graph {
