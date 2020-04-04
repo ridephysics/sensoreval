@@ -69,6 +69,21 @@ where
     }
 }
 
+#[allow(non_snake_case)]
+pub fn tri_solve_sas(b: f64, c: f64, A: f64) -> (f64, f64) {
+    let a = (b.powi(2) + c.powi(2) - 2.0 * b * c * A.cos()).sqrt();
+
+    if b < c {
+        let B = (A.sin() * b / a).asin();
+        let C = std::f64::consts::PI - A - B;
+        (B, C)
+    } else {
+        let C = (A.sin() * a / b).asin();
+        let B = std::f64::consts::PI - A - C;
+        (B, C)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use approx::assert_abs_diff_eq;
@@ -126,5 +141,12 @@ mod tests {
         sum.add((359.0f64).to_radians(), 1.0);
         sum.add((3.0f64).to_radians(), 1.0);
         assert_abs_diff_eq!(sum.avg(), (1.0f64).to_radians(), epsilon = 1.0e-6);
+    }
+
+    #[test]
+    fn tri_solve_sas() {
+        let (B, C) = super::tri_solve_sas(5.0, 7.0, (49.0f64).to_radians());
+        assert_abs_diff_eq!(B, (45.4f64).to_radians(), epsilon = 1.0e-3);
+        assert_abs_diff_eq!(C, (85.6f64).to_radians(), epsilon = 1.0e-3);
     }
 }
