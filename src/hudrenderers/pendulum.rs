@@ -787,7 +787,10 @@ impl render::HudRenderer for Pendulum {
         let est = self.est(ctx.actual_ts, dataset, dataid);
 
         let axis = nalgebra::Unit::new_normalize(nalgebra::Vector3::new(1.0, 0.0, 0.0));
-        Ok(nalgebra::UnitQuaternion::from_axis_angle(&axis, est[0]))
+        Ok(nalgebra::UnitQuaternion::from_axis_angle(
+            &axis,
+            Self::est_human_angle(&est),
+        ))
     }
 
     fn plot(&self, ctx: &render::HudContext) -> Result<(), Error> {
