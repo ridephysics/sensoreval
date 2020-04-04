@@ -658,9 +658,9 @@ impl render::HudRenderer for Pendulum {
                 .assign(&kalman::discretization::Q_discrete_white_noise(2, dt, 0.1).unwrap());
             ukf.Q[[2, 2]] = 0.000_000_1;
             ukf.Q[[3, 3]] = 0.000_000_1;
-            ukf.Q[[4, 4]] = 0.01;
-            ukf.Q[[5, 5]] = 0.01;
-            ukf.Q[[6, 6]] = 0.01;
+            ukf.Q[[4, 4]] = 0.001;
+            ukf.Q[[5, 5]] = 0.001;
+            ukf.Q[[6, 6]] = 0.001;
 
             ukf.predict(dt);
             ukf.update(&z);
