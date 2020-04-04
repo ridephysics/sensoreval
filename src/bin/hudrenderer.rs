@@ -407,7 +407,10 @@ fn main() {
                 {
                     let ret = renderctx.set_ts(ts);
                     match &ret {
-                        Err(Error::SampleNotFound) => break,
+                        Err(Error::SampleNotFound) => {
+                            eprintln!("OUT OF DATA");
+                            break;
+                        }
                         _ => ret.unwrap(),
                     }
 
@@ -421,7 +424,10 @@ fn main() {
                 let data = surface.get_data().unwrap();
                 let ret = child_stdin.write_all(&data);
                 match &ret {
-                    Err(e) if e.kind() == std::io::ErrorKind::BrokenPipe => break,
+                    Err(e) if e.kind() == std::io::ErrorKind::BrokenPipe => {
+                        eprintln!("FFMPEG CLOSED");
+                        break;
+                    }
                     _ => ret.unwrap(),
                 }
             }
