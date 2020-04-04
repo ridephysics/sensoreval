@@ -371,7 +371,7 @@ impl Pendulum {
         let frame_color: u32 = 0xffff_ffe5;
         let frame_top_color: u32 = 0x0000_00e5;
         let gondola_radius: f64 = 15.0;
-        let gondola_angle: f64 = (40.0f64).to_radians();
+        let gondola_angle: f64 = (30.0f64).to_radians();
         let gondola_frame_thickness: f64 = 0.4;
         let gondola_thickness: f64 = 1.8;
         let gondola_color: u32 = 0xff8f_00e5;
