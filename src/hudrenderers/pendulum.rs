@@ -122,16 +122,11 @@ impl<'a> kalman::ukf::Functions for StateFunctions<'a> {
     {
         let mut ret = Wm.dot(sigmas);
 
-        let mut pa_sin = 0.0;
-        let mut pa_cos = 0.0;
-        let mut o_sin = 0.0;
-        let mut o_cos = 0.0;
-        let mut re_sin = 0.0;
-        let mut re_cos = 0.0;
-        let mut rn_sin = 0.0;
-        let mut rn_cos = 0.0;
-        let mut ru_sin = 0.0;
-        let mut ru_cos = 0.0;
+        let mut pa_sum = math::SinCosSum::default();
+        let mut o_sum = math::SinCosSum::default();
+        let mut re_sum = math::SinCosSum::default();
+        let mut rn_sum = math::SinCosSum::default();
+        let mut ru_sum = math::SinCosSum::default();
 
         azip!((sp in sigmas.genrows(), w in Wm) {
             assert!(sp[0] >= -std::f64::consts::PI && sp[0] <= std::f64::consts::PI);
@@ -140,27 +135,18 @@ impl<'a> kalman::ukf::Functions for StateFunctions<'a> {
             assert!(sp[5] >= -std::f64::consts::PI && sp[5] <= std::f64::consts::PI);
             assert!(sp[6] >= -std::f64::consts::PI && sp[6] <= std::f64::consts::PI);
 
-            pa_sin += sp[0].sin() * w;
-            pa_cos += sp[0].cos() * w;
-
-            o_sin += sp[3].sin() * w;
-            o_cos += sp[3].cos() * w;
-
-            re_sin += sp[4].sin() * w;
-            re_cos += sp[4].cos() * w;
-
-            rn_sin += sp[5].sin() * w;
-            rn_cos += sp[5].cos() * w;
-
-            ru_sin += sp[6].sin() * w;
-            ru_cos += sp[6].cos() * w;
+            pa_sum.add(sp[0], *w);
+            o_sum.add(sp[3], *w);
+            re_sum.add(sp[4], *w);
+            rn_sum.add(sp[5], *w);
+            ru_sum.add(sp[6], *w);
         });
 
-        ret[0] = pa_sin.atan2(pa_cos);
-        ret[3] = o_sin.atan2(o_cos);
-        ret[4] = re_sin.atan2(re_cos);
-        ret[5] = rn_sin.atan2(rn_cos);
-        ret[6] = ru_sin.atan2(ru_cos);
+        ret[0] = pa_sum.avg();
+        ret[3] = o_sum.avg();
+        ret[4] = re_sum.avg();
+        ret[5] = rn_sum.avg();
+        ret[6] = ru_sum.avg();
 
         ret
     }
