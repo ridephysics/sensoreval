@@ -815,6 +815,7 @@ impl render::HudRenderer for Pendulum {
         //plot.add_nm("x_o", |x| x[3])?;
         //plot.add_nm("x_re", |x| x[4])?;
         //plot.add_nm("x_rn", |x| x[5])?;
+        //plot.add_nm("x_ru", |x| x[6])?;
 
         plot.show()?;
 
