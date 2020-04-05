@@ -23,12 +23,14 @@ camera_obj = bpy.data.objects[camera_name]
 
 # configure
 apply_pose(robot_skeleton, 'sitting')
-scene.cycles.samples = 1
+scene.cycles.samples = 200
 scene.render.resolution_y = int(videores[1] / 2)
 scene.render.resolution_x = scene.render.resolution_y
 scene.render.tile_x = 16
 scene.render.tile_y = 16
-camera_obj.location[1] = -12.000
+camera_obj.location[0] = 0.0
+camera_obj.location[1] = -8.0
+camera_obj.location[2] = 4.31
 
 for (fid, q) in orientations:
     filename = '%s_%s.png' % (prefix, fid)
