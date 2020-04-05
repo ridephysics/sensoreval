@@ -114,14 +114,14 @@ pub trait HudRenderer {
 
 /// create a new HUD renderer
 fn renderer_from_ctx(ctx: &Context) -> Option<Box<dyn HudRenderer>> {
-    let renderer = match &ctx.cfg.hud.renderer {
-        config::HudRenderer::Pendulum(cfg) => {
-            hudrenderers::pendulum::Pendulum::new(&ctx.hudctx, cfg)
+    match &ctx.cfg.hud.renderer {
+        config::HudRenderer::Pendulum(cfg) => Some(Box::new(
+            hudrenderers::pendulum::Pendulum::new(&ctx.hudctx, cfg),
+        )),
+        config::HudRenderer::Generic => {
+            Some(Box::new(hudrenderers::generic::Generic::new(&ctx.hudctx)))
         }
-        _ => return None,
-    };
-
-    Some(Box::new(renderer))
+    }
 }
 
 impl<'a, 'b, 'c> Context<'a, 'b, 'c> {
