@@ -685,6 +685,7 @@ impl render::HudRenderer for Pendulum {
         }
 
         // stats
+        println!("x = {:.8} P = \n{:.8}", ukf.x, ukf.P);
         let mut avg = ndarray::Array::zeros(ukf.x.dim());
         let mut min = ndarray::Array::from_elem(ukf.x.dim(), std::f64::MAX);
         let mut max = ndarray::Array::from_elem(ukf.x.dim(), std::f64::MIN);
