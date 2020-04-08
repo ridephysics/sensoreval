@@ -619,11 +619,14 @@ impl render::HudRenderer for Pendulum {
     fn data_changed(&mut self, ctx: &render::HudContext) {
         let samples = unwrap_opt_or!(ctx.get_dataset(), return);
         let fns = StateFunctions::new(&self.cfg);
-        let points_fn = kalman::sigma_points::MerweScaledSigmaPoints::new(7, 0.1, 2.0, 0.0, &fns);
+        let points_fn = kalman::sigma_points::MerweScaledSigmaPoints::new(7, 0.1, 2.0, -4.0, &fns);
         let mut ukf = kalman::ukf::UKF::new(7, 6, &points_fn, &fns);
 
         ukf.x = ndarray::Array::from(self.cfg.initial.clone());
-        ukf.P = ndarray::Array::eye(7) * 0.0001;
+        ukf.P = ndarray::Array::eye(7) * 10.0e-12;
+        ukf.P[[4, 4]] = 0.001;
+        ukf.P[[5, 5]] = 0.001;
+        ukf.P[[6, 6]] = 0.001;
         ukf.R = ndarray::Array2::from_diag(&array![
             self.cfg.stdev.accel.x.powi(2),
             self.cfg.stdev.accel.y.powi(2),
@@ -655,12 +658,12 @@ impl render::HudRenderer for Pendulum {
 
             ukf.Q
                 .slice_mut(s![0..2, 0..2])
-                .assign(&kalman::discretization::Q_discrete_white_noise(2, dt, 0.1).unwrap());
-            ukf.Q[[2, 2]] = 0.000_000_1;
-            ukf.Q[[3, 3]] = 0.000_000_1;
-            ukf.Q[[4, 4]] = 0.001;
-            ukf.Q[[5, 5]] = 0.001;
-            ukf.Q[[6, 6]] = 0.001;
+                .assign(&kalman::discretization::Q_discrete_white_noise(2, dt, 0.001).unwrap());
+            ukf.Q[[2, 2]] = 0.0;
+            ukf.Q[[3, 3]] = 0.0;
+            ukf.Q
+                .slice_mut(s![4..7, 4..7])
+                .assign(&kalman::discretization::Q_discrete_white_noise(3, dt, 0.001).unwrap());
 
             ukf.predict(dt);
             ukf.update(&z);
