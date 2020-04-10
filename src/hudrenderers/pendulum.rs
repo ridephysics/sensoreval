@@ -103,10 +103,10 @@ impl<'a> kalman::ukf::Functions for StateFunctions<'a> {
             math::normalize_angle(next[0]),
             next[1],
             r,
-            orientation_offset,
-            rot_east,
-            rot_north,
-            rot_up,
+            math::normalize_angle(orientation_offset),
+            math::normalize_angle(rot_east),
+            math::normalize_angle(rot_north),
+            math::normalize_angle(rot_up),
         ]
     }
 
