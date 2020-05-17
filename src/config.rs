@@ -154,6 +154,7 @@ pub struct Data {
 /// renderer type for the HUD and the data plot
 #[derive(Deserialize, Debug)]
 #[serde(tag = "type")]
+#[allow(clippy::large_enum_variant)]
 pub enum HudRenderer {
     /// generic renderer which doesn't do anything
     #[serde(rename = "generic")]
