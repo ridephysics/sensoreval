@@ -57,11 +57,7 @@ fn get_video_stream_info(filename: &str) -> FFProbeStream {
 }
 
 fn get_check_outdir<'a>(matches: &'a clap::ArgMatches) -> Option<&'a std::path::Path> {
-    let outdir = if let Some(v) = matches.value_of("output") {
-        v
-    } else {
-        return None;
-    };
+    let outdir = matches.value_of("output")?;
 
     let outdir = std::path::Path::new(outdir);
     if !outdir.is_dir() {
