@@ -1,3 +1,4 @@
+use ndarray::array;
 use std::ops::Mul;
 
 pub const GRAVITY: f64 = 9.80665;
@@ -84,6 +85,20 @@ pub fn tri_solve_sas(b: f64, c: f64, A: f64) -> (f64, f64) {
     }
 }
 
+#[allow(non_snake_case)]
+pub fn rot2d<S, A>(v: &ndarray::ArrayBase<S, ndarray::Ix1>, angle: A) -> ndarray::Array1<A>
+where
+    S: ndarray::Data<Elem = A>,
+    A: num_traits::float::Float,
+{
+    assert_eq!(v.dim(), (2));
+
+    array![
+        v[0] * angle.cos() - v[1] * angle.sin(),
+        v[0] * angle.sin() + v[1] * angle.cos(),
+    ]
+}
+
 #[cfg(test)]
 mod tests {
     use approx::assert_abs_diff_eq;
@@ -148,5 +163,14 @@ mod tests {
         let (B, C) = super::tri_solve_sas(5.0, 7.0, (49.0f64).to_radians());
         assert_abs_diff_eq!(B, (45.4f64).to_radians(), epsilon = 1.0e-3);
         assert_abs_diff_eq!(C, (85.6f64).to_radians(), epsilon = 1.0e-3);
+    }
+
+    #[test]
+    fn rot2d() {
+        let x = super::rot2d(&array![0.0, 1.0], std::f64::consts::FRAC_PI_2);
+        crate::test::assert_arr1_eq(&x, &array![-1.0, 0.0]);
+
+        let x = super::rot2d(&array![0.0, 1.0], -std::f64::consts::FRAC_PI_2);
+        crate::test::assert_arr1_eq(&x, &array![1.0, 0.0]);
     }
 }
