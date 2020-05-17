@@ -6,6 +6,7 @@ pub enum Error {
     ExitStatus(std::process::ExitStatus),
     BinCode(bincode::Error),
     TomlDe(toml::de::Error),
+    Plotly(plotly_types::Error),
 
     NoDataSet,
     SampleNotFound,
@@ -17,6 +18,9 @@ pub enum Error {
     InvalidArgument,
     FloatConversion,
     BlenderRenderNotFound,
+    RowAlreadyExists,
+    NoRow,
+    RowNotFound,
 }
 
 impl From<std::io::Error> for Error {
@@ -58,5 +62,12 @@ impl From<toml::de::Error> for Error {
     #[inline]
     fn from(e: toml::de::Error) -> Self {
         Error::TomlDe(e)
+    }
+}
+
+impl From<plotly_types::Error> for Error {
+    #[inline]
+    fn from(e: plotly_types::Error) -> Self {
+        Error::Plotly(e)
     }
 }

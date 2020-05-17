@@ -802,26 +802,83 @@ impl render::HudRenderer for Pendulum {
 
     fn plot(&self, ctx: &render::HudContext) -> Result<(), Error> {
         let samples = ctx.get_dataset().ok_or(Error::NoDataSet)?;
-        let mut plot = AMEPlot::new(8, &samples, &self.est)?;
-
+        let mut plot = Plot::new("/tmp/sensoreval-plot.html")?;
+        let x: Vec<f64> = samples.iter().map(|s| s.time_seconds()).collect();
         let fns = StateFunctions::new(&self.cfg);
-        plot.add("z_a0", |v| v.accel[0], |x| fns.hx(&x)[0])?;
-        plot.add("z_a1", |v| v.accel[1], |x| fns.hx(&x)[1])?;
-        plot.add("z_a2", |v| v.accel[2], |x| fns.hx(&x)[2])?;
+        let has_actual = match samples.first() {
+            Some(sample) => sample.actual.is_some(),
+            None => false,
+        };
 
-        plot.add("z_g0", |v| v.gyro[0], |x| fns.hx(&x)[3])?;
-        plot.add("z_g1", |v| v.gyro[1], |x| fns.hx(&x)[4])?;
-        plot.add("z_g2", |v| v.gyro[2], |x| fns.hx(&x)[5])?;
+        plot.add_measurements(&samples, &x)?;
 
-        plot.add_nm("x_pa", |x| x[0])?;
-        //plot.add("x_va", |v| v.gyro[0], |x| x[1])?;
-        plot.add_nm("x_r", |x| x[2])?;
-        //plot.add_nm("x_o", |x| x[3])?;
-        //plot.add_nm("x_re", |x| x[4])?;
-        //plot.add_nm("x_rn", |x| x[5])?;
-        //plot.add_nm("x_ru", |x| x[6])?;
+        let mut add_row = |rowname: &str,
+                           linename: &str,
+                           color: &str,
+                           id: usize,
+                           y: &[f64]|
+         -> Result<(), Error> {
+            let mut t = Plot::default_line();
+            t.x(&x).y(&y).name(linename);
+            t.line().color(color);
 
-        plot.show()?;
+            plot.add_trace_to_rowname(&mut t, Plot::axisid_to_rowname(rowname, id))?;
+
+            Ok(())
+        };
+
+        for i in 0..3 {
+            let y: Vec<f64> = self.est.iter().map(|x| fns.hx(&x)[i]).collect();
+            add_row("acc", "estimation", COLOR_E, i, &y)?;
+
+            if has_actual {
+                let y: Vec<f64> = samples
+                    .iter()
+                    .map(|s| fns.hx(s.actual.as_ref().unwrap())[i])
+                    .collect();
+                add_row("acc", "actual", COLOR_A, i, &y)?;
+            }
+        }
+
+        for i in 0..3 {
+            let y: Vec<f64> = self.est.iter().map(|x| fns.hx(&x)[3 + i]).collect();
+            add_row("gyr", "estimation", COLOR_E, i, &y)?;
+
+            if has_actual {
+                let y: Vec<f64> = samples
+                    .iter()
+                    .map(|s| fns.hx(s.actual.as_ref().unwrap())[3 + i])
+                    .collect();
+                add_row("gyr", "actual", COLOR_A, i, &y)?;
+            }
+        }
+
+        let xnames = ["p", "v", "r", "oo", "re", "rn", "ru"];
+        for i in 0..self.est[0].len() {
+            plot.add_row(Some(if let Some(name) = xnames.get(i) {
+                format!("x{}-{}", i, name)
+            } else {
+                format!("x{}", i)
+            }))?;
+
+            let mut t = Plot::default_line();
+            t.x(&x);
+
+            let y: Vec<f64> = self.est.iter().map(|x| x[i]).collect();
+            t.y(&y).name("estimation").line().color(COLOR_E);
+            plot.add_trace(&mut t)?;
+
+            if has_actual {
+                let y: Vec<f64> = samples
+                    .iter()
+                    .map(|s| s.actual.as_ref().unwrap()[i])
+                    .collect();
+                t.y(&y).name("actual").line().color(COLOR_A);
+                plot.add_trace(&mut t)?;
+            }
+        }
+
+        plot.finish()?;
 
         Ok(())
     }

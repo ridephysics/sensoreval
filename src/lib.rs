@@ -27,6 +27,8 @@ macro_rules! num2t {
 extern crate blas_src;
 extern crate lapack_src;
 
+use plotly_types as plotly;
+
 pub mod config;
 #[macro_use]
 mod data;

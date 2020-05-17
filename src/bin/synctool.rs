@@ -3,6 +3,7 @@ use sensoreval::*;
 use ndarray_linalg::norm::Norm;
 use std::io::Write;
 
+#[allow(clippy::many_single_char_names)]
 fn main() {
     // parse args
     let args: Vec<String> = std::env::args().collect();
@@ -33,35 +34,36 @@ fn main() {
     }
 
     // plot
-    let mut plot = TimeDataPlot::new(3, &DataSerializer::new(&samples, |i, _data| i)).unwrap();
+    let mut plot = Plot::new("/tmp/sensoreval-plot.html").unwrap();
+    let x: Vec<f64> = samples.iter().enumerate().map(|(i, _)| i as f64).collect();
 
-    plot.set_title(0, "a").unwrap();
-    plot.plot_sample(0, COLOR_A, &samples, |v| v.accel[0])
-        .unwrap();
-    plot.plot_sample(0, COLOR_M, &samples, |v| v.accel[1])
-        .unwrap();
-    plot.plot_sample(0, COLOR_E, &samples, |v| v.accel[2])
-        .unwrap();
+    plot.add_measurements(&samples, &x).unwrap();
 
-    plot.set_title(1, "a_n").unwrap();
-    plot.plot_sample(1, COLOR_A, &samples, |v| v.accel.norm_l2())
-        .unwrap();
+    let mut trace = Plot::default_line();
+    trace.x(&x).name("measurement");
+    trace.line().color(COLOR_M);
 
-    plot.set_title(2, "dt").unwrap();
-    plot.plot(
-        2,
-        COLOR_A,
-        &DataSerializer::new(&samples, |i, data| {
+    let y: Vec<f64> = samples.iter().map(|s| s.accel.norm_l2()).collect();
+    trace.y(&y);
+    plot.add_row(Some("norm-a")).unwrap();
+    plot.add_trace(&mut trace).unwrap();
+
+    let y: Vec<f64> = samples
+        .iter()
+        .enumerate()
+        .map(|(i, s)| {
             if i > 0 {
-                (data.time - samples[i - 1].time) as f64 / 1_000_000.0f64
+                (s.time - samples[i - 1].time) as f64 / 1_000_000.0f64
             } else {
                 0.0f64
             }
-        }),
-    )
-    .unwrap();
+        })
+        .collect();
+    trace.y(&y);
+    plot.add_row(Some("dt")).unwrap();
+    plot.add_trace(&mut trace).unwrap();
 
-    plot.show().unwrap();
+    plot.finish().unwrap();
 
     // read index from stdin
     std::io::stdout().flush().unwrap();

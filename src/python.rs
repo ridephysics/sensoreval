@@ -24,23 +24,6 @@ impl Python {
         Ok(Self { child })
     }
 
-    pub fn new<T: serde::ser::Serialize>(code: &T) -> Result<Self, Error> {
-        Self::new_args(
-            "python",
-            &[
-                "-c",
-                "\
-                 import sys\n\
-                 import pickle\n\
-                 def load_data():\n\
-                     \treturn pickle.load(sys.stdin.buffer)\n\
-                 exec(load_data())\n\
-                 ",
-            ],
-            code,
-        )
-    }
-
     pub fn write<T: serde::ser::Serialize>(&mut self, value: &T) -> Result<(), Error> {
         let stdin = self.child.stdin.as_mut().unwrap();
         serde_pickle::to_writer(stdin, value, true)?;
