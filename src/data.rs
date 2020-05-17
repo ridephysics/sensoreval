@@ -1,7 +1,5 @@
 use crate::*;
 
-use serde::ser::{Serialize, SerializeSeq, Serializer};
-
 /// processed data sample
 #[derive(Debug)]
 pub struct Data {
@@ -52,62 +50,6 @@ impl Data {
 
     pub fn time_seconds(&self) -> f64 {
         (self.time as f64) / 1_000_000.0
-    }
-}
-
-pub struct DataIterator<I, F> {
-    iter: I,
-    f: F,
-}
-
-impl<'a, D: 'a, I: Iterator<Item = &'a D>, R, F: Fn(&D) -> R> Iterator for DataIterator<I, F> {
-    type Item = R;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        match self.iter.next() {
-            Some(data) => Some((self.f)(&data)),
-            _ => None,
-        }
-    }
-}
-
-impl<'a, D: 'a, I: Iterator<Item = &'a D>, R, F: Fn(&D) -> R> DataIterator<I, F> {
-    pub fn new(iter: I, f: F) -> Self {
-        Self { iter, f }
-    }
-}
-
-pub struct DataSerializer<'a, D, F> {
-    list: &'a [D],
-    f: F,
-}
-
-impl<'a, D, ST, F> Serialize for DataSerializer<'a, D, F>
-where
-    ST: 'a + Serialize,
-    F: Fn(usize, &'a D) -> ST,
-{
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        let mut seq = serializer.serialize_seq(Some(self.list.len()))?;
-
-        for (i, data) in self.list.iter().enumerate() {
-            seq.serialize_element(&(self.f)(i, &data))?;
-        }
-
-        seq.end()
-    }
-}
-
-impl<'a, D, ST, F> DataSerializer<'a, D, F>
-where
-    ST: 'a + Serialize,
-    F: Fn(usize, &'a D) -> ST,
-{
-    pub fn new(list: &'a [D], f: F) -> Self {
-        Self { list, f }
     }
 }
 

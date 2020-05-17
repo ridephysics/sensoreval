@@ -51,6 +51,9 @@ pub use python::*;
 mod drain_filter;
 use drain_filter::*;
 
+mod intoitermap;
+pub use intoitermap::IntoIteratorMap;
+
 pub use data::*;
 pub use error::*;
 pub use plot::*;

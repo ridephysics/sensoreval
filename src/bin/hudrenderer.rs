@@ -275,23 +275,18 @@ fn main() {
             blender.write(&"mannequin").unwrap();
             let axis = nalgebra::Unit::new_normalize(nalgebra::Vector3::new(0.0, 0.0, 1.0));
             blender
-                .write(&DataSerializer::new(
-                    &orientations[id_start..id_end],
-                    |_i, q| {
-                        let fid = render::quat_to_fid(q);
+                .write(&orientations[id_start..id_end].map_intoiter(|q| {
+                    let fid = render::quat_to_fid(q);
 
-                        // the mannequin looks toward the camera, fix that
-                        let q = q * nalgebra::UnitQuaternion::from_axis_angle(
-                            &axis,
-                            std::f64::consts::PI,
-                        );
+                    // the mannequin looks toward the camera, fix that
+                    let q =
+                        q * nalgebra::UnitQuaternion::from_axis_angle(&axis, std::f64::consts::PI);
 
-                        let q = nalgebra::UnitQuaternion::from_quaternion(
-                            render::process_quat_for_name(q.as_vector()).into(),
-                        );
-                        (fid, [q[3], q[0], q[1], q[2]])
-                    },
-                ))
+                    let q = nalgebra::UnitQuaternion::from_quaternion(
+                        render::process_quat_for_name(q.as_vector()).into(),
+                    );
+                    (fid, [q[3], q[0], q[1], q[2]])
+                }))
                 .unwrap();
             blender
                 .write(&[stream_info.width, stream_info.height])

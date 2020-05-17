@@ -53,10 +53,11 @@ impl render::HudRenderer for Generic {
         graph_at.precision = 1;
         graph_at.draw(
             cr,
-            &mut DataIterator::new(dataslice.iter().rev(), |data| data.time),
-            &mut DataIterator::new(dataslice.iter().rev(), |data| {
-                data.accel.norm_l2() / math::GRAVITY
-            }),
+            &mut dataslice.iter().rev().map(|data| data.time),
+            &mut dataslice
+                .iter()
+                .rev()
+                .map(|data| data.accel.norm_l2() / math::GRAVITY),
         );
 
         // gyroscope
@@ -68,8 +69,8 @@ impl render::HudRenderer for Generic {
         graph_at.precision = 0;
         graph_at.draw(
             cr,
-            &mut DataIterator::new(dataslice.iter().rev(), |data| data.time),
-            &mut DataIterator::new(dataslice.iter().rev(), |data| data.gyro.norm_l2()),
+            &mut dataslice.iter().rev().map(|data| data.time),
+            &mut dataslice.iter().rev().map(|data| data.gyro.norm_l2()),
         );
 
         Ok(())
