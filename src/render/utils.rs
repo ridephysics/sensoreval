@@ -182,13 +182,7 @@ impl Graph {
         let mut tstart: u64 = 0;
         let mut first: bool = true;
         let mut data_now: f64 = 0.0;
-
-        // clippy is wrong, because we're iterating of two iterators at the same time
-        // alos, I'm not comfortable using zip, yet due to unclear performance impacts
-        #[allow(clippy::while_let_loop)]
-        loop {
-            let time = unwrap_opt_or!(iter_time.next(), break);
-            let data = unwrap_opt_or!(iter_data.next(), break);
+        for (time, data) in iter_time.zip(iter_data) {
             let was_first = first;
             if first {
                 tnow = time;
