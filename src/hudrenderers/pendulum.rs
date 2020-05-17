@@ -39,6 +39,9 @@ pub struct Config {
     /// initial conditions, used for vector x
     pub initial: Vec<f64>,
 
+    /// initial conditions, used for matrix P
+    pub initial_cov: Vec<f64>,
+
     /// override with known values in fx
     #[serde(default)]
     #[serde(rename = "override")]
@@ -623,10 +626,7 @@ impl render::HudRenderer for Pendulum {
         let mut ukf = kalman::ukf::UKF::new(7, 6, &points_fn, &fns);
 
         ukf.x = ndarray::Array::from(self.cfg.initial.clone());
-        ukf.P = ndarray::Array::eye(7) * 10.0e-12;
-        ukf.P[[4, 4]] = 0.001;
-        ukf.P[[5, 5]] = 0.001;
-        ukf.P[[6, 6]] = 0.001;
+        ukf.P = ndarray::Array::from_diag(&ndarray::Array::from(self.cfg.initial_cov.clone()));
         ukf.R = ndarray::Array2::from_diag(&array![
             self.cfg.stdev.accel.x.powi(2),
             self.cfg.stdev.accel.y.powi(2),
