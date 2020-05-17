@@ -857,11 +857,11 @@ impl render::HudRenderer for Pendulum {
 
         let xnames = ["p", "v", "r", "oo", "re", "rn", "ru"];
         for i in 0..self.est[0].len() {
-            plot.add_row(Some(if let Some(name) = xnames.get(i) {
-                format!("x{}-{}", i, name)
-            } else {
-                format!("x{}", i)
-            }))?;
+            plot.add_row(Some(
+                xnames
+                    .get(i)
+                    .map_or(format!("x{}", i), |s| format!("x{}-{}", i, s)),
+            ))?;
 
             let mut t = Plot::default_line();
             t.x(&x);
