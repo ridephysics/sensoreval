@@ -99,6 +99,7 @@ impl<'a> Plot<'a> {
         }
 
         trace.yaxis(format!("y{}", id + 1));
+        trace.xaxis(format!("x{}", id + 1));
 
         self.plot.add_trace(trace)?;
         Ok(())
@@ -127,7 +128,6 @@ impl<'a> Plot<'a> {
 
     pub fn default_line<'b>() -> plotly::traces::scatter::Scatter<'b> {
         let mut t = plotly::traces::scatter::Scatter::default();
-        t.xaxis("x");
         t.line().simplify(false);
         t
     }
