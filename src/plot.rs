@@ -173,8 +173,8 @@ impl<'a> Plot<'a> {
             t.x(&x).y(&y).name("measurement");
             t.line().color(COLOR_M);
 
-            self.add_row(Some(Self::axisid_to_rowname(rowname, id)))?;
-            self.add_trace(&mut t)?;
+            let rowid = self.ensure_row(Self::axisid_to_rowname(rowname, id))?;
+            self.add_trace_to_rowid(&mut t, rowid)?;
 
             Ok(())
         };
