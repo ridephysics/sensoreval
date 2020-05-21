@@ -11,6 +11,7 @@ pub struct Plot<'a> {
     plot: plotly::Plot<'a, std::fs::File, &'static str>,
     nrows: usize,
     row_ids: std::collections::HashMap<String, usize>,
+    trace_prefix: Option<String>,
 }
 
 impl<'a> Plot<'a> {
@@ -31,6 +32,7 @@ impl<'a> Plot<'a> {
             plot: plotly::Plot::new(f, "plotly-div")?,
             nrows: 0,
             row_ids: std::collections::HashMap::new(),
+            trace_prefix: None,
         };
         let config = plot.plot.config();
 
@@ -47,6 +49,10 @@ impl<'a> Plot<'a> {
             .grouped(true);
 
         Ok(plot)
+    }
+
+    pub fn set_trace_prefix<A: AsRef<str>>(&mut self, trace_prefix: Option<A>) {
+        self.trace_prefix = trace_prefix.map(|v| v.as_ref().to_string());
     }
 
     pub fn add_row<A: AsRef<str>>(&mut self, name: Option<A>) -> Result<usize, Error> {
@@ -100,6 +106,14 @@ impl<'a> Plot<'a> {
 
         trace.yaxis(format!("y{}", id + 1));
         trace.xaxis(format!("x{}", id + 1));
+
+        if let Some(trace_prefix) = &self.trace_prefix {
+            trace.name(format!(
+                "{}{}",
+                trace_prefix,
+                trace.name.as_ref().map(|v| v.as_ref()).unwrap_or("")
+            ));
+        }
 
         self.plot.add_trace(trace)?;
         Ok(())
