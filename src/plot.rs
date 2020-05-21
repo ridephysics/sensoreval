@@ -100,13 +100,6 @@ impl<'a> Plot<'a> {
 
         trace.yaxis(format!("y{}", id + 1));
 
-        for (rowname, rowid) in &self.row_ids {
-            if id == *rowid {
-                trace.legendgroup(rowname.clone());
-                break;
-            }
-        }
-
         self.plot.add_trace(trace)?;
         Ok(())
     }
