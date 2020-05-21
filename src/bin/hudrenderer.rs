@@ -177,6 +177,12 @@ fn main() {
                 .value_name("RANGE")
                 .help("render range"),
         )
+        .arg(
+            clap::Arg::with_name("simcfg")
+                .long("simcfg")
+                .value_name("SIMCFG")
+                .help("simulation config"),
+        )
         .get_matches();
 
     let cfgname = matches.value_of("CONFIG").unwrap();
@@ -209,6 +215,16 @@ fn main() {
 
             // plot
             renderctx.plot(&mut plot).expect("can't plot");
+
+            if let Some(simcfgname) = matches.value_of("simcfg") {
+                let simcfg = config::load(&simcfgname).expect("can't load sim config");
+                let simsamples = simcfg.load_data().expect("can't read sim samples");
+                let simrenderctx = render::Context::new(&simcfg, Some(&simsamples));
+
+                plot.set_trace_prefix(Some("sim-"));
+                simrenderctx.plot(&mut plot).expect("can't plot sim");
+                plot.set_trace_prefix::<&str>(None);
+            }
 
             plot.finish().unwrap();
         }
