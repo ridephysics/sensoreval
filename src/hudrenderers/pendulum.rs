@@ -856,18 +856,18 @@ impl render::HudRenderer for Pendulum {
 
         let xnames = ["p", "v", "r", "oo", "re", "rn", "ru"];
         for i in 0..self.est[0].len() {
-            plot.add_row(Some(
+            let rowid = plot.ensure_row(
                 xnames
                     .get(i)
                     .map_or(format!("x{}", i), |s| format!("x{}-{}", i, s)),
-            ))?;
+            )?;
 
             let mut t = Plot::default_line();
             t.x(&x);
 
             let y: Vec<f64> = self.est.iter().map(|x| x[i]).collect();
             t.y(&y).name("estimation").line().color(COLOR_E);
-            plot.add_trace(&mut t)?;
+            plot.add_trace_to_rowid(&mut t, rowid)?;
 
             if has_actual {
                 let y: Vec<f64> = samples
@@ -875,7 +875,7 @@ impl render::HudRenderer for Pendulum {
                     .map(|s| s.actual.as_ref().unwrap()[i])
                     .collect();
                 t.y(&y).name("actual").line().color(COLOR_A);
-                plot.add_trace(&mut t)?;
+                plot.add_trace_to_rowid(&mut t, rowid)?;
             }
         }
 
