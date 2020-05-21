@@ -122,7 +122,6 @@ impl<'a> Plot<'a> {
         }
 
         trace.yaxis(format!("y{}", id + 1));
-        trace.xaxis(format!("x{}", id + 1));
 
         if let Some(trace_prefix) = &self.trace_prefix {
             trace.name(format!(
@@ -159,6 +158,7 @@ impl<'a> Plot<'a> {
 
     pub fn default_line<'b>() -> plotly::traces::scatter::Scatter<'b> {
         let mut t = plotly::traces::scatter::Scatter::default();
+        t.xaxis("x");
         t.line().simplify(false);
         t
     }
