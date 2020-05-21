@@ -802,9 +802,8 @@ impl render::HudRenderer for Pendulum {
         ))
     }
 
-    fn plot(&self, ctx: &render::HudContext) -> Result<(), Error> {
+    fn plot(&self, ctx: &render::HudContext, plot: &mut Plot) -> Result<(), Error> {
         let samples = ctx.get_dataset().ok_or(Error::NoDataSet)?;
-        let mut plot = Plot::new("/tmp/sensoreval-plot.html")?;
         let x: Vec<f64> = samples.iter().map(|s| s.time_seconds()).collect();
         let fns = StateFunctions::new(&self.cfg);
         let has_actual = match samples.first() {
@@ -879,8 +878,6 @@ impl render::HudRenderer for Pendulum {
                 plot.add_trace(&mut t)?;
             }
         }
-
-        plot.finish()?;
 
         Ok(())
     }

@@ -205,8 +205,12 @@ fn main() {
 
     match matches.value_of("MODE").unwrap() {
         "plot" => {
+            let mut plot = Plot::new("/tmp/sensoreval-plot.html").unwrap();
+
             // plot
-            renderctx.plot().expect("can't plot");
+            renderctx.plot(&mut plot).expect("can't plot");
+
+            plot.finish().unwrap();
         }
         "dataviewer" => {
             renderctx.set_allow_missing_renders(true);

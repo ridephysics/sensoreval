@@ -83,14 +83,11 @@ impl render::HudRenderer for Generic {
         Ok(nalgebra::UnitQuaternion::identity())
     }
 
-    fn plot(&self, ctx: &render::HudContext) -> Result<(), Error> {
+    fn plot(&self, ctx: &render::HudContext, plot: &mut Plot) -> Result<(), Error> {
         let samples = ctx.get_dataset().ok_or(Error::NoDataSet)?;
-        let mut plot = Plot::new("/tmp/sensoreval-plot.html")?;
         let x: Vec<f64> = samples.iter().map(|s| s.time_seconds()).collect();
 
         plot.add_measurements(&samples, &x)?;
-
-        plot.finish()?;
 
         Ok(())
     }
