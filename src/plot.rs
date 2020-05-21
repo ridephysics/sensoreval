@@ -74,6 +74,23 @@ impl<'a> Plot<'a> {
         Ok(self.nrows - 1)
     }
 
+    pub fn rowid_by_name<A: AsRef<str>>(&self, name: A) -> Result<usize, Error> {
+        self.row_ids
+            .get(name.as_ref())
+            .cloned()
+            .ok_or(Error::RowNotFound)
+    }
+
+    pub fn ensure_row<A: AsRef<str>>(&mut self, name: A) -> Result<usize, Error> {
+        match self.rowid_by_name(&name) {
+            Ok(v) => Ok(v),
+            Err(e) => match e {
+                Error::RowNotFound => self.add_row(Some(name)),
+                _ => Err(e),
+            },
+        }
+    }
+
     pub fn add_trace(&mut self, trace: &mut plotly::traces::scatter::Scatter) -> Result<(), Error> {
         if self.nrows == 0 {
             return Err(Error::NoRow);
