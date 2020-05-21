@@ -49,7 +49,7 @@ impl<'a> Plot<'a> {
         Ok(plot)
     }
 
-    pub fn add_row<A: AsRef<str>>(&mut self, name: Option<A>) -> Result<(), Error> {
+    pub fn add_row<A: AsRef<str>>(&mut self, name: Option<A>) -> Result<usize, Error> {
         if let Some(name) = name {
             if self.row_ids.get(name.as_ref()).is_some() {
                 return Err(Error::RowAlreadyExists);
@@ -65,7 +65,7 @@ impl<'a> Plot<'a> {
 
         self.nrows += 1;
 
-        Ok(())
+        Ok(self.nrows - 1)
     }
 
     pub fn add_trace(&mut self, trace: &mut plotly::traces::scatter::Scatter) -> Result<(), Error> {
