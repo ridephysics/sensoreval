@@ -25,17 +25,15 @@ pub struct Config {
     pub active_row: usize,
 }
 
-pub struct StateFunctions<'a> {
-    cfg: &'a Config,
-}
+pub struct StateFunctions;
 
-impl<'a> StateFunctions<'a> {
-    pub fn new(cfg: &'a Config) -> Self {
-        Self { cfg }
+impl Default for StateFunctions {
+    fn default() -> Self {
+        Self
     }
 }
 
-impl<'a> kalman::ukf::Functions for StateFunctions<'a> {
+impl<'a> kalman::ukf::Functions for StateFunctions {
     type Elem = f64;
 
     fn fx<S>(
@@ -193,7 +191,7 @@ impl<'a> kalman::ukf::Functions for StateFunctions<'a> {
     }
 }
 
-impl<'a> kalman::sigma_points::Functions for StateFunctions<'a> {
+impl<'a> kalman::sigma_points::Functions for StateFunctions {
     type Elem = f64;
 
     fn subtract<Sa, Sb>(
@@ -261,7 +259,7 @@ impl Pendulum {
         let est_sampletime = &self.est[dataid];
 
         let est_now = if actual_ts > sample.time {
-            let fns = StateFunctions::new(&self.cfg);
+            let fns = StateFunctions::default();
             Some(fns.fx(
                 est_sampletime,
                 (actual_ts - sample.time) as f64 / 1_000_000.0f64,
@@ -578,7 +576,7 @@ impl render::HudRenderer for Pendulum {
     #[allow(non_snake_case)]
     fn data_changed(&mut self, ctx: &render::HudContext) {
         let samples = unwrap_opt_or!(ctx.get_dataset(), return);
-        let fns = StateFunctions::new(&self.cfg);
+        let fns = StateFunctions::default();
         let points_fn = kalman::sigma_points::MerweScaledSigmaPoints::new(7, 0.1, 2.0, -4.0, &fns);
         let mut ukf = kalman::ukf::UKF::new(7, 6, &points_fn, &fns);
 
@@ -762,7 +760,7 @@ impl render::HudRenderer for Pendulum {
     fn plot(&self, ctx: &render::HudContext, plot: &mut Plot) -> Result<(), Error> {
         let samples = ctx.get_dataset().ok_or(Error::NoDataSet)?;
         let x: Vec<f64> = samples.iter().map(|s| s.time_seconds()).collect();
-        let fns = StateFunctions::new(&self.cfg);
+        let fns = StateFunctions::default();
         let has_actual = match samples.first() {
             Some(sample) => sample.actual.is_some(),
             None => false,
