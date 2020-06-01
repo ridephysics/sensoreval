@@ -1,49 +1,61 @@
 use crate::*;
 use eom::traits::Scheme;
+use eom::traits::TimeEvolution;
 use ndarray::array;
 use serde::Deserialize;
 
 #[derive(Deserialize, Debug)]
 pub struct Config {
+    /// unit: seconds
+    start_off: f64,
     /// unit: meters
     radius: f64,
+    /// unit: rad
+    ship_arc_half_angle: f64,
     /// unit: seconds
     dt: f64,
     /// unit: seconds
     duration: f64,
+
     /// unit: rad
-    initial_angle: f64,
-    /// unit: rad
-    #[serde(default)]
     orientation_offset: f64,
     /// unit: rad
-    #[serde(default)]
-    rot_east: f64,
-    /// unit: rad
-    #[serde(default)]
-    rot_north: f64,
-    /// unit: rad
-    #[serde(default)]
-    rot_up: f64,
+    rot: Vec<f64>,
+
+    initial: Vec<f64>,
+    control_input: Vec<Vec<f64>>,
 }
 
 #[derive(Clone)]
-pub struct EomFns {
-    /// unit: m/s^2
+pub struct EomFns<'c> {
     radius: f64,
+    ship_arc_half_angle: f64,
+    control_input: Option<&'c Vec<f64>>,
 }
 
-impl EomFns {
+impl<'c> EomFns<'c> {
     pub fn new(cfg: &Config) -> Self {
-        Self { radius: cfg.radius }
+        Self {
+            radius: cfg.radius,
+            control_input: None,
+            ship_arc_half_angle: cfg.ship_arc_half_angle,
+        }
     }
 
     pub fn from_radius(radius: f64) -> Self {
-        Self { radius }
+        Self {
+            radius,
+            control_input: None,
+            ship_arc_half_angle: 0.0,
+        }
+    }
+
+    pub fn set_control_input(&mut self, control_input: Option<&'c Vec<f64>>) {
+        self.control_input = control_input;
     }
 }
 
-impl eom::traits::ModelSpec for EomFns {
+impl<'c> eom::traits::ModelSpec for EomFns<'c> {
     type Scalar = f64;
     type Dim = ndarray::Ix1;
 
@@ -52,7 +64,7 @@ impl eom::traits::ModelSpec for EomFns {
     }
 }
 
-impl eom::traits::Explicit for EomFns {
+impl<'c> eom::traits::Explicit for EomFns<'c> {
     fn rhs<'a, S>(
         &mut self,
         v: &'a mut ndarray::ArrayBase<S, ndarray::Ix1>,
@@ -62,41 +74,54 @@ impl eom::traits::Explicit for EomFns {
     {
         let theta = v[0];
         let x = v[1];
+        let mut motor = 0.0;
+
+        if let Some(control_input) = self.control_input {
+            if theta.abs() <= self.ship_arc_half_angle {
+                motor = control_input[1];
+
+                // accelerate into the direction of movement
+                if x < 0.0 {
+                    motor = -motor;
+                };
+            }
+        }
+
         v[0] = x;
-        v[1] = -(math::GRAVITY / self.radius) * theta.sin();
+        v[1] = (-math::GRAVITY * theta.sin() + motor) / self.radius;
         v
     }
 }
 
-fn build_sample<S>(cfg: &Config, id: usize, data: &ndarray::ArrayBase<S, ndarray::Ix1>) -> Data
+fn build_sample<S>(cfg: &Config, t_us: u64, data: &ndarray::ArrayBase<S, ndarray::Ix1>) -> Data
 where
     S: ndarray::Data<Elem = f64>,
 {
-    let t_us = (id as f64 * cfg.dt * 1_000_000.0) as u64;
-    let p_ang = data[0];
-    let v_ang = data[1];
-    let ac = v_ang.powi(2) * cfg.radius;
+    let pa = math::normalize_angle(data[0]);
+    let va = data[1];
+    let r = cfg.radius;
+    let oo = cfg.orientation_offset;
+    let re = cfg.rot[0];
+    let rn = cfg.rot[1];
+    let ru = cfg.rot[2];
 
-    let accel = nalgebra::Vector3::new(
-        0.0,
-        0.0,
-        ac + math::GRAVITY * (p_ang + cfg.orientation_offset).cos(),
-    );
+    let ac = va.powi(2) * r;
 
-    let gyro = nalgebra::Vector3::new(v_ang, 0.0, 0.0);
+    let accel = nalgebra::Vector3::new(0.0, 0.0, ac + math::GRAVITY * (pa + oo).cos());
+    let gyro = nalgebra::Vector3::new(va, 0.0, 0.0);
 
-    let axis = nalgebra::Unit::new_normalize(nalgebra::Vector3::new(1.0, 0.0, 0.0));
-    let q = nalgebra::UnitQuaternion::from_axis_angle(&axis, cfg.rot_east);
+    let axis_east = nalgebra::Unit::new_normalize(nalgebra::Vector3::new(1.0, 0.0, 0.0));
+    let q = nalgebra::UnitQuaternion::from_axis_angle(&axis_east, re);
     let accel = q * accel;
     let gyro = q * gyro;
 
-    let axis = nalgebra::Unit::new_normalize(nalgebra::Vector3::new(0.0, 1.0, 0.0));
-    let q = nalgebra::UnitQuaternion::from_axis_angle(&axis, cfg.rot_north);
+    let axis_north = nalgebra::Unit::new_normalize(nalgebra::Vector3::new(0.0, 1.0, 0.0));
+    let q = nalgebra::UnitQuaternion::from_axis_angle(&axis_north, rn);
     let accel = q * accel;
     let gyro = q * gyro;
 
-    let axis = nalgebra::Unit::new_normalize(nalgebra::Vector3::new(0.0, 0.0, 1.0));
-    let q = nalgebra::UnitQuaternion::from_axis_angle(&axis, cfg.rot_up);
+    let axis_up = nalgebra::Unit::new_normalize(nalgebra::Vector3::new(0.0, 0.0, 1.0));
+    let q = nalgebra::UnitQuaternion::from_axis_angle(&axis_up, ru);
     let accel = q * accel;
     let gyro = q * gyro;
 
@@ -105,29 +130,45 @@ where
     sample.time_baro = t_us;
     sample.accel = array![accel[0], accel[1], accel[2]];
     sample.gyro = array![gyro[0], gyro[1], gyro[2]];
-    sample.actual = Some(array![
-        p_ang,
-        v_ang,
-        cfg.radius,
-        cfg.orientation_offset,
-        cfg.rot_east,
-        cfg.rot_north,
-        cfg.rot_up,
-    ]);
+    sample.actual = Some(array![pa, va, r, oo, re, rn, ru]);
 
     sample
 }
 
+fn next_control_input_time(cfg: &Config, id: usize) -> Option<f64> {
+    if id >= cfg.control_input.len() {
+        None
+    } else {
+        Some(cfg.control_input[id][0])
+    }
+}
+
 pub fn generate(cfg: &Config) -> Result<Vec<Data>, Error> {
-    let mut ret = Vec::new();
-
-    let mut teo = eom::explicit::RK4::new(EomFns::new(cfg), cfg.dt);
-    let ts = eom::adaptor::time_series(ndarray::arr1(&[cfg.initial_angle, 0.0]), &mut teo);
     let nsamples = (cfg.duration / cfg.dt) as usize;
+    let mut ret = Vec::new();
+    let mut teo = eom::explicit::RK4::new(EomFns::new(cfg), cfg.dt);
 
-    ret.push(build_sample(cfg, 0, &array![cfg.initial_angle, 0.0]));
-    for (id, v) in ts.take(nsamples).enumerate() {
-        ret.push(build_sample(cfg, 1 + id, &v));
+    let mut x = ndarray::Array::from(cfg.initial.clone());
+    let mut ciid = 0;
+    let mut next_input_time = next_control_input_time(cfg, ciid);
+
+    for id in 0..nsamples {
+        let t = id as f64 * cfg.dt + cfg.start_off;
+        let t_us = (t * 1_000_000.0) as u64;
+
+        ret.push(build_sample(cfg, t_us, &x));
+
+        if let Some(nit) = next_input_time {
+            if t + cfg.dt >= nit {
+                teo.core_mut()
+                    .set_control_input(Some(&cfg.control_input[ciid]));
+
+                ciid += 1;
+                next_input_time = next_control_input_time(cfg, ciid);
+            }
+        }
+
+        teo.iterate(&mut x);
     }
 
     Ok(ret)
