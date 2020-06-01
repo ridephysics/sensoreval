@@ -8,29 +8,6 @@ use ndarray::azip;
 use ndarray::s;
 use serde::Deserialize;
 
-#[derive(Deserialize, Debug, Clone, Default)]
-pub struct Override {
-    /// unit: meters
-    #[serde(default)]
-    pub radius: Option<f64>,
-
-    /// unit: rad
-    #[serde(default)]
-    pub orientation_offset: Option<f64>,
-
-    /// unit: rad
-    #[serde(default)]
-    pub rot_east: Option<f64>,
-
-    /// unit: rad
-    #[serde(default)]
-    pub rot_north: Option<f64>,
-
-    /// unit: rad
-    #[serde(default)]
-    pub rot_up: Option<f64>,
-}
-
 #[derive(Deserialize, Debug, Clone)]
 pub struct Config {
     /// standard deviation of the measurements, used for matrix R
@@ -41,11 +18,6 @@ pub struct Config {
 
     /// initial conditions, used for matrix P
     pub initial_cov: Vec<f64>,
-
-    /// override with known values in fx
-    #[serde(default)]
-    #[serde(rename = "override")]
-    pub override_: Override,
 
     #[serde(default)]
     pub enable_rts_smoother: bool,
@@ -76,26 +48,11 @@ impl<'a> kalman::ukf::Functions for StateFunctions<'a> {
     {
         let pa = x[0];
         let va = x[1];
-        let r = match self.cfg.override_.radius {
-            Some(v) => v,
-            None => x[2],
-        };
-        let orientation_offset = match self.cfg.override_.orientation_offset {
-            Some(v) => v,
-            None => x[3],
-        };
-        let rot_east = match self.cfg.override_.rot_east {
-            Some(v) => v,
-            None => x[4],
-        };
-        let rot_north = match self.cfg.override_.rot_north {
-            Some(v) => v,
-            None => x[5],
-        };
-        let rot_up = match self.cfg.override_.rot_up {
-            Some(v) => v,
-            None => x[6],
-        };
+        let r = x[2];
+        let orientation_offset = x[3];
+        let rot_east = x[4];
+        let rot_north = x[5];
+        let rot_up = x[6];
 
         let mut teo =
             eom::explicit::RK4::new(crate::simulator::pendulum::EomFns::from_radius(r), dt);
@@ -895,12 +852,11 @@ impl render::HudRenderer for Pendulum {
 
         bincode::config()
             .big_endian()
-            .serialize_into(&mut file, &(self.cfg.override_.radius.unwrap() as f32))?;
+            .serialize_into(&mut file, &(self.cfg.initial[2] as f32))?;
 
-        bincode::config().big_endian().serialize_into(
-            &mut file,
-            &(self.cfg.override_.orientation_offset.unwrap() as f32),
-        )?;
+        bincode::config()
+            .big_endian()
+            .serialize_into(&mut file, &(self.cfg.initial[3] as f32))?;
 
         bincode::config()
             .big_endian()
