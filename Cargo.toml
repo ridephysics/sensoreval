@@ -32,8 +32,8 @@ lapack-src = { version = "*", features = ["openblas"] }
 openblas-src = { version = "*", features = ["static"] }
 approx = "0.3"
 serde_json = "1.0"
-nalgebra = "0.20"
-half = { version = "1.5", features = ["serde"] }
+nalgebra = "0.21"
+half = { version = "1.6", features = ["serde"] }
 plotly-types = { git = "https://github.com/M1cha/plotly-types-rs", branch = "master" }
 
 [build-dependencies]
