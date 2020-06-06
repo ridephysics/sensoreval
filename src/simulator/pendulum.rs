@@ -91,7 +91,12 @@ impl eom::traits::Explicit for EomFns {
     }
 }
 
-fn build_sample<S>(cfg: &Config, t_us: u64, data: &ndarray::ArrayBase<S, ndarray::Ix1>, motor: f64) -> Data
+fn build_sample<S>(
+    cfg: &Config,
+    t_us: u64,
+    data: &ndarray::ArrayBase<S, ndarray::Ix1>,
+    motor: f64,
+) -> Data
 where
     S: ndarray::Data<Elem = f64>,
 {
@@ -158,8 +163,7 @@ pub fn generate(cfg: &Config) -> Result<Vec<Data>, Error> {
 
         if let Some(nit) = next_input_time {
             if t + cfg.dt >= nit {
-                teo.core_mut()
-                    .set_motor(cfg.control_input[ciid][1]);
+                teo.core_mut().set_motor(cfg.control_input[ciid][1]);
 
                 ciid += 1;
                 next_input_time = next_control_input_time(cfg, ciid);
