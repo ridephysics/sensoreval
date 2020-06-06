@@ -46,6 +46,10 @@ impl<'a, FNS> MerweScaledSigmaPoints<'a, FNS>
 where
     FNS: Functions<Elem = f64>,
 {
+    /// n: number of dimensions
+    /// alpha: between 0 and 1, a larger value spreads the sigma points further from the mean
+    /// beta: 2 is a good choice for gaussian problems
+    /// kappa: 3 - n
     pub fn new(n: usize, alpha: f64, beta: f64, kappa: f64, fns: &'a FNS) -> Self {
         Self {
             fns,
