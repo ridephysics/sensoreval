@@ -156,6 +156,7 @@ impl<'a> kalman::sigma_points::Functions for StateFunctions {
 pub(crate) struct Pendulum {
     cfg: Config,
     est: Vec<ndarray::Array1<f64>>,
+    ys: Vec<ndarray::Array1<f64>>,
     font: pango::FontDescription,
     svg_speed: librsvg::SvgHandle,
     svg_height: librsvg::SvgHandle,
@@ -167,6 +168,7 @@ impl Pendulum {
         let mut o = Self {
             cfg: (*cfg).clone(),
             est: Vec::new(),
+            ys: Vec::new(),
             font: pango::FontDescription::new(),
             svg_speed: render::utils::bytes_to_svghandle(include_bytes!(
                 "../../assets/icons/speed-24px.svg"
@@ -247,6 +249,7 @@ impl render::HudRenderer for Pendulum {
         ]);
 
         self.est.clear();
+        self.ys.clear();
 
         let mut t_prev = match samples.get(0) {
             Some(v) => v.time,
@@ -274,6 +277,7 @@ impl render::HudRenderer for Pendulum {
             ukf.update(&z);
 
             self.est.push(ukf.x.clone());
+            self.ys.push(ukf.y.clone());
 
             if self.cfg.enable_rts_smoother {
                 Ps.push(ukf.P.clone());
@@ -379,6 +383,14 @@ impl render::HudRenderer for Pendulum {
                 t.y(&y).name("actual").line().color(COLOR_A);
                 plot.add_trace_to_rowid(&mut t, rowid)?;
             }
+        }
+
+        plot.add_row(Some("y"))?;
+        for i in 0..self.ys[0].len() {
+            let y: Vec<f64> = self.ys.iter().map(|y| y[i]).collect();
+            let mut t = Plot::default_line();
+            t.x(&x).y(&y).name(format!("y{}", i));
+            plot.add_trace(&mut t)?;
         }
 
         Ok(())
