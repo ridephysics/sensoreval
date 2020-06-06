@@ -51,9 +51,10 @@ impl<'a> kalman::ukf::Functions for StateFunctions {
         let rot_east = x[4];
         let rot_north = x[5];
         let rot_up = x[6];
+        let motor = x[7];
 
         let mut teo =
-            eom::explicit::RK4::new(crate::simulator::pendulum::EomFns::from_radius(r), dt);
+            eom::explicit::RK4::new(crate::simulator::pendulum::EomFns::for_est(r, 0.2743, motor), dt);
         let mut ic = array![pa, va];
         let next = teo.iterate(&mut ic);
 
@@ -65,6 +66,7 @@ impl<'a> kalman::ukf::Functions for StateFunctions {
             math::normalize_angle(rot_east),
             math::normalize_angle(rot_north),
             math::normalize_angle(rot_up),
+            motor,
         ]
     }
 
@@ -143,7 +145,7 @@ impl<'a> kalman::ukf::Functions for StateFunctions {
         let accel = nalgebra::Vector3::new(
             0.0,
             0.0,
-            ac + math::GRAVITY * (pa + orientation_offset).cos(),
+            ac + math::GRAVITY * (pa + orientation_offset).cos() /*+ x[7]*/,
         );
         let gyro = nalgebra::Vector3::new(va, 0.0, 0.0);
 
@@ -577,8 +579,8 @@ impl render::HudRenderer for Pendulum {
     fn data_changed(&mut self, ctx: &render::HudContext) {
         let samples = unwrap_opt_or!(ctx.get_dataset(), return);
         let fns = StateFunctions::default();
-        let points_fn = kalman::sigma_points::MerweScaledSigmaPoints::new(7, 0.1, 2.0, -4.0, &fns);
-        let mut ukf = kalman::ukf::UKF::new(7, 6, &points_fn, &fns);
+        let points_fn = kalman::sigma_points::MerweScaledSigmaPoints::new(8, 0.1, 2.0, -5.0, &fns);
+        let mut ukf = kalman::ukf::UKF::new(8, 6, &points_fn, &fns);
 
         ukf.x = ndarray::Array::from(self.cfg.initial.clone());
         ukf.P = ndarray::Array::from_diag(&ndarray::Array::from(self.cfg.initial_cov.clone()));
@@ -613,12 +615,22 @@ impl render::HudRenderer for Pendulum {
 
             ukf.Q
                 .slice_mut(s![0..2, 0..2])
-                .assign(&kalman::discretization::Q_discrete_white_noise(2, dt, 0.001).unwrap());
+                .assign(&kalman::discretization::Q_discrete_white_noise(2, dt, 1.0e-12).unwrap());
+            ukf.Q[[0, 0]] = 1.0e-12;
+            ukf.Q[[1, 1]] = 0.0;
+
             ukf.Q[[2, 2]] = 0.0;
             ukf.Q[[3, 3]] = 0.0;
-            ukf.Q
+
+            /*ukf.Q
                 .slice_mut(s![4..7, 4..7])
-                .assign(&kalman::discretization::Q_discrete_white_noise(3, dt, 0.001).unwrap());
+                .assign(&kalman::discretization::Q_discrete_white_noise(3, dt, 0.001).unwrap());*/
+
+            ukf.Q[[4, 4]] = 0.0;
+            ukf.Q[[5, 5]] = 0.0;
+            ukf.Q[[6, 6]] = 0.0;
+
+            ukf.Q[[7, 7]] = 1.0e-6;
 
             ukf.predict(dt);
             ukf.update(&z);
