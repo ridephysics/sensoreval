@@ -79,6 +79,7 @@ pub struct UKF<'a, FP, FNS, A> {
     // update
     sigmas_h: ndarray::Array2<A>,
     pub y: ndarray::Array1<A>,
+    pub S: ndarray::Array2<A>,
 }
 
 impl<'a, FP, FNS, A> UKF<'a, FP, FNS, A>
@@ -111,6 +112,7 @@ where
             sigmas_f: ndarray::Array::zeros((points_fn.num_sigmas(), dim_x)),
             sigmas_h: ndarray::Array::zeros((points_fn.num_sigmas(), dim_z)),
             y: ndarray::Array::zeros(dim_z),
+            S: ndarray::Array::zeros((dim_z, dim_z)),
         }
     }
 
@@ -192,7 +194,10 @@ where
         // new state estimate
         self.x = &self.x + &K.dot(&y);
         self.P = &self.P - &K.dot(&S).dot(&K.t());
+
+        // provide internal results
         self.y = y;
+        self.S = S;
     }
 
     pub fn rts_smoother<Sx>(
