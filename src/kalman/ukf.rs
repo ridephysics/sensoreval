@@ -87,12 +87,12 @@ where
     FP: kalman::sigma_points::SigmaPoints<Elem = A>,
     FNS: Functions<Elem = A>,
     A: Copy
-        + num_traits::identities::Zero
-        + num_traits::identities::One
+        + num_traits::float::FloatConst
+        + num_traits::float::Float
         + ndarray::ScalarOperand
-        + std::ops::Sub<A, Output = A>
-        + std::ops::AddAssign<A>
-        + ndarray_linalg::types::Lapack,
+        + ndarray_linalg::types::Lapack
+        + std::convert::From<f32>,
+    <A as ndarray_linalg::Scalar>::Real: std::convert::From<f32>,
 {
     pub fn new(dim_x: usize, dim_z: usize, points_fn: &'a FP, fns: &'a FNS) -> Self {
         Self {
@@ -198,6 +198,27 @@ where
         // provide internal results
         self.y = y;
         self.S = S;
+    }
+
+    /// log-likelihood of the last measurement
+    pub fn log_likelihood(&self) -> Result<A, Error> {
+        let mean = ndarray::Array1::zeros(self.y.len());
+        math::multivariate::logpdf(&self.y, &mean, &self.S, true)
+    }
+
+    /// Computed from the log-likelihood. The log-likelihood can be very
+    /// small,  meaning a large negative value such as -28000. Taking the
+    /// exp() of that results in 0.0, which can break typical algorithms
+    /// which multiply by this value, so by default we always return a
+    /// number >= `A::min_positive_value`
+    pub fn likelihood(&self) -> Result<A, Error> {
+        let ll = self.log_likelihood()?;
+        let mut l = ll.exp();
+        if l.is_zero() {
+            l = A::min_positive_value();
+        }
+
+        Ok(l)
     }
 
     pub fn rts_smoother<Sx>(
