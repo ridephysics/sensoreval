@@ -1,3 +1,5 @@
+pub mod multivariate;
+
 use ndarray::array;
 use std::ops::Mul;
 
