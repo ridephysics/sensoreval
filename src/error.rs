@@ -7,6 +7,7 @@ pub enum Error {
     BinCode(bincode::Error),
     TomlDe(toml::de::Error),
     Plotly(plotly_types::Error),
+    Linalg(ndarray_linalg::error::LinalgError),
 
     NoDataSet,
     SampleNotFound,
@@ -21,6 +22,11 @@ pub enum Error {
     RowAlreadyExists,
     NoRow,
     RowNotFound,
+
+    NotPositiveSemiDefinite,
+    SingularMatrix,
+    WrongVecLen(usize),
+    NotSquare,
 }
 
 impl From<std::io::Error> for Error {
@@ -69,5 +75,12 @@ impl From<plotly_types::Error> for Error {
     #[inline]
     fn from(e: plotly_types::Error) -> Self {
         Error::Plotly(e)
+    }
+}
+
+impl From<ndarray_linalg::error::LinalgError> for Error {
+    #[inline]
+    fn from(e: ndarray_linalg::error::LinalgError) -> Self {
+        Error::Linalg(e)
     }
 }
