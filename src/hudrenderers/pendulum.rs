@@ -33,6 +33,17 @@ impl Default for StateFunctions {
     }
 }
 
+impl StateFunctions {
+    fn x_normalize(mut x: ndarray::Array1<f64>) -> ndarray::Array1<f64> {
+        x[0] = math::normalize_angle(x[0]);
+        x[3] = math::normalize_angle(x[3]);
+        x[4] = math::normalize_angle(x[4]);
+        x[5] = math::normalize_angle(x[5]);
+        x[6] = math::normalize_angle(x[6]);
+        x
+    }
+}
+
 impl<'a> kalman::ukf::Functions for StateFunctions {
     type Elem = f64;
 
@@ -118,13 +129,19 @@ impl<'a> kalman::ukf::Functions for StateFunctions {
         Sa: ndarray::Data<Elem = Self::Elem>,
         Sb: ndarray::Data<Elem = Self::Elem>,
     {
-        let mut res = a - b;
-        res[0] = math::normalize_angle(res[0]);
-        res[3] = math::normalize_angle(res[3]);
-        res[4] = math::normalize_angle(res[4]);
-        res[5] = math::normalize_angle(res[5]);
-        res[6] = math::normalize_angle(res[6]);
-        res
+        Self::x_normalize(a - b)
+    }
+
+    fn x_add<Sa, Sb>(
+        &self,
+        a: &ndarray::ArrayBase<Sa, ndarray::Ix1>,
+        b: &ndarray::ArrayBase<Sb, ndarray::Ix1>,
+    ) -> ndarray::Array1<Self::Elem>
+    where
+        Sa: ndarray::Data<Elem = Self::Elem>,
+        Sb: ndarray::Data<Elem = Self::Elem>,
+    {
+        Self::x_normalize(a + b)
     }
 
     fn hx<S>(&self, x: &ndarray::ArrayBase<S, ndarray::Ix1>) -> ndarray::Array1<Self::Elem>
