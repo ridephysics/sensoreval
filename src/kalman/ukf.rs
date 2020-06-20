@@ -148,6 +148,7 @@ where
                 .assign(&self.fns.fx(&sigmas.index_axis(ndarray::Axis(0), i), dt));
         }
 
+        // and pass sigmas through the unscented transform to compute prior
         let (x_prior, P_prior) = kalman::unscented_transform(
             &self.sigmas_f,
             &self.Wm,
