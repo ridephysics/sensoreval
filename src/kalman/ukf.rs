@@ -197,7 +197,7 @@ where
 
         // new state estimate
         self.x = &self.x + &K.dot(&y);
-        self.P = &self.P - &K.dot(&S).dot(&K.t());
+        self.P = &self.P - &K.dot(&S.dot(&K.t()));
 
         // provide internal results
         self.y = y;
