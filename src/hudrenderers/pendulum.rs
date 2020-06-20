@@ -96,6 +96,20 @@ impl<'a> kalman::ukf::Functions for StateFunctions {
         res
     }
 
+    fn x_add<Sa, Sb>(
+        &self,
+        a: &ndarray::ArrayBase<Sa, ndarray::Ix1>,
+        b: &ndarray::ArrayBase<Sb, ndarray::Ix1>,
+    ) -> ndarray::Array1<Self::Elem>
+    where
+        Sa: ndarray::Data<Elem = Self::Elem>,
+        Sb: ndarray::Data<Elem = Self::Elem>,
+    {
+        let mut res = a + b;
+        res[0] = math::normalize_angle(res[0]);
+        res
+    }
+
     fn hx<S>(&self, x: &ndarray::ArrayBase<S, ndarray::Ix1>) -> ndarray::Array1<Self::Elem>
     where
         S: ndarray::Data<Elem = Self::Elem>,
