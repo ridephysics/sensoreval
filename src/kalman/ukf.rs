@@ -33,6 +33,15 @@ pub trait Functions {
         Sa: ndarray::Data<Elem = Self::Elem>,
         Sb: ndarray::Data<Elem = Self::Elem>;
 
+    fn x_add<Sa, Sb>(
+        &self,
+        a: &ndarray::ArrayBase<Sa, ndarray::Ix1>,
+        b: &ndarray::ArrayBase<Sb, ndarray::Ix1>,
+    ) -> ndarray::Array1<Self::Elem>
+    where
+        Sa: ndarray::Data<Elem = Self::Elem>,
+        Sb: ndarray::Data<Elem = Self::Elem>;
+
     fn hx<S>(&self, x: &ndarray::ArrayBase<S, ndarray::Ix1>) -> ndarray::Array1<Self::Elem>
     where
         S: ndarray::Data<Elem = Self::Elem>;
@@ -290,7 +299,7 @@ where
             let residual = self.fns.x_residual(&xss.last().unwrap(), &xb);
 
             // update the smoothed estimates
-            xss.push(x + &K.dot(&residual));
+            xss.push(self.fns.x_add(&x, &K.dot(&residual)));
             Pss.push(P + &K.dot(&(Pss.last().unwrap() - &Pb)).dot(&K.t()));
         }
 
