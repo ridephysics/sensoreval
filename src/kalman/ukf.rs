@@ -159,6 +159,9 @@ where
 
         self.x = x_prior;
         self.P = P_prior;
+
+        // update sigma points to reflect the new variance of the points
+        self.sigmas_f = self.points_fn.sigma_points(&self.x, &self.P);
     }
 
     pub fn update<Sz>(&mut self, z: &ndarray::ArrayBase<Sz, ndarray::Ix1>)
