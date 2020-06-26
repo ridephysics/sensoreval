@@ -1,5 +1,3 @@
-pub mod utils;
-
 use crate::*;
 use approx::abs_diff_ne;
 
@@ -209,7 +207,7 @@ impl<'a, 'b, 'c> Context<'a, 'b, 'c> {
     }
 
     pub fn render(&mut self, cr: &cairo::Context) -> Result<(), Error> {
-        let ssz = render::utils::surface_sz_user(cr);
+        let ssz = sensoreval_graphics::utils::surface_sz_user(cr);
         let dpi = 160.0 * (ssz.0 / 1920.0);
         let spi = dpi;
         let scale_changed =
@@ -246,13 +244,13 @@ impl<'a, 'b, 'c> Context<'a, 'b, 'c> {
                         );
                     }
                 }
-                let ssz = render::utils::surface_sz_user(cr);
+                let ssz = sensoreval_graphics::utils::surface_sz_user(cr);
 
                 let q = self.orientation()?;
                 let fid = quat_to_fid(&q);
                 let path = blenderdir.join(format!("mannequin/mannequin_{}.png", fid));
 
-                if let Ok(surface) = utils::png_to_surface(&path) {
+                if let Ok(surface) = sensoreval_graphics::utils::png_to_surface(&path) {
                     cr.set_source_surface(&surface, 0.0, ssz.1 - surface.get_height() as f64);
                     cr.paint();
                 } else if !self.allow_missing_renders {

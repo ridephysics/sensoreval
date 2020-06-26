@@ -31,12 +31,12 @@ impl render::HudRenderer for Generic {
         let dataid = unwrap_opt_or!(ctx.current_data_id(), return Err(Error::SampleNotFound));
         let dataset = ctx.get_dataset().unwrap();
 
-        let mut utilfont = render::utils::Font::new(&self.font);
+        let mut utilfont = sensoreval_graphics::utils::Font::new(&self.font);
         utilfont.line_width = ctx.dp2px(3.0);
 
         let dataslice = &dataset[0..dataid];
 
-        let mut graph_at = render::utils::GraphAndText::new(&utilfont);
+        let mut graph_at = sensoreval_graphics::utils::GraphAndText::new(&utilfont);
         graph_at.graph.width = ctx.dp2px(200.0);
         graph_at.graph.height = ctx.dp2px(100.0);
         graph_at.graph.dt = 10_000_000;

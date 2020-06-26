@@ -1,9 +1,12 @@
+mod error;
+pub use error::Error;
+
 pub mod multivariate;
+
+pub const GRAVITY: f64 = 9.80665;
 
 use ndarray::array;
 use std::ops::Mul;
-
-pub const GRAVITY: f64 = 9.80665;
 
 pub fn outer_product<Sa, Sb, Aa, Ab>(
     a: &ndarray::ArrayBase<Sa, ndarray::Ix1>,
@@ -106,13 +109,15 @@ mod tests {
     use approx::assert_abs_diff_eq;
     use ndarray::array;
 
+    extern crate blas_src;
+
     #[test]
     fn outer_product() {
         let res = super::outer_product(
             &ndarray::Array1::<f64>::ones(5),
             &ndarray::Array1::<f64>::linspace(-2.0, 2.0, 5),
         );
-        crate::test::assert_arr2_eq(
+        testlib::assert_arr2_eq(
             &res,
             &array![
                 [-2., -1., 0., 1., 2.],
@@ -170,9 +175,9 @@ mod tests {
     #[test]
     fn rot2d() {
         let x = super::rot2d(&array![0.0, 1.0], std::f64::consts::FRAC_PI_2);
-        crate::test::assert_arr1_eq(&x, &array![-1.0, 0.0]);
+        testlib::assert_arr1_eq(&x, &array![-1.0, 0.0]);
 
         let x = super::rot2d(&array![0.0, 1.0], -std::f64::consts::FRAC_PI_2);
-        crate::test::assert_arr1_eq(&x, &array![1.0, 0.0]);
+        testlib::assert_arr1_eq(&x, &array![1.0, 0.0]);
     }
 }

@@ -1,0 +1,16 @@
+[package]
+name = "math"
+version = "0.1.0"
+authors = ["Michael Zimmermann <sigmaepsilon92@gmail.com>"]
+edition = "2018"
+
+[dependencies]
+ndarray = "*"
+ndarray-linalg = "*"
+num-traits = "*"
+thiserror = "1.0"
+
+[dev-dependencies]
+testlib = { path = "../testlib" }
+blas-src = { version = "*", features = ["openblas"] }
+approx = "0.3"

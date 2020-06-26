@@ -1,0 +1,16 @@
+[package]
+name = "kalman"
+version = "0.1.0"
+authors = ["Michael Zimmermann <sigmaepsilon92@gmail.com>"]
+edition = "2018"
+
+[dependencies]
+math = { path = "../math" }
+ndarray = "*"
+ndarray-linalg = "*"
+num-traits = "*"
+thiserror = "1.0"
+
+[dev-dependencies]
+testlib = { path = "../testlib" }
+lapack-src = { version = "*", features = ["openblas"] }

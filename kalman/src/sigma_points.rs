@@ -231,7 +231,7 @@ pub(crate) mod tests {
         let wc = points.weights_covariance();
         let wm = points.weights_mean();
 
-        crate::test::assert_arr2_eq(
+        testlib::assert_arr2_eq(
             &sigmas,
             &array![
                 [0.0, 0.0],
@@ -242,7 +242,7 @@ pub(crate) mod tests {
             ],
         );
 
-        crate::test::assert_arr1_eq(
+        testlib::assert_arr1_eq(
             &wc,
             &array![
                 -62.67666667,
@@ -253,7 +253,7 @@ pub(crate) mod tests {
             ],
         );
 
-        crate::test::assert_arr1_eq(
+        testlib::assert_arr1_eq(
             &wm,
             &array![
                 -65.66666667,
@@ -273,7 +273,7 @@ pub(crate) mod tests {
         let wc = points.weights_covariance();
         let wm = points.weights_mean();
 
-        crate::test::assert_arr2_eq(
+        testlib::assert_arr2_eq(
             &sigmas,
             &array![
                 [0., 0.],
@@ -284,12 +284,12 @@ pub(crate) mod tests {
             ],
         );
 
-        crate::test::assert_arr1_eq(
+        testlib::assert_arr1_eq(
             &wc,
             &array![0.33333333, 0.16666667, 0.16666667, 0.16666667, 0.16666667],
         );
 
-        crate::test::assert_arr1_eq(
+        testlib::assert_arr1_eq(
             &wm,
             &array![0.33333333, 0.16666667, 0.16666667, 0.16666667, 0.16666667],
         );

@@ -1,8 +1,8 @@
-use crate::kalman::ukf::Functions;
 use crate::render::HudRenderer;
 use crate::*;
 use eom::traits::Scheme;
 use eom::traits::TimeEvolution;
+use kalman::ukf::Functions;
 use ndarray::array;
 use ndarray::azip;
 use ndarray::s;
@@ -239,13 +239,13 @@ impl Pendulum {
             cfg: (*cfg).clone(),
             est: Vec::new(),
             font: pango::FontDescription::new(),
-            svg_speed: render::utils::bytes_to_svghandle(include_bytes!(
+            svg_speed: sensoreval_graphics::utils::bytes_to_svghandle(include_bytes!(
                 "../../assets/icons/speed-24px.svg"
             )),
-            svg_height: render::utils::bytes_to_svghandle(include_bytes!(
+            svg_height: sensoreval_graphics::utils::bytes_to_svghandle(include_bytes!(
                 "../../assets/icons/height-24px.svg"
             )),
-            svg_weight: render::utils::bytes_to_svghandle(include_bytes!(
+            svg_weight: sensoreval_graphics::utils::bytes_to_svghandle(include_bytes!(
                 "../../assets/icons/weight-24px.svg"
             )),
         };
@@ -290,260 +290,6 @@ impl Pendulum {
         } else {
             est_sampletime.clone()
         }
-    }
-
-    /// draws to pointy end of a boat
-    fn swingboat_head_line(
-        cr: &cairo::Context,
-        radius0: f64,
-        angle0: f64,
-        radius1: f64,
-        angle1: f64,
-    ) {
-        let thickness = (radius0 - radius1).abs();
-        let (angle_inner, angle_outer) = if radius1 <= radius0 {
-            (angle0, angle1)
-        } else {
-            (angle1, angle0)
-        };
-        let mirror = if angle_outer <= angle_inner {
-            1.0
-        } else {
-            -1.0
-        };
-        let (x0, y0) = render::utils::circle_coords(radius0, angle0);
-        let (x1, y1) = render::utils::circle_coords(radius1, angle1);
-
-        // tip
-        let (tip_x, tip_y) = render::utils::circle_coords(
-            thickness,
-            angle_outer + (std::f64::consts::FRAC_PI_2 * mirror),
-        );
-
-        // bottom
-        let (bottom_x, bottom_y) = render::utils::circle_coords(
-            thickness / 2.0,
-            angle_inner - (std::f64::consts::FRAC_PI_2 * mirror),
-        );
-
-        if radius1 <= radius0 {
-            cr.curve_to(x0 + bottom_x, y0 + bottom_y, x1 + tip_x, y1 + tip_y, x1, y1);
-        } else {
-            cr.curve_to(x0 + tip_x, y0 + tip_y, x1 + bottom_x, y1 + bottom_y, x1, y1);
-        }
-    }
-
-    fn draw_swingboat(
-        &self,
-        ctx: &render::HudContext,
-        cr: &cairo::Context,
-        ppm: f64,
-        gondola_rotation: f64,
-    ) {
-        let frame_radius: f64 = 16.0;
-        let frame_angle: f64 = (68.0f64).to_radians();
-        let frame_thickness: f64 = 0.5;
-        let frame_color: u32 = 0xffff_ffe5;
-        let frame_top_color: u32 = 0x0000_00e5;
-        let gondola_radius: f64 = 15.0;
-        let gondola_angle: f64 = (30.0f64).to_radians();
-        let gondola_frame_thickness: f64 = 0.4;
-        let gondola_thickness: f64 = 1.8;
-        let gondola_color: u32 = 0xff8f_00e5;
-        let gondola_num_sections: usize = 5;
-        let active_row_color: u32 = 0x64dd_17e5;
-        let section_divider_color: u32 = 0x0000_00e5;
-        let section_divider_width: f64 = 0.2;
-        let section_dark_color: u32 = 0x0000_0033;
-        let border_width: f64 = 0.1;
-        let border_color: u32 = 0x0000_00ff;
-
-        let (cx, cy) = cr.get_current_point();
-
-        cr.save();
-        cr.translate(cx, cy);
-        cr.scale(ctx.dpi / 160.0, ctx.dpi / 160.0);
-        cr.scale(ppm, ppm);
-
-        cr.save();
-        cr.rotate(gondola_rotation);
-
-        // gondola-frame
-        render::utils::set_source_rgba_u32(cr, frame_color);
-        cr.set_line_width(gondola_frame_thickness);
-        cr.move_to(0., 0.);
-        // we use twice the radius because we want to cut the line horizontally
-        // which is done by clipping it
-        render::utils::stroke_arc_sides(
-            cr,
-            gondola_radius,
-            std::f64::consts::PI / 2.0,
-            gondola_angle / 2.0
-                + math::tri_solve_sas(
-                    frame_thickness / 2.0,
-                    gondola_radius,
-                    std::f64::consts::FRAC_PI_2,
-                )
-                .0,
-            border_width,
-            border_color,
-        );
-
-        // gondola
-        {
-            // the boat itself
-            cr.save();
-
-            let angle_middle = std::f64::consts::FRAC_PI_2;
-            let angle_left = angle_middle + gondola_angle / 2.0;
-            let angle_right = angle_middle - gondola_angle / 2.0;
-            let section_width_ang = gondola_angle / gondola_num_sections as f64;
-            let angle_head_right = angle_right - section_width_ang;
-            let angle_head_left = angle_left + section_width_ang;
-            let radius_ship_outer = gondola_radius + gondola_thickness / 2.0;
-            let radius_ship_inner = gondola_radius - gondola_thickness / 2.0;
-            let gondola_line_width = gondola_thickness / 6.0;
-
-            cr.set_operator(cairo::Operator::Source);
-            cr.set_line_join(cairo::LineJoin::Round);
-
-            let (x0, y0) = render::utils::circle_coords(radius_ship_outer, angle_right);
-            cr.move_to(x0, y0);
-
-            Self::swingboat_head_line(
-                cr,
-                radius_ship_outer,
-                angle_right,
-                radius_ship_inner,
-                angle_head_right,
-            );
-            cr.arc(
-                0.0,
-                0.0,
-                radius_ship_inner,
-                angle_head_right,
-                angle_head_left,
-            );
-            Self::swingboat_head_line(
-                cr,
-                radius_ship_inner,
-                angle_head_left,
-                radius_ship_outer,
-                angle_left,
-            );
-            cr.arc_negative(0.0, 0.0, radius_ship_outer, angle_left, angle_right);
-            cr.close_path();
-
-            cr.set_line_width(gondola_line_width + border_width);
-            render::utils::set_source_rgba_u32(cr, border_color);
-            cr.stroke_preserve();
-
-            render::utils::set_source_rgba_u32(cr, gondola_color);
-            cr.set_line_width(gondola_line_width);
-            cr.stroke_preserve();
-
-            cr.fill();
-            cr.restore();
-
-            // sections
-            cr.save();
-            render::utils::set_source_rgba_u32(cr, section_dark_color);
-            cr.set_line_width(gondola_thickness + gondola_line_width);
-
-            // left
-            cr.arc(
-                0.0,
-                0.0,
-                gondola_radius,
-                angle_left - section_width_ang,
-                angle_left,
-            );
-            cr.stroke();
-
-            // middle
-            cr.arc(
-                0.0,
-                0.0,
-                gondola_radius,
-                angle_middle - section_width_ang / 2.0,
-                angle_middle + section_width_ang / 2.0,
-            );
-            cr.stroke();
-
-            // right
-            cr.arc(
-                0.0,
-                0.0,
-                gondola_radius,
-                angle_right,
-                angle_right + section_width_ang,
-            );
-            cr.stroke();
-
-            // active row
-            let active_row_left = angle_left - self.cfg.active_row as f64 * section_width_ang / 2.0;
-            cr.set_operator(cairo::Operator::Source);
-            render::utils::set_source_rgba_u32(cr, active_row_color);
-            cr.arc_negative(
-                0.0,
-                0.0,
-                gondola_radius,
-                active_row_left,
-                active_row_left - section_width_ang / 2.0,
-            );
-            cr.stroke();
-
-            cr.restore();
-
-            // section dividers
-            let radius_divider_inner = radius_ship_inner - gondola_line_width / 2.0;
-            let radius_divider_outer = radius_ship_outer + gondola_line_width / 2.0;
-
-            cr.save();
-            cr.set_line_width(section_divider_width);
-
-            for i in 0..gondola_num_sections {
-                let angle = angle_left - section_width_ang / 2.0 - i as f64 * section_width_ang;
-
-                render::utils::move_to_circle(cr, radius_divider_inner, angle);
-                render::utils::line_to_circle(cr, radius_divider_outer, angle);
-
-                render::utils::set_source_rgba_u32(cr, section_divider_color);
-                cr.set_operator(cairo::Operator::Source);
-                cr.stroke();
-            }
-
-            cr.restore();
-        }
-
-        cr.restore();
-
-        // frame
-        cr.save();
-        render::utils::clip_bottom(cr, frame_radius);
-        render::utils::set_source_rgba_u32(cr, frame_color);
-        cr.set_line_width(frame_thickness);
-        cr.move_to(0., 0.);
-        render::utils::stroke_arc_sides(
-            cr,
-            frame_radius * 2.0,
-            std::f64::consts::PI / 2.0,
-            frame_angle / 2.0,
-            border_width,
-            border_color,
-        );
-        cr.restore();
-
-        // top
-        cr.set_operator(cairo::Operator::Source);
-        render::utils::set_source_rgba_u32(cr, frame_color);
-        cr.set_line_width(0.2);
-        cr.arc(0., 0., 1.0, 0., 2.0 * std::f64::consts::PI);
-        cr.fill_preserve();
-        render::utils::set_source_rgba_u32(cr, frame_top_color);
-        cr.stroke();
-
-        cr.restore();
     }
 }
 
@@ -688,19 +434,24 @@ impl render::HudRenderer for Pendulum {
         let dataset = ctx.get_dataset().unwrap();
         let est = self.est(ctx.actual_ts, dataset, dataid);
 
-        let mut utilfont = render::utils::Font::new(&self.font);
+        let mut utilfont = sensoreval_graphics::utils::Font::new(&self.font);
         utilfont.line_width = ctx.dp2px(3.0);
 
         // swingboat
-        let ssz = render::utils::surface_sz_user(cr);
+        let ssz = sensoreval_graphics::utils::surface_sz_user(cr);
         let ppm = 30.0;
         cr.move_to(ssz.0 - ctx.dp2px(16.0 * ppm), ssz.1 - ctx.dp2px(16.5 * ppm));
-        self.draw_swingboat(ctx, cr, ppm, est[0]);
+
+        cr.save();
+        cr.scale(ctx.dpi / 160.0, ctx.dpi / 160.0);
+        cr.scale(ppm, ppm);
+        sensoreval_graphics::pendulum_nessy::draw(cr, est[0], self.cfg.active_row);
+        cr.restore();
 
         let dataslice = &dataset[0..dataid];
         let estslice = &self.est[0..dataid];
 
-        let mut graph_at = render::utils::GraphAndText::new(&utilfont);
+        let mut graph_at = sensoreval_graphics::utils::GraphAndText::new(&utilfont);
         graph_at.graph.width = ctx.dp2px(200.0);
         graph_at.graph.height = ctx.dp2px(100.0);
         graph_at.graph.dt = 10_000_000;

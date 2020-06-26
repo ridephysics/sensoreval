@@ -1,5 +1,12 @@
-use crate::*;
+use crate::Error;
 use ndarray::array;
+
+#[macro_export]
+macro_rules! num2t {
+    ($type:ty, $num:expr) => {
+        <$type>::from($num).ok_or(Error::FloatConversion)?
+    };
+}
 
 #[allow(non_snake_case)]
 pub fn Q_discrete_white_noise<A>(dim: usize, dt: A, var: A) -> Result<ndarray::Array2<A>, Error>
@@ -57,10 +64,10 @@ mod tests {
     #[test]
     fn discrete_white_noise() {
         let q = Q_discrete_white_noise(2, 1.0, 1.0).unwrap();
-        crate::test::assert_arr2_eq(&q, &array![[0.25, 0.5], [0.5, 1.0]]);
+        testlib::assert_arr2_eq(&q, &array![[0.25, 0.5], [0.5, 1.0]]);
 
         let q = Q_discrete_white_noise(3, 1.0, 1.0).unwrap();
-        crate::test::assert_arr2_eq(
+        testlib::assert_arr2_eq(
             &q,
             &array![[0.25, 0.5, 0.5], [0.5, 1.0, 1.0], [0.5, 1.0, 1.0]],
         );

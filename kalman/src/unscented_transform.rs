@@ -1,7 +1,5 @@
 #![allow(non_snake_case)]
 
-use crate::*;
-
 pub fn unscented_transform<'a, Ss, Swm, Swc, Sq, A>(
     sigmas: &'a ndarray::ArrayBase<Ss, ndarray::Ix2>,
     Wm: &ndarray::ArrayBase<Swm, ndarray::Ix1>,
@@ -75,8 +73,8 @@ mod tests {
             |sigmas, mean| mean.dot(sigmas),
             |a, b| a - b,
         );
-        crate::test::assert_arr1_eq(&xt, &x);
-        crate::test::assert_arr2_eq(&Pt, &P);
+        testlib::assert_arr1_eq(&xt, &x);
+        testlib::assert_arr2_eq(&Pt, &P);
 
         let (xt, Pt) = unscented_transform(
             &sigmas,
@@ -86,7 +84,7 @@ mod tests {
             |sigmas, mean| mean.dot(sigmas),
             |a, b| a - b,
         );
-        crate::test::assert_arr1_eq(&xt, &x);
-        crate::test::assert_arr2_eq(&Pt, &(P + Q));
+        testlib::assert_arr1_eq(&xt, &x);
+        testlib::assert_arr2_eq(&Pt, &(P + Q));
     }
 }

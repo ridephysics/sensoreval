@@ -1,6 +1,6 @@
 #![allow(non_snake_case)]
 
-use crate::*;
+use crate::Error;
 use ndarray::azip;
 use ndarray_linalg::solve::Inverse;
 
@@ -93,7 +93,7 @@ pub struct UKF<'a, FP, FNS, A> {
 
 impl<'a, FP, FNS, A> UKF<'a, FP, FNS, A>
 where
-    FP: kalman::sigma_points::SigmaPoints<Elem = A>,
+    FP: crate::sigma_points::SigmaPoints<Elem = A>,
     FNS: Functions<Elem = A>,
     A: Copy
         + num_traits::float::FloatConst
@@ -158,7 +158,7 @@ where
         }
 
         // and pass sigmas through the unscented transform to compute prior
-        let (x_prior, P_prior) = kalman::unscented_transform(
+        let (x_prior, P_prior) = crate::unscented_transform(
             &self.sigmas_f,
             &self.Wm,
             &self.Wc,
@@ -186,7 +186,7 @@ where
         }
 
         // mean and covariance of prediction passed through UT
-        let (zp, S) = kalman::unscented_transform(
+        let (zp, S) = crate::unscented_transform(
             &self.sigmas_h,
             &self.Wm,
             &self.Wc,
@@ -216,7 +216,7 @@ where
     /// log-likelihood of the last measurement
     pub fn log_likelihood(&self) -> Result<A, Error> {
         let mean = ndarray::Array1::zeros(self.y.len());
-        math::multivariate::logpdf(&self.y, &mean, &self.S, true)
+        Ok(math::multivariate::logpdf(&self.y, &mean, &self.S, true)?)
     }
 
     /// Computed from the log-likelihood. The log-likelihood can be very
@@ -275,7 +275,7 @@ where
                     .assign(&self.fns.fx(&sigmas.index_axis(ndarray::Axis(0), i), dt));
             }
 
-            let (xb, Pb) = kalman::unscented_transform(
+            let (xb, Pb) = crate::unscented_transform(
                 &self.sigmas_f,
                 &self.Wm,
                 &self.Wc,
