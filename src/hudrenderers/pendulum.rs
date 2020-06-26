@@ -46,16 +46,17 @@ impl<'a> kalman::ukf::Functions for StateFunctions {
     {
         let pa = x[0];
         let va = x[1];
+        let aa = x[2];
         let r = 14.6;
 
         let mut teo = eom::explicit::RK4::new(
-            crate::simulator::pendulum::EomFns::for_est(r, 0.2743, 0.0),
+            crate::simulator::pendulum::EomFns::for_est(r, 0.2743, aa),
             dt,
         );
         let mut ic = array![pa, va];
         let next = teo.iterate(&mut ic);
 
-        array![math::normalize_angle(next[0]), next[1],]
+        array![math::normalize_angle(next[0]), next[1], aa]
     }
 
     #[allow(non_snake_case)]
@@ -248,8 +249,8 @@ impl render::HudRenderer for Pendulum {
     fn data_changed(&mut self, ctx: &render::HudContext) {
         let samples = unwrap_opt_or!(ctx.get_dataset(), return);
         let fns = StateFunctions::default();
-        let points_fn = kalman::sigma_points::MerweScaledSigmaPoints::new(2, 0.1, 2.0, -1.0, &fns);
-        let mut ukf = kalman::ukf::UKF::new(2, 6, &points_fn, &fns);
+        let points_fn = kalman::sigma_points::MerweScaledSigmaPoints::new(3, 0.1, 2.0, -2.0, &fns);
+        let mut ukf = kalman::ukf::UKF::new(3, 6, &points_fn, &fns);
 
         ukf.x = ndarray::Array::from(self.cfg.initial.clone());
         ukf.P = ndarray::Array::from_diag(&ndarray::Array::from(self.cfg.initial_cov.clone()));
@@ -286,6 +287,8 @@ impl render::HudRenderer for Pendulum {
             ukf.Q
                 .slice_mut(s![0..2, 0..2])
                 .assign(&kalman::discretization::Q_discrete_white_noise(2, dt, 1.0e-12).unwrap());
+            ukf.Q[[2, 2]] = 0.0;
+            //ukf.Q[[2, 2]] = 1.0e-6;
 
             ukf.predict(dt);
             ukf.update(&z);

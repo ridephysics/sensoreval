@@ -133,7 +133,7 @@ where
     sample.time_baro = t_us;
     sample.accel = array![accel[0], accel[1], accel[2]];
     sample.gyro = array![gyro[0], gyro[1], gyro[2]];
-    sample.actual = Some(array![pa, va, r, oo, re, rn, ru, motor]);
+    sample.actual = Some(array![pa, va, motor]);
 
     sample
 }
