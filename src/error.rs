@@ -1,86 +1,57 @@
-#[derive(Debug)]
-pub enum Error {
-    Io(std::io::Error),
-    CairoIo(cairo::IoError),
-    SerdePickle(serde_pickle::error::Error),
-    ExitStatus(std::process::ExitStatus),
-    BinCode(bincode::Error),
-    TomlDe(toml::de::Error),
-    Plotly(plotly_types::Error),
-    Linalg(ndarray_linalg::error::LinalgError),
+use thiserror::Error;
 
+#[derive(Error, Debug)]
+pub enum Error {
+    #[error(transparent)]
+    Io(#[from] std::io::Error),
+    #[error(transparent)]
+    CairoIo(#[from] cairo::IoError),
+    #[error(transparent)]
+    SerdePickle(#[from] serde_pickle::error::Error),
+    #[error("exit status: {0}")]
+    ExitStatus(std::process::ExitStatus),
+    #[error(transparent)]
+    BinCode(#[from] bincode::Error),
+    #[error(transparent)]
+    TomlDe(#[from] toml::de::Error),
+    #[error(transparent)]
+    Plotly(#[from] plotly_types::Error),
+    #[error(transparent)]
+    Linalg(#[from] ndarray_linalg::error::LinalgError),
+
+    #[error("no dataset")]
     NoDataSet,
+    #[error("sample not found")]
     SampleNotFound,
+    #[error("EOF")]
     EOF,
+    #[error("sunsupported configs")]
     UnsupportedConfigs,
+    #[error("invalid data")]
     InvalidData,
+    #[error("unsupported datatype")]
     UnsupportedDatatype,
+    #[error("no HUD renderer")]
     NoHudRenderer,
+    #[error("invalid argument")]
     InvalidArgument,
+    #[error("float conversion")]
     FloatConversion,
+    #[error("blender render not found")]
     BlenderRenderNotFound,
+    #[error("row already exists")]
     RowAlreadyExists,
+    #[error("no row")]
     NoRow,
+    #[error("row not found")]
     RowNotFound,
 
+    #[error("not positive semi-definite")]
     NotPositiveSemiDefinite,
+    #[error("sigular matrix")]
     SingularMatrix,
+    #[error("wrong vec len {0}")]
     WrongVecLen(usize),
+    #[error("not square")]
     NotSquare,
-}
-
-impl From<std::io::Error> for Error {
-    #[inline]
-    fn from(e: std::io::Error) -> Self {
-        Error::Io(e)
-    }
-}
-
-impl From<cairo::IoError> for Error {
-    #[inline]
-    fn from(e: cairo::IoError) -> Self {
-        Error::CairoIo(e)
-    }
-}
-
-impl From<serde_pickle::error::Error> for Error {
-    #[inline]
-    fn from(e: serde_pickle::error::Error) -> Self {
-        Error::SerdePickle(e)
-    }
-}
-
-impl From<std::process::ExitStatus> for Error {
-    #[inline]
-    fn from(e: std::process::ExitStatus) -> Self {
-        Error::ExitStatus(e)
-    }
-}
-
-impl From<bincode::Error> for Error {
-    #[inline]
-    fn from(e: bincode::Error) -> Self {
-        Error::BinCode(e)
-    }
-}
-
-impl From<toml::de::Error> for Error {
-    #[inline]
-    fn from(e: toml::de::Error) -> Self {
-        Error::TomlDe(e)
-    }
-}
-
-impl From<plotly_types::Error> for Error {
-    #[inline]
-    fn from(e: plotly_types::Error) -> Self {
-        Error::Plotly(e)
-    }
-}
-
-impl From<ndarray_linalg::error::LinalgError> for Error {
-    #[inline]
-    fn from(e: ndarray_linalg::error::LinalgError) -> Self {
-        Error::Linalg(e)
-    }
 }

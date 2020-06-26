@@ -34,7 +34,7 @@ impl Python {
     pub fn wait(&mut self) -> Result<(), Error> {
         let status = self.child.wait()?;
         if !status.success() {
-            return Err(Error::from(status));
+            return Err(Error::ExitStatus(status));
         }
 
         Ok(())
