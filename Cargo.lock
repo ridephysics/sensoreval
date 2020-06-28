@@ -2085,12 +2085,8 @@ dependencies = [
  "bincode",
  "blas-src 0.6.1",
  "cairo-rs",
- "cairo-sys-rs",
  "clap",
- "cmake",
  "eom",
- "gio",
- "glib",
  "half",
  "kalman",
  "lapack-src 0.6.0",
@@ -2102,8 +2098,6 @@ dependencies = [
  "num-traits",
  "openblas-src",
  "pango",
- "pangocairo",
- "pkg-config",
  "plotly-types",
  "rand 0.7.3",
  "regex",
@@ -2115,7 +2109,6 @@ dependencies = [
  "serde_json",
  "thiserror",
  "toml",
- "walkdir",
 ]
 
 [[package]]
