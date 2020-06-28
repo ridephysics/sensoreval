@@ -1,5 +1,6 @@
 use crate::render::HudRenderer;
 use crate::*;
+use bincode::config::Options;
 use eom::traits::Scheme;
 use eom::traits::TimeEvolution;
 use kalman::ukf::Functions;
@@ -616,22 +617,22 @@ impl render::HudRenderer for Pendulum {
         let out_est = path.join("est.bin");
         let mut file = std::fs::File::create(&out_est)?;
 
-        bincode::config()
-            .big_endian()
+        bincode::options()
+            .with_big_endian()
             .serialize_into(&mut file, &(self.cfg.initial[2] as f32))?;
 
-        bincode::config()
-            .big_endian()
+        bincode::options()
+            .with_big_endian()
             .serialize_into(&mut file, &(self.cfg.initial[3] as f32))?;
 
-        bincode::config()
-            .big_endian()
+        bincode::options()
+            .with_big_endian()
             .serialize_into(&mut file, &TIMESTEP)?;
 
         let mut us = cfg.video.startoff * 1000;
         while let Some(dataid) = id_for_time(&dataset, 0, us) {
             let est = self.est(us, &dataset, dataid);
-            bincode::config().big_endian().serialize_into(
+            bincode::options().with_big_endian().serialize_into(
                 &mut file,
                 &[half::f16::from_f64(est[0]), half::f16::from_f64(est[1])],
             )?;
