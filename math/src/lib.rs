@@ -166,6 +166,7 @@ mod tests {
     }
 
     #[test]
+    #[allow(non_snake_case)]
     fn tri_solve_sas() {
         let (B, C) = super::tri_solve_sas(5.0, 7.0, (49.0f64).to_radians());
         assert_abs_diff_eq!(B, (45.4f64).to_radians(), epsilon = 1.0e-3);
