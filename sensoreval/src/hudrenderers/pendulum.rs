@@ -239,15 +239,15 @@ impl Pendulum {
             cfg: (*cfg).clone(),
             est: Vec::new(),
             font: pango::FontDescription::new(),
-            svg_speed: sensoreval_graphics::utils::bytes_to_svghandle(include_bytes!(
-                "../../assets/icons/speed-24px.svg"
-            )),
-            svg_height: sensoreval_graphics::utils::bytes_to_svghandle(include_bytes!(
-                "../../assets/icons/height-24px.svg"
-            )),
-            svg_weight: sensoreval_graphics::utils::bytes_to_svghandle(include_bytes!(
-                "../../assets/icons/weight-24px.svg"
-            )),
+            svg_speed: sensoreval_graphics::utils::bytes_to_svghandle(
+                sensoreval_graphics::ICON_SPEED,
+            ),
+            svg_height: sensoreval_graphics::utils::bytes_to_svghandle(
+                sensoreval_graphics::ICON_HEIGHT,
+            ),
+            svg_weight: sensoreval_graphics::utils::bytes_to_svghandle(
+                sensoreval_graphics::ICON_WEIGHT,
+            ),
         };
 
         o.scale_changed(ctx);
