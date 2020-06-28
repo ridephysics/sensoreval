@@ -1,4 +1,8 @@
-use crate::*;
+use crate::config;
+use crate::hudrenderers;
+use crate::render;
+use crate::Data;
+use crate::Error;
 use approx::abs_diff_ne;
 
 /// data source type and info
@@ -168,7 +172,7 @@ impl<'a, 'b, 'c> Context<'a, 'b, 'c> {
             return Err(Error::NoDataSet);
         }
 
-        match id_for_time(self.hudctx.dataset.unwrap(), 0, us) {
+        match crate::id_for_time(self.hudctx.dataset.unwrap(), 0, us) {
             Some(id) => {
                 self.hudctx.src = DataSrc::Array { id };
                 self.hudctx.actual_ts = us;

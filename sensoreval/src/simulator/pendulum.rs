@@ -1,4 +1,5 @@
-use crate::*;
+use crate::Data;
+use crate::Error;
 use eom::traits::Scheme;
 use eom::traits::TimeEvolution;
 use ndarray::array;
