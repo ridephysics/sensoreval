@@ -4,6 +4,7 @@ members = [
     "math",
     "sensoreval",
     "sensoreval_graphics",
+    "sensoreval_gui",
     "testlib",
 ]
 

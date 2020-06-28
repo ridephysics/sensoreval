@@ -8,7 +8,7 @@ extern "C" {
 
 QmlVideoHUD::QmlVideoHUD(QQuickItem *parent)
     : QQuickPaintedItem(parent),
-      m_render(nullptr),
+      m_cfg(nullptr),
       m_cairo_surface(nullptr),
       m_cr(nullptr),
       m_qimg(nullptr)
@@ -50,19 +50,16 @@ void QmlVideoHUD::paint(QPainter *painter)
 {
     checkCreateCairo(painter);
 
-    if (m_render) {
-        int rc = sensoreval_render(m_render, m_cr);
-        if (rc) {
-            fprintf(stderr, "can't render: %d\n", rc);
-        }
+    if (m_cfg && m_cfg->render) {
+        m_cfg->render(m_cr, m_cfg->pdata);
     }
 
     cairo_surface_flush(m_cairo_surface);
     painter->drawImage(0, 0, *m_qimg);
 }
 
-void QmlVideoHUD::setSensorEvalRenderCtx(struct sensoreval_render_ctx *ctx)
+void QmlVideoHUD::setConfig(const struct sensorevalgui_cfg *cfg)
 {
-    m_render = ctx;
+    m_cfg = cfg;
     update();
 }

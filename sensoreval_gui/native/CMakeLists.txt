@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.1)
 
-project(dataviewer LANGUAGES C CXX)
+project(sensorevalgui_native LANGUAGES C CXX)
 
 include(FindPkgConfig)
 find_package(Qt5 COMPONENTS Core Quick Multimedia REQUIRED)
@@ -19,33 +19,34 @@ add_compile_options(
     -Wextra
     -Wshadow
     -Werror
+
+    -fno-exceptions
 )
 
-add_library(dataviewer
+add_library(sensorevalgui_native
     main.cpp
     qmlnative/qmlvideohud.cpp
     qmlnative/orientation.cpp
     qml.qrc
 )
-target_compile_definitions(dataviewer PRIVATE
+target_compile_definitions(sensorevalgui_native PRIVATE
     $<$<OR:$<CONFIG:Debug>,$<CONFIG:RelWithDebInfo>>:QT_QML_DEBUG>
 )
-target_link_libraries(dataviewer PRIVATE
+target_link_libraries(sensorevalgui_native PRIVATE
     Qt5::Core
     Qt5::Quick
     Qt5::Multimedia
     ${GLU_LIBRARIES}
     cairo
-    sensoreval
 )
-target_include_directories(dataviewer PRIVATE
+target_include_directories(sensorevalgui_native PRIVATE
     ${GLU_INCLUDE_DIRS}
-    ${CMAKE_SOURCE_DIR}/../include
+    include
 )
-target_compile_options(dataviewer PUBLIC
+target_compile_options(sensorevalgui_native PUBLIC
     ${GLU_CFLAGS_OTHER}
 )
 
 install(TARGETS
-    dataviewer
+    sensorevalgui_native
 )

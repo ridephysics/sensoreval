@@ -26,7 +26,6 @@ use plotly_types as plotly;
 pub mod config;
 #[macro_use]
 mod data;
-mod capi;
 pub mod datareader;
 mod error;
 mod hudrenderers;

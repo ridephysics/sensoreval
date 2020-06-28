@@ -1,0 +1,1 @@
+#include "native/include/global.h"

@@ -74,13 +74,6 @@ fn svg2png(png: &str, svg: &str) {
         .expect("inkscape failed");
 }
 
-extern "C" {
-    fn dataviewer_main(
-        renderctx_ptr: *mut std::ffi::c_void,
-        readctx_ptr: *mut std::ffi::c_void,
-    ) -> std::os::raw::c_int;
-}
-
 fn run_blender<T: serde::ser::Serialize>(scene: &str, code: &T) -> Result<Python, Error> {
     Python::new_args(
         "blender",
@@ -137,6 +130,24 @@ impl Iterator for DataTimestampIter {
         self.frameid += 1;
 
         Some(ts)
+    }
+}
+
+struct GuiCallback<'a, 'b, 'c> {
+    renderctx: render::Context<'a, 'b, 'c>,
+}
+
+impl<'a, 'b, 'c> sensoreval_gui::Callback for GuiCallback<'a, 'b, 'c> {
+    fn set_ts(&mut self, ctx: &mut sensoreval_gui::RuntimeContext, ts: u64) {
+        self.renderctx.set_ts(ts).unwrap();
+
+        if let Ok(q) = self.renderctx.orientation() {
+            ctx.set_orientation(*q);
+        }
+    }
+
+    fn render(&mut self, _ctx: &mut sensoreval_gui::RuntimeContext, cr: &mut cairo::Context) {
+        self.renderctx.render(cr).unwrap();
     }
 }
 
@@ -231,15 +242,16 @@ fn main() {
         "dataviewer" => {
             renderctx.set_allow_missing_renders(true);
 
-            let rc = unsafe {
-                dataviewer_main(
-                    &mut renderctx as *mut render::Context as *mut std::ffi::c_void,
-                    std::ptr::null_mut(),
-                )
-            };
-            if rc != 0 {
-                panic!("dataviewer_main failed: {}", rc);
-            }
+            let mut gui = sensoreval_gui::Context::default();
+            gui.set_timer_ms(30);
+            gui.set_startoff(renderctx.cfg.video.startoff);
+            gui.set_endoff(match renderctx.cfg.video.endoff {
+                Some(v) => v,
+                None => std::u64::MAX,
+            });
+            gui.set_callback(Some(GuiCallback { renderctx }));
+            gui.set_videopath(cfg.video.filename.as_ref());
+            gui.start().unwrap();
         }
         "webdata" => {
             let outdir = outdir.expect("no output file specified.");

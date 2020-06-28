@@ -53,7 +53,7 @@ Window {
 
         Connections {
             target: player
-            onPositionChanged: {
+            function onPositionChanged() {
                 if (player.playbackState == MediaPlayer.PlayingState && player.duration > 0 && player.position >= main_videoEndOffset) {
                     player.stop();
                     player.seek(main_videoEndOffset);

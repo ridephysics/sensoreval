@@ -94,7 +94,7 @@ void Orientation::setQuat(QQuaternion quat)
         window()->update();
 }
 
-OrientationRenderer::~OrientationRenderer() {}
+OrientationRenderer::~OrientationRenderer() { }
 
 void OrientationRenderer::paint()
 {

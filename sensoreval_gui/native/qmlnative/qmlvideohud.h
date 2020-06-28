@@ -7,7 +7,7 @@
 
 extern "C" {
 #include <cairo/cairo.h>
-#include <sensoreval.h>
+#include <global.h>
 }
 
 class QmlVideoHUD : public QQuickPaintedItem
@@ -19,10 +19,10 @@ public:
 
     void paint(QPainter *painter);
 
-    void setSensorEvalRenderCtx(struct sensoreval_render_ctx *render);
+    void setConfig(const struct sensorevalgui_cfg *cfg);
 
 private:
-    struct sensoreval_render_ctx *m_render;
+    const struct sensorevalgui_cfg *m_cfg;
 
     cairo_surface_t *m_cairo_surface;
     cairo_t *m_cr;

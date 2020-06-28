@@ -10,6 +10,7 @@ crate-type = ["staticlib", "rlib"]
 [dependencies]
 kalman = { path = "../kalman" }
 math = { path = "../math" }
+sensoreval_gui = { path = "../sensoreval_gui" }
 sensoreval_graphics = { path = "../sensoreval_graphics" }
 thiserror = "1.0"
 serde = { version = "1.0", features = ["derive"] }

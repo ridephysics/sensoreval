@@ -9,7 +9,7 @@ class OrientationRenderer : public QObject, protected QOpenGLFunctions_3_0
 {
     Q_OBJECT
 public:
-    OrientationRenderer() : m_initialized(false), m_quat(1, 0, 0, 0) {}
+    OrientationRenderer() : m_initialized(false), m_quat(1, 0, 0, 0) { }
     ~OrientationRenderer();
 
     void setViewportSize(const QSize &size) { m_viewportSize = size; }
