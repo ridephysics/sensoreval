@@ -1,5 +1,8 @@
+use crate::config;
+use crate::render;
 use crate::render::HudRenderer;
-use crate::*;
+use crate::Error;
+use crate::PlotUtils;
 use ndarray_linalg::norm::Norm;
 
 pub(crate) struct Generic {
@@ -83,7 +86,11 @@ impl render::HudRenderer for Generic {
         Ok(nalgebra::UnitQuaternion::identity())
     }
 
-    fn plot(&self, ctx: &render::HudContext, plot: &mut Plot) -> Result<(), Error> {
+    fn plot(
+        &self,
+        ctx: &render::HudContext,
+        plot: &mut sensoreval_utils::Plot,
+    ) -> Result<(), Error> {
         let samples = ctx.get_dataset().ok_or(Error::NoDataSet)?;
         let x: Vec<f64> = samples.iter().map(|s| s.time_seconds()).collect();
 

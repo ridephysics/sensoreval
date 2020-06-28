@@ -97,7 +97,11 @@ pub trait HudRenderer {
     /// render current state to cairo context
     fn render(&self, ctx: &render::HudContext, cr: &cairo::Context) -> Result<(), Error>;
     /// plot dataset using matplotlib, if available
-    fn plot(&self, ctx: &render::HudContext, plot: &mut Plot) -> Result<(), Error>;
+    fn plot(
+        &self,
+        ctx: &render::HudContext,
+        plot: &mut sensoreval_utils::Plot,
+    ) -> Result<(), Error>;
     /// get current orientation of the person sitting in the ride
     fn orientation(&self, ctx: &render::HudContext)
         -> Result<nalgebra::UnitQuaternion<f64>, Error>;
@@ -264,7 +268,7 @@ impl<'a, 'b, 'c> Context<'a, 'b, 'c> {
         Ok(())
     }
 
-    pub fn plot(&self, plot: &mut Plot) -> Result<(), Error> {
+    pub fn plot(&self, plot: &mut sensoreval_utils::Plot) -> Result<(), Error> {
         if let Some(renderer) = &self.hudrenderer {
             renderer.plot(&self.hudctx, plot)
         } else {

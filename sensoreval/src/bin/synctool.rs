@@ -1,6 +1,7 @@
 use sensoreval::*;
 
 use ndarray_linalg::norm::Norm;
+use sensoreval::PlotUtils;
 use std::io::Write;
 
 #[allow(clippy::many_single_char_names)]
@@ -34,14 +35,14 @@ fn main() {
     }
 
     // plot
-    let mut plot = Plot::new("/tmp/sensoreval-plot.html").unwrap();
+    let mut plot = sensoreval_utils::Plot::new("/tmp/sensoreval-plot.html").unwrap();
     let x: Vec<f64> = samples.iter().enumerate().map(|(i, _)| i as f64).collect();
 
     plot.add_measurements(&samples, &x).unwrap();
 
-    let mut trace = Plot::default_line();
+    let mut trace = sensoreval_utils::Plot::default_line();
     trace.x(&x).name("measurement");
-    trace.line().color(COLOR_M);
+    trace.line().color(sensoreval_utils::COLOR_M);
 
     let y: Vec<f64> = samples.iter().map(|s| s.accel.norm_l2()).collect();
     trace.y(&y);

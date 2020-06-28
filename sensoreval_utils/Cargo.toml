@@ -1,0 +1,11 @@
+[package]
+name = "sensoreval_utils"
+version = "0.1.0"
+authors = ["Michael Zimmermann <sigmaepsilon92@gmail.com>"]
+edition = "2018"
+
+[dependencies]
+plotly-types = { git = "https://github.com/M1cha/plotly-types-rs", branch = "master" }
+serde = "1.0"
+serde-pickle = "0.6"
+thiserror = "1.0"

@@ -1,4 +1,4 @@
-use crate::*;
+use crate::Error;
 
 pub struct Python {
     child: std::process::Child,

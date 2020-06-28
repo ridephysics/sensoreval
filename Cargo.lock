@@ -2098,11 +2098,11 @@ dependencies = [
  "num-traits",
  "openblas-src",
  "pango",
- "plotly-types",
  "rand 0.7.3",
  "regex",
  "sensoreval_graphics",
  "sensoreval_gui",
+ "sensoreval_utils",
  "serde",
  "serde-pickle",
  "serde_ignored",
@@ -2137,6 +2137,16 @@ dependencies = [
  "pkg-config",
  "thiserror",
  "walkdir",
+]
+
+[[package]]
+name = "sensoreval_utils"
+version = "0.1.0"
+dependencies = [
+ "plotly-types",
+ "serde",
+ "serde-pickle",
+ "thiserror",
 ]
 
 [[package]]

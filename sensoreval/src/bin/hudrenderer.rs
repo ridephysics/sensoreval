@@ -1,4 +1,5 @@
 use sensoreval::*;
+use sensoreval_utils::IntoIteratorMap;
 use serde::Deserialize;
 use std::io::Write;
 
@@ -74,8 +75,11 @@ fn svg2png(png: &str, svg: &str) {
         .expect("inkscape failed");
 }
 
-fn run_blender<T: serde::ser::Serialize>(scene: &str, code: &T) -> Result<Python, Error> {
-    Python::new_args(
+fn run_blender<T: serde::ser::Serialize>(
+    scene: &str,
+    code: &T,
+) -> Result<sensoreval_utils::Python, Error> {
+    Ok(sensoreval_utils::Python::new_args(
         "blender",
         &[
             "-b",
@@ -93,7 +97,7 @@ fn run_blender<T: serde::ser::Serialize>(scene: &str, code: &T) -> Result<Python
                 ",
         ],
         code,
-    )
+    )?)
 }
 
 struct DataTimestampIter {
@@ -222,7 +226,7 @@ fn main() {
 
     match matches.value_of("MODE").unwrap() {
         "plot" => {
-            let mut plot = Plot::new("/tmp/sensoreval-plot.html").unwrap();
+            let mut plot = sensoreval_utils::Plot::new("/tmp/sensoreval-plot.html").unwrap();
 
             // plot
             renderctx.plot(&mut plot).expect("can't plot");

@@ -1,6 +1,4 @@
-use thiserror::Error;
-
-#[derive(Error, Debug)]
+#[derive(thiserror::Error, Debug)]
 pub enum Error {
     #[error(transparent)]
     Io(#[from] std::io::Error),
@@ -15,9 +13,9 @@ pub enum Error {
     #[error(transparent)]
     TomlDe(#[from] toml::de::Error),
     #[error(transparent)]
-    Plotly(#[from] plotly_types::Error),
-    #[error(transparent)]
     Linalg(#[from] ndarray_linalg::error::LinalgError),
+    #[error(transparent)]
+    SensorevalUtils(#[from] sensoreval_utils::Error),
 
     #[error("no dataset")]
     NoDataSet,
@@ -39,19 +37,4 @@ pub enum Error {
     FloatConversion,
     #[error("blender render not found")]
     BlenderRenderNotFound,
-    #[error("row already exists")]
-    RowAlreadyExists,
-    #[error("no row")]
-    NoRow,
-    #[error("row not found")]
-    RowNotFound,
-
-    #[error("not positive semi-definite")]
-    NotPositiveSemiDefinite,
-    #[error("sigular matrix")]
-    SingularMatrix,
-    #[error("wrong vec len {0}")]
-    WrongVecLen(usize),
-    #[error("not square")]
-    NotSquare,
 }

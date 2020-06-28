@@ -1,4 +1,5 @@
-use crate::*;
+use crate::Error;
+use plotly_types as plotly;
 use std::io::Write;
 
 pub const COLOR_A: &str = "#1f77b4";
@@ -165,35 +166,5 @@ impl<'a> Plot<'a> {
 
     pub fn axisid_to_rowname(name: &str, id: usize) -> String {
         format!("{}-{}", name, ID2NAME[id])
-    }
-
-    pub fn add_measurements(&mut self, samples: &[Data], x: &[f64]) -> Result<(), Error> {
-        let mut add_row = |rowname: &str, id: usize, y: &[f64]| -> Result<(), Error> {
-            let mut t = Self::default_line();
-            t.x(&x).y(&y).name("measurement");
-            t.line().color(COLOR_M);
-
-            let rowid = self.ensure_row(Self::axisid_to_rowname(rowname, id))?;
-            self.add_trace_to_rowid(&mut t, rowid)?;
-
-            Ok(())
-        };
-
-        for i in 0..3 {
-            let y: Vec<f64> = samples.iter().map(|s| s.accel[i]).collect();
-            add_row("acc", i, &y)?;
-        }
-
-        for i in 0..3 {
-            let y: Vec<f64> = samples.iter().map(|s| s.gyro[i]).collect();
-            add_row("gyr", i, &y)?;
-        }
-
-        for i in 0..3 {
-            let y: Vec<f64> = samples.iter().map(|s| s.mag[i]).collect();
-            add_row("mag", i, &y)?;
-        }
-
-        Ok(())
     }
 }

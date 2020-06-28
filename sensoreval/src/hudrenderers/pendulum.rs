@@ -1,5 +1,9 @@
+use crate::config;
+use crate::render;
 use crate::render::HudRenderer;
-use crate::*;
+use crate::Data;
+use crate::Error;
+use crate::PlotUtils;
 use bincode::config::Options;
 use eom::traits::Scheme;
 use eom::traits::TimeEvolution;
@@ -526,7 +530,11 @@ impl render::HudRenderer for Pendulum {
         ))
     }
 
-    fn plot(&self, ctx: &render::HudContext, plot: &mut Plot) -> Result<(), Error> {
+    fn plot(
+        &self,
+        ctx: &render::HudContext,
+        plot: &mut sensoreval_utils::Plot,
+    ) -> Result<(), Error> {
         let samples = ctx.get_dataset().ok_or(Error::NoDataSet)?;
         let x: Vec<f64> = samples.iter().map(|s| s.time_seconds()).collect();
         let fns = StateFunctions::default();
@@ -543,38 +551,41 @@ impl render::HudRenderer for Pendulum {
                            id: usize,
                            y: &[f64]|
          -> Result<(), Error> {
-            let mut t = Plot::default_line();
+            let mut t = sensoreval_utils::Plot::default_line();
             t.x(&x).y(&y).name(linename);
             t.line().color(color);
 
-            plot.add_trace_to_rowname(&mut t, Plot::axisid_to_rowname(rowname, id))?;
+            plot.add_trace_to_rowname(
+                &mut t,
+                sensoreval_utils::Plot::axisid_to_rowname(rowname, id),
+            )?;
 
             Ok(())
         };
 
         for i in 0..3 {
             let y: Vec<f64> = self.est.iter().map(|x| fns.hx(&x)[i]).collect();
-            add_row("acc", "estimation", COLOR_E, i, &y)?;
+            add_row("acc", "estimation", sensoreval_utils::COLOR_E, i, &y)?;
 
             if has_actual {
                 let y: Vec<f64> = samples
                     .iter()
                     .map(|s| fns.hx(s.actual.as_ref().unwrap())[i])
                     .collect();
-                add_row("acc", "actual", COLOR_A, i, &y)?;
+                add_row("acc", "actual", sensoreval_utils::COLOR_A, i, &y)?;
             }
         }
 
         for i in 0..3 {
             let y: Vec<f64> = self.est.iter().map(|x| fns.hx(&x)[3 + i]).collect();
-            add_row("gyr", "estimation", COLOR_E, i, &y)?;
+            add_row("gyr", "estimation", sensoreval_utils::COLOR_E, i, &y)?;
 
             if has_actual {
                 let y: Vec<f64> = samples
                     .iter()
                     .map(|s| fns.hx(s.actual.as_ref().unwrap())[3 + i])
                     .collect();
-                add_row("gyr", "actual", COLOR_A, i, &y)?;
+                add_row("gyr", "actual", sensoreval_utils::COLOR_A, i, &y)?;
             }
         }
 
@@ -586,11 +597,14 @@ impl render::HudRenderer for Pendulum {
                     .map_or(format!("x{}", i), |s| format!("x{}-{}", i, s)),
             )?;
 
-            let mut t = Plot::default_line();
+            let mut t = sensoreval_utils::Plot::default_line();
             t.x(&x);
 
             let y: Vec<f64> = self.est.iter().map(|x| x[i]).collect();
-            t.y(&y).name("estimation").line().color(COLOR_E);
+            t.y(&y)
+                .name("estimation")
+                .line()
+                .color(sensoreval_utils::COLOR_E);
             plot.add_trace_to_rowid(&mut t, rowid)?;
 
             if has_actual {
@@ -598,7 +612,10 @@ impl render::HudRenderer for Pendulum {
                     .iter()
                     .map(|s| s.actual.as_ref().unwrap()[i])
                     .collect();
-                t.y(&y).name("actual").line().color(COLOR_A);
+                t.y(&y)
+                    .name("actual")
+                    .line()
+                    .color(sensoreval_utils::COLOR_A);
                 plot.add_trace_to_rowid(&mut t, rowid)?;
             }
         }
@@ -630,7 +647,7 @@ impl render::HudRenderer for Pendulum {
             .serialize_into(&mut file, &TIMESTEP)?;
 
         let mut us = cfg.video.startoff * 1000;
-        while let Some(dataid) = id_for_time(&dataset, 0, us) {
+        while let Some(dataid) = crate::id_for_time(&dataset, 0, us) {
             let est = self.est(us, &dataset, dataid);
             bincode::options().with_big_endian().serialize_into(
                 &mut file,
