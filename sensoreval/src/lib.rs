@@ -1,12 +1,3 @@
-macro_rules! unwrap_res_or {
-    ($opt:expr, $default:expr) => {
-        match $opt {
-            Err(_) => $default,
-            Ok(v) => v,
-        }
-    };
-}
-
 #[macro_export]
 macro_rules! unwrap_opt_or {
     ($opt:expr, $default:expr) => {
