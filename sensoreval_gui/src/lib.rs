@@ -41,21 +41,25 @@ pub trait Callback {
     fn render(&mut self, _ctx: &mut RuntimeContext, _cr: &mut cairo::Context) {}
 }
 
-pub struct Context<'a, 'b> {
+pub struct InnerContext<'a, 'b> {
     cfg: native::sensorevalgui_cfg,
     videopath: Option<std::ffi::CString>,
     callback: Option<Box<dyn Callback + 'a>>,
     rtctx: RuntimeContext<'b>,
 }
 
+pub struct Context<'a, 'b> {
+    inner: Box<InnerContext<'a, 'b>>,
+}
+
 unsafe extern "C" fn native_set_ts(ts: u64, ctx: *mut ::std::os::raw::c_void) {
-    let ctx = unwrap_opt_or!((ctx as *mut Context).as_mut(), return);
+    let ctx = unwrap_opt_or!((ctx as *mut InnerContext).as_mut(), return);
     let callback = unwrap_opt_or!(ctx.callback.as_mut(), return);
     callback.set_ts(&mut ctx.rtctx, ts);
 }
 
 unsafe extern "C" fn native_render(cr_ptr: *mut native::cairo_t, ctx: *mut ::std::os::raw::c_void) {
-    let ctx = unwrap_opt_or!((ctx as *mut Context).as_mut(), return);
+    let ctx = unwrap_opt_or!((ctx as *mut InnerContext).as_mut(), return);
     let callback = unwrap_opt_or!(ctx.callback.as_mut(), return);
     let mut cr = cairo::Context::from_raw_borrow(cr_ptr as *mut cairo_sys::cairo_t);
     callback.render(&mut ctx.rtctx, &mut cr);
@@ -64,41 +68,44 @@ unsafe extern "C" fn native_render(cr_ptr: *mut native::cairo_t, ctx: *mut ::std
 impl<'a, 'b> Default for Context<'a, 'b> {
     fn default() -> Self {
         Self {
-            cfg: native::sensorevalgui_cfg {
-                timer_ms: 0,
-                videopath: std::ptr::null(),
-                startoff: 0,
-                endoff: 0,
-                set_ts: Some(native_set_ts),
-                render: Some(native_render),
-                pdata: std::ptr::null_mut(),
-            },
-            videopath: None,
-            callback: None,
-            rtctx: RuntimeContext { ctx: None },
+            inner: Box::new(InnerContext {
+                cfg: native::sensorevalgui_cfg {
+                    timer_ms: 0,
+                    videopath: std::ptr::null(),
+                    startoff: 0,
+                    endoff: 0,
+                    set_ts: Some(native_set_ts),
+                    render: Some(native_render),
+                    pdata: std::ptr::null_mut(),
+                },
+                videopath: None,
+                callback: None,
+                rtctx: RuntimeContext { ctx: None },
+            }),
         }
     }
 }
 
 impl<'a, 'b> Context<'a, 'b> {
     pub fn set_timer_ms(&mut self, ms: u64) {
-        self.cfg.timer_ms = ms;
+        self.inner.cfg.timer_ms = ms;
     }
 
     pub fn set_startoff(&mut self, startoff: u64) {
-        self.cfg.startoff = startoff;
+        self.inner.cfg.startoff = startoff;
     }
 
     pub fn set_endoff(&mut self, endoff: u64) {
-        self.cfg.endoff = endoff;
+        self.inner.cfg.endoff = endoff;
     }
 
     pub fn set_videopath<S>(&mut self, videopath: Option<S>)
     where
         S: AsRef<str>,
     {
-        self.videopath = videopath.map(|v| std::ffi::CString::new(v.as_ref()).unwrap());
-        self.cfg.videopath = self
+        self.inner.videopath = videopath.map(|v| std::ffi::CString::new(v.as_ref()).unwrap());
+        self.inner.cfg.videopath = self
+            .inner
             .videopath
             .as_ref()
             .map(|v| v.as_ptr())
@@ -109,7 +116,7 @@ impl<'a, 'b> Context<'a, 'b> {
     where
         C: Callback + 'a,
     {
-        self.callback = if let Some(callback) = callback {
+        self.inner.callback = if let Some(callback) = callback {
             Some(Box::new(callback))
         } else {
             None
@@ -118,16 +125,16 @@ impl<'a, 'b> Context<'a, 'b> {
 
     pub fn start(&mut self) -> Result<(), Error> {
         let mut nativectx = std::ptr::null_mut();
-        let rc = unsafe { native::sensorevalgui_native_create(&mut nativectx, &self.cfg) };
+        let rc = unsafe { native::sensorevalgui_native_create(&mut nativectx, &self.inner.cfg) };
         assert_eq!(rc, 0);
 
-        self.rtctx.ctx = unsafe { nativectx.as_mut() };
-        self.cfg.pdata = self as *mut Context as *mut std::ffi::c_void;
+        self.inner.rtctx.ctx = unsafe { nativectx.as_mut() };
+        self.inner.cfg.pdata = self.inner.as_mut() as *mut InnerContext as *mut std::ffi::c_void;
 
         let rc = unsafe { native::sensorevalgui_native_start(nativectx) };
 
-        self.rtctx.ctx = None;
-        self.cfg.pdata = std::ptr::null_mut();
+        self.inner.rtctx.ctx = None;
+        self.inner.cfg.pdata = std::ptr::null_mut();
 
         unsafe { native::sensorevalgui_native_destroy(nativectx) };
 
