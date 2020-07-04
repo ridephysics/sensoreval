@@ -2,6 +2,13 @@ use crate::Error;
 use std::convert::TryFrom;
 use std::convert::TryInto;
 
+pub fn clear(cr: &cairo::Context) {
+    cr.save();
+    cr.set_operator(cairo::Operator::Source);
+    cr.paint();
+    cr.restore();
+}
+
 pub fn set_source_rgba_u32(cr: &cairo::Context, rgba: u32) {
     let r: f64 = ((rgba >> 24) & 0xff).try_into().unwrap();
     let g: f64 = ((rgba >> 16) & 0xff).try_into().unwrap();
