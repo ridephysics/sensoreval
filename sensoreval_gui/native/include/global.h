@@ -2,6 +2,7 @@
 #define GLOBAL_H
 
 #include <stdint.h>
+#include <stdbool.h>
 #include <cairo/cairo.h>
 
 struct context;
@@ -9,6 +10,8 @@ struct context;
 struct sensorevalgui_cfg
 {
     uint64_t timer_ms;
+
+    bool orientation_enabled;
 
     const char *videopath;
     uint64_t startoff;

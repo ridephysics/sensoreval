@@ -50,6 +50,7 @@ static void rotateVertex(const QQuaternion &q, GLfloat dst[3], const GLfloat src
 Orientation::Orientation() : m_renderer(nullptr), m_quat(1, 0, 0, 0)
 {
     connect(this, &QQuickItem::windowChanged, this, &Orientation::handleWindowChanged);
+    connect(this, &QQuickItem::visibleChanged, this, &Orientation::handleVisibleChanged);
 }
 
 void Orientation::handleWindowChanged(QQuickWindow *win)
@@ -62,12 +63,20 @@ void Orientation::handleWindowChanged(QQuickWindow *win)
     }
 }
 
+void Orientation::handleVisibleChanged()
+{
+    if (m_renderer) {
+        m_renderer->setVisible(this->property("visible").toBool());
+    }
+}
+
 void Orientation::sync()
 {
     if (!m_renderer) {
         m_renderer = new OrientationRenderer();
         connect(window(), &QQuickWindow::afterRendering, m_renderer, &OrientationRenderer::paint,
                 Qt::DirectConnection);
+        handleVisibleChanged();
     }
     m_renderer->setViewportSize(window()->size() * window()->devicePixelRatio());
     m_renderer->setQuaternion(m_quat);
@@ -98,6 +107,10 @@ OrientationRenderer::~OrientationRenderer() { }
 
 void OrientationRenderer::paint()
 {
+    if (!m_visible) {
+        return;
+    }
+
     m_window->resetOpenGLState();
 
     if (!m_initialized) {

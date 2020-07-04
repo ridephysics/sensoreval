@@ -71,6 +71,7 @@ impl<'a, 'b> Default for Context<'a, 'b> {
             inner: Box::new(InnerContext {
                 cfg: native::sensorevalgui_cfg {
                     timer_ms: 0,
+                    orientation_enabled: false,
                     videopath: std::ptr::null(),
                     startoff: 0,
                     endoff: 0,
@@ -89,6 +90,10 @@ impl<'a, 'b> Default for Context<'a, 'b> {
 impl<'a, 'b> Context<'a, 'b> {
     pub fn set_timer_ms(&mut self, ms: u64) {
         self.inner.cfg.timer_ms = ms;
+    }
+
+    pub fn set_orientation_enabled(&mut self, orientation_enabled: bool) {
+        self.inner.cfg.orientation_enabled = orientation_enabled;
     }
 
     pub fn set_startoff(&mut self, startoff: u64) {

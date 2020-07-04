@@ -63,6 +63,8 @@ extern "C" int sensorevalgui_native_create(struct context **pctx,
         url = QUrl();
     }
 
+    ctx->engine->rootContext()->setContextProperty("main_orientationEnabled",
+                                                   ctx->cfg->orientation_enabled);
     ctx->engine->rootContext()->setContextProperty("main_videoPath", url);
     ctx->engine->rootContext()->setContextProperty("main_videoStartOffset",
                                                    (double)ctx->cfg->startoff);

@@ -12,6 +12,7 @@ public:
     OrientationRenderer() : m_initialized(false), m_quat(1, 0, 0, 0) { }
     ~OrientationRenderer();
 
+    void setVisible(bool visible) { m_visible = visible; };
     void setViewportSize(const QSize &size) { m_viewportSize = size; }
     void setWindow(QQuickWindow *window) { m_window = window; }
     void setQuaternion(const QQuaternion &quat) { m_quat = quat; }
@@ -20,6 +21,7 @@ public slots:
     void paint();
 
 private:
+    bool m_visible;
     QSize m_viewportSize;
     bool m_initialized;
     QQuickWindow *m_window;
@@ -50,6 +52,7 @@ signals:
 
 private slots:
     void handleWindowChanged(QQuickWindow *win);
+    void handleVisibleChanged();
 
 private:
     OrientationRenderer *m_renderer;

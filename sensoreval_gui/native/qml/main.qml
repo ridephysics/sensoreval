@@ -75,6 +75,7 @@ Window {
             height: parent.height
 
             quat: main_quaternion
+            visible: main_orientationEnabled
         }
 
         VideoHUD {
