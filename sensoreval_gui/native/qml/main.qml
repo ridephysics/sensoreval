@@ -65,6 +65,7 @@ Window {
             id: videoOutput
             source: player
             anchors.fill: parent
+            visible: player.source != ""
         }
 
         Orientation {
@@ -94,7 +95,8 @@ Window {
             }
             duration: main_videoEndOffset - main_videoStartOffset
             playPosition: player.position - main_videoStartOffset
-            onSeekPositionChanged: player.seek(seekPosition + main_videoStartOffset);
+            onSeekPositionChanged: player.seek(seekPosition + main_videoStartOffset)
+            visible: player.source != ""
         }
     }
 }
