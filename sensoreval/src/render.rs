@@ -4,6 +4,7 @@ use crate::render;
 use crate::Data;
 use crate::Error;
 use approx::abs_diff_ne;
+use sensoreval_graphics::utils::CairoEx;
 
 /// data source type and info
 #[allow(clippy::large_enum_variant)]
@@ -215,7 +216,7 @@ impl<'a, 'b, 'c> Context<'a, 'b, 'c> {
     }
 
     pub fn render(&mut self, cr: &cairo::Context) -> Result<(), Error> {
-        let ssz = sensoreval_graphics::utils::surface_sz_user(cr);
+        let ssz = cr.surface_sz_user();
         let dpi = 160.0 * (ssz.0 / 1920.0);
         let spi = dpi;
         let scale_changed =
@@ -223,8 +224,8 @@ impl<'a, 'b, 'c> Context<'a, 'b, 'c> {
         self.hudctx.dpi = dpi;
         self.hudctx.spi = dpi;
 
-        sensoreval_graphics::utils::set_source_rgba_u32(cr, 0x00000000);
-        sensoreval_graphics::utils::clear(cr);
+        cr.set_source_rgba_u32(0x00000000);
+        cr.clear();
 
         if let Some(renderer) = &mut self.hudrenderer {
             if scale_changed {
@@ -248,7 +249,7 @@ impl<'a, 'b, 'c> Context<'a, 'b, 'c> {
                         );
                     }
                 }
-                let ssz = sensoreval_graphics::utils::surface_sz_user(cr);
+                let ssz = cr.surface_sz_user();
 
                 let q = self.orientation()?;
                 let fid = quat_to_fid(&q);

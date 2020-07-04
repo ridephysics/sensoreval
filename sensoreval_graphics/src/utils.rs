@@ -2,86 +2,106 @@ use crate::Error;
 use std::convert::TryFrom;
 use std::convert::TryInto;
 
-pub fn clear(cr: &cairo::Context) {
-    cr.save();
-    cr.set_operator(cairo::Operator::Source);
-    cr.paint();
-    cr.restore();
+pub trait CairoEx {
+    fn clear(&self);
+    fn set_source_rgba_u32(&self, rgba: u32);
+    fn clip_bottom(&self, h: f64);
+    fn move_to_circle(&self, r: f64, angle: f64);
+    fn rel_move_to_circle(&self, r: f64, angle: f64);
+    fn line_to_circle(&self, r: f64, angle: f64);
+    fn stroke_arc_sides(
+        &self,
+        r: f64,
+        angle_mid: f64,
+        angle_sides: f64,
+        border_width: f64,
+        border_color: u32,
+    );
+    fn surface_sz_user(&self) -> (f64, f64);
 }
 
-pub fn set_source_rgba_u32(cr: &cairo::Context, rgba: u32) {
-    let r: f64 = ((rgba >> 24) & 0xff).try_into().unwrap();
-    let g: f64 = ((rgba >> 16) & 0xff).try_into().unwrap();
-    let b: f64 = ((rgba >> 8) & 0xff).try_into().unwrap();
-    let a: f64 = (rgba & 0xff).try_into().unwrap();
+impl CairoEx for cairo::Context {
+    fn clear(&self) {
+        self.save();
+        self.set_operator(cairo::Operator::Source);
+        self.paint();
+        self.restore();
+    }
 
-    let rf = 1.0 / 255.0 * r;
-    let gf = 1.0 / 255.0 * g;
-    let bf = 1.0 / 255.0 * b;
-    let af = 1.0 / 255.0 * a;
+    fn set_source_rgba_u32(&self, rgba: u32) {
+        let r: f64 = ((rgba >> 24) & 0xff).try_into().unwrap();
+        let g: f64 = ((rgba >> 16) & 0xff).try_into().unwrap();
+        let b: f64 = ((rgba >> 8) & 0xff).try_into().unwrap();
+        let a: f64 = (rgba & 0xff).try_into().unwrap();
 
-    cr.set_source_rgba(rf, gf, bf, af);
-}
+        let rf = 1.0 / 255.0 * r;
+        let gf = 1.0 / 255.0 * g;
+        let bf = 1.0 / 255.0 * b;
+        let af = 1.0 / 255.0 * a;
 
-pub fn clip_bottom(cr: &cairo::Context, h: f64) {
-    let ssz = surface_sz_user(cr);
-    let p = cr.device_to_user(0., 0.);
-    let sz = (ssz.0, -p.1 + h);
+        self.set_source_rgba(rf, gf, bf, af);
+    }
 
-    cr.rectangle(p.0, p.1, sz.0, sz.1);
-    cr.clip();
+    fn clip_bottom(&self, h: f64) {
+        let ssz = self.surface_sz_user();
+        let p = self.device_to_user(0., 0.);
+        let sz = (ssz.0, -p.1 + h);
+
+        self.rectangle(p.0, p.1, sz.0, sz.1);
+        self.clip();
+    }
+
+    fn move_to_circle(&self, r: f64, angle: f64) {
+        let (x, y) = circle_coords(r, angle);
+        self.move_to(x, y)
+    }
+
+    fn rel_move_to_circle(&self, r: f64, angle: f64) {
+        let (x, y) = circle_coords(r, angle);
+        self.rel_move_to(x, y)
+    }
+
+    fn line_to_circle(&self, r: f64, angle: f64) {
+        let (x, y) = circle_coords(r, angle);
+        self.line_to(x, y)
+    }
+
+    fn stroke_arc_sides(
+        &self,
+        r: f64,
+        angle_mid: f64,
+        angle_sides: f64,
+        border_width: f64,
+        border_color: u32,
+    ) {
+        let (cx, cy) = self.get_current_point();
+
+        self.save();
+        self.set_line_width(self.get_line_width() + border_width);
+        self.set_source_rgba_u32(border_color);
+        self.rel_move_to_circle(r, angle_mid + angle_sides);
+        self.line_to(cx, cy);
+        self.line_to_circle(r, angle_mid - angle_sides);
+        self.stroke_preserve();
+        self.restore();
+
+        self.save();
+        self.set_operator(cairo::Operator::Source);
+        self.stroke();
+        self.restore();
+    }
+
+    fn surface_sz_user(&self) -> (f64, f64) {
+        let surface = cairo::ImageSurface::try_from(self.get_target()).unwrap();
+        let sw = f64::from(surface.get_width());
+        let sh = f64::from(surface.get_height());
+
+        self.device_to_user_distance(sw, sh)
+    }
 }
 
 pub fn circle_coords(r: f64, angle: f64) -> (f64, f64) {
     (angle.cos() * r, angle.sin() * r)
-}
-
-pub fn move_to_circle(cr: &cairo::Context, r: f64, angle: f64) {
-    let (x, y) = circle_coords(r, angle);
-    cr.move_to(x, y)
-}
-
-pub fn rel_move_to_circle(cr: &cairo::Context, r: f64, angle: f64) {
-    let (x, y) = circle_coords(r, angle);
-    cr.rel_move_to(x, y)
-}
-
-pub fn line_to_circle(cr: &cairo::Context, r: f64, angle: f64) {
-    let (x, y) = circle_coords(r, angle);
-    cr.line_to(x, y)
-}
-
-pub fn stroke_arc_sides(
-    cr: &cairo::Context,
-    r: f64,
-    angle_mid: f64,
-    angle_sides: f64,
-    border_width: f64,
-    border_color: u32,
-) {
-    let (cx, cy) = cr.get_current_point();
-
-    cr.save();
-    cr.set_line_width(cr.get_line_width() + border_width);
-    set_source_rgba_u32(cr, border_color);
-    rel_move_to_circle(cr, r, angle_mid + angle_sides);
-    cr.line_to(cx, cy);
-    line_to_circle(cr, r, angle_mid - angle_sides);
-    cr.stroke_preserve();
-    cr.restore();
-
-    cr.save();
-    cr.set_operator(cairo::Operator::Source);
-    cr.stroke();
-    cr.restore();
-}
-
-pub fn surface_sz_user(cr: &cairo::Context) -> (f64, f64) {
-    let surface = cairo::ImageSurface::try_from(cr.get_target()).unwrap();
-    let sw = f64::from(surface.get_width());
-    let sh = f64::from(surface.get_height());
-
-    cr.device_to_user_distance(sw, sh)
 }
 
 pub struct Font<'a> {
@@ -112,12 +132,12 @@ impl<'a> Font<'a> {
     pub fn draw_layout(&self, cr: &cairo::Context, layout: &pango::Layout) {
         cr.save();
 
-        set_source_rgba_u32(cr, self.color_fill);
+        cr.set_source_rgba_u32(self.color_fill);
         pangocairo::functions::update_layout(cr, &layout);
         pangocairo::functions::show_layout(cr, &layout);
 
         cr.set_line_width(self.line_width);
-        set_source_rgba_u32(cr, self.color_border);
+        cr.set_source_rgba_u32(self.color_border);
         pangocairo::functions::layout_path(cr, &layout);
         cr.stroke();
 
@@ -219,7 +239,7 @@ impl Graph {
 
         // border
         cr.save();
-        set_source_rgba_u32(cr, self.border_color);
+        cr.set_source_rgba_u32(self.border_color);
         cr.set_line_width(self.border_width);
         cr.move_to(cx, cy);
         cr.rel_line_to(0.0, self.height);

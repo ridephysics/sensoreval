@@ -1,4 +1,5 @@
 use crate::utils;
+use crate::utils::CairoEx;
 
 /// draws to pointy end of a boat
 fn swingboat_head_line(cr: &cairo::Context, radius0: f64, angle0: f64, radius1: f64, angle1: f64) {
@@ -63,13 +64,12 @@ pub fn draw(cr: &cairo::Context, gondola_rotation: f64, active_row: usize) {
     cr.rotate(gondola_rotation);
 
     // gondola-frame
-    utils::set_source_rgba_u32(cr, frame_color);
+    cr.set_source_rgba_u32(frame_color);
     cr.set_line_width(gondola_frame_thickness);
     cr.move_to(0., 0.);
     // we use twice the radius because we want to cut the line horizontally
     // which is done by clipping it
-    utils::stroke_arc_sides(
-        cr,
+    cr.stroke_arc_sides(
         gondola_radius,
         std::f64::consts::PI / 2.0,
         gondola_angle / 2.0
@@ -129,10 +129,10 @@ pub fn draw(cr: &cairo::Context, gondola_rotation: f64, active_row: usize) {
         cr.close_path();
 
         cr.set_line_width(gondola_line_width + border_width);
-        utils::set_source_rgba_u32(cr, border_color);
+        cr.set_source_rgba_u32(border_color);
         cr.stroke_preserve();
 
-        utils::set_source_rgba_u32(cr, gondola_color);
+        cr.set_source_rgba_u32(gondola_color);
         cr.set_line_width(gondola_line_width);
         cr.stroke_preserve();
 
@@ -141,7 +141,7 @@ pub fn draw(cr: &cairo::Context, gondola_rotation: f64, active_row: usize) {
 
         // sections
         cr.save();
-        utils::set_source_rgba_u32(cr, section_dark_color);
+        cr.set_source_rgba_u32(section_dark_color);
         cr.set_line_width(gondola_thickness + gondola_line_width);
 
         // left
@@ -177,7 +177,7 @@ pub fn draw(cr: &cairo::Context, gondola_rotation: f64, active_row: usize) {
         // active row
         let active_row_left = angle_left - active_row as f64 * section_width_ang / 2.0;
         cr.set_operator(cairo::Operator::Source);
-        utils::set_source_rgba_u32(cr, active_row_color);
+        cr.set_source_rgba_u32(active_row_color);
         cr.arc_negative(
             0.0,
             0.0,
@@ -199,10 +199,10 @@ pub fn draw(cr: &cairo::Context, gondola_rotation: f64, active_row: usize) {
         for i in 0..gondola_num_sections {
             let angle = angle_left - section_width_ang / 2.0 - i as f64 * section_width_ang;
 
-            utils::move_to_circle(cr, radius_divider_inner, angle);
-            utils::line_to_circle(cr, radius_divider_outer, angle);
+            cr.move_to_circle(radius_divider_inner, angle);
+            cr.line_to_circle(radius_divider_outer, angle);
 
-            utils::set_source_rgba_u32(cr, section_divider_color);
+            cr.set_source_rgba_u32(section_divider_color);
             cr.set_operator(cairo::Operator::Source);
             cr.stroke();
         }
@@ -214,12 +214,11 @@ pub fn draw(cr: &cairo::Context, gondola_rotation: f64, active_row: usize) {
 
     // frame
     cr.save();
-    utils::clip_bottom(cr, frame_radius);
-    utils::set_source_rgba_u32(cr, frame_color);
+    cr.clip_bottom(frame_radius);
+    cr.set_source_rgba_u32(frame_color);
     cr.set_line_width(frame_thickness);
     cr.move_to(0., 0.);
-    utils::stroke_arc_sides(
-        cr,
+    cr.stroke_arc_sides(
         frame_radius * 2.0,
         std::f64::consts::PI / 2.0,
         frame_angle / 2.0,
@@ -230,11 +229,11 @@ pub fn draw(cr: &cairo::Context, gondola_rotation: f64, active_row: usize) {
 
     // top
     cr.set_operator(cairo::Operator::Source);
-    utils::set_source_rgba_u32(cr, frame_color);
+    cr.set_source_rgba_u32(frame_color);
     cr.set_line_width(0.2);
     cr.arc(0., 0., 1.0, 0., 2.0 * std::f64::consts::PI);
     cr.fill_preserve();
-    utils::set_source_rgba_u32(cr, frame_top_color);
+    cr.set_source_rgba_u32(frame_top_color);
     cr.stroke();
 
     cr.restore();

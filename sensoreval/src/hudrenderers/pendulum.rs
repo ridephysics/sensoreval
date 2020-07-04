@@ -11,6 +11,7 @@ use kalman::ukf::Functions;
 use ndarray::array;
 use ndarray::azip;
 use ndarray::s;
+use sensoreval_graphics::utils::CairoEx;
 use serde::Deserialize;
 
 #[derive(Deserialize, Debug, Clone)]
@@ -443,7 +444,7 @@ impl render::HudRenderer for Pendulum {
         utilfont.line_width = ctx.dp2px(3.0);
 
         // swingboat
-        let ssz = sensoreval_graphics::utils::surface_sz_user(cr);
+        let ssz = cr.surface_sz_user();
         let ppm = 30.0;
         cr.move_to(ssz.0 - ctx.dp2px(16.0 * ppm), ssz.1 - ctx.dp2px(16.5 * ppm));
 
