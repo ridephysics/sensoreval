@@ -21,7 +21,7 @@ half = { version = "1.6", features = ["serde"] }
 lapack-src = { version = "*", features = ["openblas"] }
 librsvg = { git = "https://gitlab.gnome.org/GNOME/librsvg" }
 nalgebra = "0.21"
-ndarray = {version = "0.13", features = ["serde"] }
+ndarray = { version = "0.13", features = ["serde"] }
 ndarray-linalg = "0.12"
 num-traits = "0.2"
 openblas-src = { version = "*", features = ["static"] }
