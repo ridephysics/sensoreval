@@ -5,6 +5,7 @@ members = [
     "sensoreval",
     "sensoreval_graphics",
     "sensoreval_gui",
+    "sensoreval_psim",
     "sensoreval_utils",
     "testlib",
 ]

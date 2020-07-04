@@ -2140,6 +2140,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "sensoreval_psim"
+version = "0.1.0"
+dependencies = [
+ "cairo-rs",
+ "eom",
+ "math",
+ "ndarray",
+ "sensoreval_graphics",
+ "sensoreval_gui",
+]
+
+[[package]]
 name = "sensoreval_utils"
 version = "0.1.0"
 dependencies = [

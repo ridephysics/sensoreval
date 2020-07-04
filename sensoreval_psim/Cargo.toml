@@ -1,0 +1,14 @@
+[package]
+name = "sensoreval_psim"
+version = "0.1.0"
+authors = ["Michael Zimmermann <sigmaepsilon92@gmail.com>"]
+edition = "2018"
+
+[dependencies]
+math = { path = "../math" }
+sensoreval_gui = { path = "../sensoreval_gui" }
+sensoreval_graphics = { path = "../sensoreval_graphics" }
+
+cairo-rs = { version = "0.8" }
+eom = { git = "https://github.com/M1cha/eom", branch = "master" }
+ndarray = { version = "0.13" }
