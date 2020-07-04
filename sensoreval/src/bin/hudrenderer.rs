@@ -248,6 +248,7 @@ fn main() {
 
             let mut gui = sensoreval_gui::Context::default();
             gui.set_timer_ms(30);
+            gui.set_orientation_enabled(true);
             gui.set_startoff(renderctx.cfg.video.startoff);
             gui.set_endoff(match renderctx.cfg.video.endoff {
                 Some(v) => v,
