@@ -42,7 +42,7 @@ void QmlVideoHUD::checkCreateCairo(QPainter *painter)
         m_qimg = new QImage(cairo_image_surface_get_data(m_cairo_surface), vp.width(), vp.height(),
                             QImage::Format_ARGB32_Premultiplied);
 
-        cairo_set_antialias(m_cr, CAIRO_ANTIALIAS_FAST);
+        cairo_set_antialias(m_cr, CAIRO_ANTIALIAS_BEST);
     }
 }
 
