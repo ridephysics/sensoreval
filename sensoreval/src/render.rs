@@ -223,12 +223,8 @@ impl<'a, 'b, 'c> Context<'a, 'b, 'c> {
         self.hudctx.dpi = dpi;
         self.hudctx.spi = dpi;
 
-        // clear
-        cr.save();
-        cr.set_source_rgba(0., 0., 0., 0.);
-        cr.set_operator(cairo::Operator::Source);
-        cr.paint();
-        cr.restore();
+        sensoreval_graphics::utils::set_source_rgba_u32(cr, 0x00000000);
+        sensoreval_graphics::utils::clear(cr);
 
         if let Some(renderer) = &mut self.hudrenderer {
             if scale_changed {
