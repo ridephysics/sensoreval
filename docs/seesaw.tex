@@ -156,4 +156,33 @@ Rearrange:
 m_1 l_1^2 \ddot{\theta} + m_2 l_2^2 \ddot{\theta} + m_1 g l_1 \sin \theta - m_2 g l_2 \sin \theta = 0
 \end{equation}
 
+\section{State space}
+extract $\ddot{\theta}$:
+\begin{equation}
+(m_1 l_1^2 + m_2 l_2^2)\ddot{\theta} + m_1 g l_1 \sin \theta - m_2 g l_2 \sin \theta = 0
+\end{equation}
+solve for $\ddot{\theta}$:
+\begin{equation}
+(m_1 l_1^2 + m_2 l_2^2)\ddot{\theta} = m_2 g l_2 \sin \theta - m_1 g l_1 \sin \theta
+\end{equation}
+\begin{equation}
+\ddot{\theta} = \frac{m_2 g l_2 \sin \theta - m_1 g l_1 \sin \theta}{m_1 l_1^2 + m_2 l_2^2}
+\end{equation}
+rewrite as state space:
+\begin{equation}
+\dot{\overrightarrow{y}} = \frac{d}{dt}
+\left\{\!
+\begin{array}{c}
+  \theta \\
+  \dot{\theta}
+\end{array}
+\!\right\} = 
+\left\{\!
+\begin{array}{c}
+  \dot{\theta} \\
+  \frac{m_2 g l_2 \sin \theta - m_1 g l_1 \sin \theta}{m_1 l_1^2 + m_2 l_2^2}
+\end{array}
+\!\right\}
+\end{equation}
+
 \end{document}
