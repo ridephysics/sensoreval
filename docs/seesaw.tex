@@ -1,0 +1,155 @@
+\documentclass[titlepage]{article}
+\usepackage{amsmath}
+\usepackage{tikz}
+\usetikzlibrary{angles,quotes}
+\numberwithin{equation}{section}
+
+\begin{document}
+
+\title{Equations of Motion: Seesaw}
+\author{Michael Zimmermann}
+\date{}
+\maketitle
+
+\section{Diagram}
+\begin{tikzpicture}
+% coordinate system
+\draw[thick,->] (-5,0) -- (5,0) node[anchor=north west] {x};
+\draw[thick,->] (0,-5) -- (0,5) node[anchor=south east] {y};
+
+% rods
+\draw (0,0) -- (4,-2) node[pos=0.5,fill=white]{l1};
+\draw (0,0) -- (-4,2) node[pos=0.5,fill=white]{l2};
+
+% angle
+\draw
+  (0,-4) coordinate (a)
+  (0,0) coordinate (b)
+  (4,-2) coordinate (c)
+  pic["$\theta$", draw=black, ->, angle radius=1.5cm]{angle=a--b--c};
+
+% masses
+\draw[fill=white] (4,-2) circle (0.5cm) node[label={[label distance=0.2cm]east:{$(x_1, y_1)$}}]{m1};
+\draw[fill=white] (-4,2) circle (0.5cm) node[label={[label distance=0.2cm]west:{$(x_2, y_2)$}}]{m2};
+
+\end{tikzpicture}
+
+\section{Assumptions}
+\begin{itemize}
+	\item Point masses
+	\item Massless, rigid rod
+	\item Gravity is present
+\end{itemize}
+
+\section{Trigonometric Identities}
+\begin{equation} \label{eq:ti1}
+\sin^2 \theta  + \cos^2 \theta = 1
+\end{equation}
+
+\pagebreak
+\section{Kinematic Constrains}
+\begin{equation}
+x_1 = l_1 * \sin \theta
+\end{equation}
+\begin{equation} \label{eq:y_1}
+y_1 = -l_1 * \cos \theta
+\end{equation}
+
+\begin{equation}
+x_2 = -l_2 * \sin \theta
+\end{equation}
+\begin{equation} \label{eq:y_2}
+y_2 = l_2 * \cos \theta
+\end{equation}
+
+\section{Velocities}
+\begin{equation} \label{eq:x_1_dot}
+\dot{x_1} = \dot{\theta} * l_1 * \cos \theta
+\end{equation}
+\begin{equation} \label{eq:y_1_dot}
+\dot{y_1} = \dot{\theta} * l_1 * \sin \theta
+\end{equation}
+
+\begin{equation} \label{eq:x_2_dot}
+\dot{x_2} = \dot{\theta} * (-l_2) * \cos \theta
+\end{equation}
+\begin{equation} \label{eq:y_2_dot}
+\dot{y_2} = \dot{\theta} * (-l_2) * \sin \theta
+\end{equation}
+
+\section{Potential Energy}
+\begin{equation} \label{eq:V_base}
+V = m_1 * g * y_1 + m_2 * g * y_2
+\end{equation}
+Substitute \ref{eq:y_1}, \ref{eq:y_2} into \ref{eq:V_base}:
+\begin{equation} \label{eq:V}
+V = m_1 * g * (-l_1 * \cos \theta) + m_2 * g * (l_2 * \cos \theta)
+\end{equation}
+
+\section{Kinetic Energy}
+\begin{equation}
+T = \frac{1}{2} * m_1 * v_1^2 + \frac{1}{2} * m_2 * v_2^2
+\end{equation}
+Pythagoras:
+\begin{equation} \label{eq:T_base}
+T = \frac{1}{2} * m_1 * (\dot{x_1}^2 + \dot{y_1}^2) + \frac{1}{2} * m_2 * (\dot{x_2}^2 + \dot{y_2}^2)
+\end{equation}
+Substitute \ref{eq:x_1_dot}, \ref{eq:y_1_dot}, \ref{eq:x_2_dot}, \ref{eq:y_2_dot} into \ref{eq:T_base}:
+\begin{align}
+T &= \frac{1}{2} * m_1 * ((\dot{\theta} * l_1 * \cos \theta)^2 + (\dot{\theta} * l_1 * \sin \theta)^2) \nonumber \\
+  &+ \frac{1}{2} * m_2 * ((\dot{\theta} * (-l_2) * \cos \theta)^2 + (\dot{\theta} * (-l_2) * \sin \theta)^2)
+\end{align}
+Simplify:
+\begin{align}
+T &= \frac{1}{2} * m_1 * (\dot{\theta}^2 * l_1^2 * (\cos^2 \theta + \sin^2 \theta)) \nonumber \\
+  &+ \frac{1}{2} * m_2 * (\dot{\theta}^2 * (-l_2)^2 * (\cos^2 \theta + \sin^2 \theta))
+\end{align}
+Substitute \ref{eq:ti1}:
+\begin{equation} \label{eq:T}
+T = \frac{1}{2} * m_1 * l_1^2 * \dot{\theta}^2 + \frac{1}{2} * m_2 * (-l2)^2 * \dot{\theta}^2
+\end{equation}
+
+\section{Lagrangian}
+\begin{equation} \label{eq:L_base}
+L = T - V
+\end{equation}
+Substitute \ref{eq:T}, \ref{eq:V} into \ref{eq:L_base}:
+\begin{align}
+L &= \frac{1}{2} * m_1 * l_1^2 * \dot{\theta}^2 + \frac{1}{2} * m_2 * (-l2)^2 * \dot{\theta}^2 \nonumber \\
+  &- m_1 * g * (-l_1 * \cos \theta) + m_2 * g * (l_2 * \cos \theta)
+\end{align}
+
+\section{Lagrange's Equations}
+\begin{equation} \label{eq:LE_base}
+\frac{d}{dt} \left(\frac{\partial L}{\partial \dot{q}_j}\right) - \frac{\partial L}{\partial q_j}
+\end{equation}
+
+\bigskip
+\begin{align}
+\frac{\partial L}{\partial \dot{\theta}} &= \frac{1}{2} * m_1 * l_1^2 * 2 * \dot{\theta} + \frac{1}{2} * m_2 * (-l2)^2 * 2 * \dot{\theta} \\
+&= m_2 * l_1^2 * \dot{\theta} + m_2 * (-l_2)^2 * \dot{\theta}
+\end{align}
+
+\bigskip
+\begin{equation} \label{eq:LE_left}
+\frac{d}{dt} \left(\frac{\partial L}{\partial \dot{\theta}}\right) = m_1 * l_1^2 * \ddot{\theta} + m_2 * (-l_2)^2 * \ddot{\theta}
+\end{equation}
+
+\bigskip
+\begin{align} \label{eq:LE_right}
+\frac{\partial L}{\partial \theta} &= -m_1 * g * (-l_1 * -\sin \theta) + m_2 * g * (l_2 * -\sin \theta) \\
+&= -m_1 * g * l_1 * \sin \theta + m_2 * g * l_2 * -\sin \theta
+\end{align}
+
+\bigskip
+\noindent
+Substitute \ref{eq:LE_left}, \ref{eq:LE_right} into \ref{eq:LE_base}:
+\begin{equation}
+m_1 * l_1^2 * \ddot{\theta} + m_2 * (-l_2)^2 * \ddot{\theta} + m_1 * g * l_1 * \sin \theta + m_2 * g * l_2 * -\sin \theta = 0
+\end{equation}
+Rearrange:
+\begin{equation}
+m_1 * l_1^2 * \ddot{\theta} + m_1 * g * l_1 * \sin \theta + m_2 * (-l_2)^2 * \ddot{\theta} + m_2 * g * l_2 * -\sin \theta = 0
+\end{equation}
+
+\end{document}
