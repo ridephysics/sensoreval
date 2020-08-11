@@ -167,6 +167,7 @@ L &= \frac{1}{2} m_1 r^2 \dot{\theta_3}^2 + m_1 r \dot{\theta_3} l_1 \dot{\theta
 \frac{d}{dt} \left(\frac{\partial L}{\partial \dot{q}_j}\right) - \frac{\partial L}{\partial q_j}
 \end{equation}
 
+\pagebreak
 \subsection{$\theta_1$}
 \begin{align}
 \frac{\partial L}{\partial \dot{\theta_1}} &= m_1 r \dot{\theta_3} l_1 \cos{(\theta_3 - \theta_1)} + m_1 l_1^2 \dot{\theta_1}
@@ -193,15 +194,26 @@ Substitute \ref{eq:LE_left_t1}, \ref{eq:LE_right_t1} into \ref{eq:LE_base}:
  &+ m_1 g l_1 \sin \theta_1 \nonumber \\
  &= 0
 \end{align}
+Simplify:
+\begin{align}
+ &+ m_1 r \ddot{\theta_3} l_1 \cos{(\theta_3 - \theta_1)} \nonumber \\
+ &- m_1 r \dot{\theta_3}^2 l_1 \sin{(\theta_3 - \theta_1)} \nonumber \\
+ &+ m_1 l_1^2 \ddot{\theta_1} \nonumber \\
+ &+ m_1 g l_1 \sin \theta_1 \nonumber \\
+ &= 0
+\end{align}
 Cancel out $l_1 m_1$:
 \begin{align}
  &+ r \ddot{\theta_3} \cos{(\theta_3 - \theta_1)} \nonumber \\
- &- r \dot{\theta_3} \sin{(\theta_3 - \theta_1)} (\dot{\theta_3} - \dot{\theta_1}) \nonumber \\
+ &- r \dot{\theta_3}^2 \sin{(\theta_3 - \theta_1)} \nonumber \\
  &+ l_1 \ddot{\theta_1} \nonumber \\
- &- r \dot{\theta_3} \dot{\theta_1} \sin{(\theta_3 - \theta_1)} \nonumber \\
  &+ g \sin \theta_1 \nonumber \\
  &= 0
 \end{align}
+Rearrange:
+\begin{equation}
+ r \ddot{\theta_3} \cos{(\theta_3 - \theta_1)} - r \dot{\theta_3}^2 \sin{(\theta_3 - \theta_1)} + l_1 \ddot{\theta_1} + g \sin \theta_1 = 0
+\end{equation}
 
 \subsection{$\theta_2$}
 \begin{equation}
@@ -230,15 +242,26 @@ Substitute \ref{eq:LE_left_t2}, \ref{eq:LE_right_t2} into \ref{eq:LE_base}:
  &+ m_2 g l_2 \sin \theta_2 \nonumber \\
  &= 0
 \end{align}
+Simplify:
+\begin{align}
+ &- m_2 r \ddot{\theta_3} l_2 \cos{(\theta_3 - \theta_2)} \nonumber \\
+ &+ m_2 r \dot{\theta_3}^2 l_2 \sin{(\theta_3 - \theta_2)} \nonumber \\
+ &+ m_2 l_2^2 \ddot{\theta_2} \nonumber \\
+ &+ m_2 g l_2 \sin \theta_2 \nonumber \\
+ &= 0
+\end{align}
 Cancel out $l_2 m_2$:
 \begin{align}
  &- r \ddot{\theta_3} \cos{(\theta_3 - \theta_2)} \nonumber \\
- &+ r \dot{\theta_3} \sin{(\theta_3 - \theta_2)} (\dot{\theta_3} - \dot{\theta_2}) \nonumber \\
+ &+ r \dot{\theta_3}^2 \sin{(\theta_3 - \theta_2)} \nonumber \\
  &+ l_2 \ddot{\theta_2} \nonumber \\
- &+ r \dot{\theta_3} \dot{\theta_2} \sin{(\theta_3 - \theta_2)} \nonumber \\
  &+ g \sin \theta_2 \nonumber \\
  &= 0
 \end{align}
+Rearrange:
+\begin{equation}
+ - r \ddot{\theta_3} \cos{(\theta_3 - \theta_2)} + r \dot{\theta_3}^2 \sin{(\theta_3 - \theta_2)} + l_2 \ddot{\theta_2} + g \sin \theta_2 = 0
+\end{equation}
 
 \subsection{$\theta_3$}
 \begin{align}
@@ -286,17 +309,22 @@ Combine similar terms:
  &+ (m_1 - m2) g r \sin \theta_3 \nonumber \\
  &= 0
 \end{align}
+Simplify:
+\begin{align}
+ &+ m_1 r l_1 \ddot{\theta_1} \cos{(\theta_3 - \theta_1)} + m_1 r l_1 \dot{\theta_1}^2 \sin{(\theta_3 - \theta_1)} \nonumber \\
+ &- m_2 r l_2 \ddot{\theta_2} \cos{(\theta_3 - \theta_2)} - m_2 r l_2 \dot{\theta_2}^2 \sin{(\theta_3 - \theta_2)} \nonumber \\
+ &+ (m_1 + m_2 + \frac{1}{3} m_3) r^2 \ddot{\theta_3} + (m_1 - m2) g r \sin \theta_3 \nonumber \\
+ &= 0
+\end{align}
 Cancel out $r$
 \begin{align}
- &+ m_1 l_1 \ddot{\theta_1} \cos{(\theta_3 - \theta_1)} - m_1 l_1 \dot{\theta_1} \sin{(\theta_3 - \theta_1)} (\dot{\theta_3} - \dot{\theta_1}) \nonumber \\
- &- m_2 l_2 \ddot{\theta_2} \cos{(\theta_3 - \theta_2)} + m_2 l_2 \dot{\theta_2} \sin{(\theta_3 - \theta_2)} (\dot{\theta_3} - \dot{\theta_2}) \nonumber \\
- &+ (m_1 + m_2 + \frac{1}{3} m_3) r \ddot{\theta_3} \nonumber \\
- &+ m_1 \dot{\theta_3} l_1 \dot{\theta_1} \sin{(\theta_3 - \theta_1)} \nonumber \\
- &- m_2 \dot{\theta_3} l_2 \dot{\theta_2} \sin{(\theta_3 - \theta_2)} \nonumber \\
- &+ (m_1 - m2) g \sin \theta_3 \nonumber \\
+ &+ m_1 l_1 \ddot{\theta_1} \cos{(\theta_3 - \theta_1)} + m_1 l_1 \dot{\theta_1}^2 \sin{(\theta_3 - \theta_1)} \nonumber \\
+ &- m_2 l_2 \ddot{\theta_2} \cos{(\theta_3 - \theta_2)} - m_2 l_2 \dot{\theta_2}^2 \sin{(\theta_3 - \theta_2)} \nonumber \\
+ &+ (m_1 + m_2 + \frac{1}{3} m_3) r \ddot{\theta_3} + (m_1 - m2) g \sin \theta_3 \nonumber \\
  &= 0
 \end{align}
 
+\pagebreak
 \section{State space}
 Matrix $M$, $x$ is the row, $y$ the column:
 \begin{equation}
@@ -346,10 +374,9 @@ Final state space:
 
 \pagebreak
 \subsection{$\theta_1$}
-move $\ddot{\theta_1}$ to the left:
+move accelerations to the left:
 \begin{align}
- &+ r \ddot{\theta_3} \cos{(\theta_3 - \theta_1)} + l_1 \ddot{\theta_1} \nonumber \\
- &= r \dot{\theta_3} \sin{(\theta_3 - \theta_1)} (\dot{\theta_3} - \dot{\theta_1}) + r \dot{\theta_3} \dot{\theta_1} \sin{(\theta_3 - \theta_1)} - g \sin \theta_1
+l_1 \ddot{\theta_1} + r \ddot{\theta_3} \cos{(\theta_3 - \theta_1)} = r \dot{\theta_3}^2 \sin{(\theta_3 - \theta_1)} - g \sin \theta_1
 \end{align}
 Matrix row:
 \begin{equation}
@@ -359,14 +386,13 @@ M_1 = \begin{bmatrix}
 \end{equation}
 Function:
 \begin{equation}
-f_1 = r \dot{\theta_3} \sin{(\theta_3 - \theta_1)} (\dot{\theta_3} - \dot{\theta_1}) + r \dot{\theta_3} \dot{\theta_1} \sin{(\theta_3 - \theta_1)} - g \sin \theta_1
+f_1 = r \dot{\theta_3}^2 \sin{(\theta_3 - \theta_1)} - g \sin \theta_1
 \end{equation}
 
 \subsection{$\theta_2$}
-move $\ddot{\theta_2}$ to the left:
+move accelerations to the left:
 \begin{align}
- &- r \ddot{\theta_3} \cos{(\theta_3 - \theta_2)} + l_2 \ddot{\theta_2} \nonumber \\
- = &- r \dot{\theta_3} \sin{(\theta_3 - \theta_2)} (\dot{\theta_3} - \dot{\theta_2}) - r \dot{\theta_3} \dot{\theta_2} \sin{(\theta_3 - \theta_2)}  - g \sin \theta_2
+l_2 \ddot{\theta_2} - r \ddot{\theta_3} \cos{(\theta_3 - \theta_2)} = - r \dot{\theta_3}^2 \sin{(\theta_3 - \theta_2)} - g \sin \theta_2
 \end{align}
 Matrix row:
 \begin{equation}
@@ -376,18 +402,14 @@ M_2 = \begin{bmatrix}
 \end{equation}
 Function:
 \begin{equation}
-f_2 = - r \dot{\theta_3} \sin{(\theta_3 - \theta_2)} (\dot{\theta_3} - \dot{\theta_2}) - r \dot{\theta_3} \dot{\theta_2} \sin{(\theta_3 - \theta_2)}  - g \sin \theta_2
+f_2 = - r \dot{\theta_3}^2 \sin{(\theta_3 - \theta_2)} - g \sin \theta_2
 \end{equation}
 
 \subsection{$\theta_3$}
-move $\ddot{\theta_3}$ to the left:
+move accelerations to the left:
 \begin{align}
  &+ m_1 l_1 \ddot{\theta_1} \cos{(\theta_3 - \theta_1)} - m_2 l_2 \ddot{\theta_2} \cos{(\theta_3 - \theta_2)} + (m_1 + m_2 + \frac{1}{3} m_3) r \ddot{\theta_3} \nonumber \\
- = &+ m_1 l_1 \dot{\theta_1} \sin{(\theta_3 - \theta_1)} (\dot{\theta_3} - \dot{\theta_1}) \nonumber \\
- &- m_2 l_2 \dot{\theta_2} \sin{(\theta_3 - \theta_2)} (\dot{\theta_3} - \dot{\theta_2}) \nonumber \\
- &- m_1 \dot{\theta_3} l_1 \dot{\theta_1} \sin{(\theta_3 - \theta_1)} \nonumber \\
- &+ m_2 \dot{\theta_3} l_2 \dot{\theta_2} \sin{(\theta_3 - \theta_2)} \nonumber \\
- &- (m_1 - m2) g \sin \theta_3
+ &= - m_1 l_1 \dot{\theta_1}^2 \sin{(\theta_3 - \theta_1)} + m_2 l_2 \dot{\theta_2}^2 \sin{(\theta_3 - \theta_2)} - (m_1 - m2) g \sin \theta_3
 \end{align}
 Matrix row:
 \begin{equation}
@@ -397,11 +419,9 @@ M_3 = \begin{bmatrix}
 \end{equation}
 Function:
 \begin{align}
-f_3 = &+ m_1 l_1 \dot{\theta_1} \sin{(\theta_3 - \theta_1)} (\dot{\theta_3} - \dot{\theta_1}) \nonumber \\
- &- m_2 l_2 \dot{\theta_2} \sin{(\theta_3 - \theta_2)} (\dot{\theta_3} - \dot{\theta_2}) \nonumber \\
- &- m_1 \dot{\theta_3} l_1 \dot{\theta_1} \sin{(\theta_3 - \theta_1)} \nonumber \\
- &+ m_2 \dot{\theta_3} l_2 \dot{\theta_2} \sin{(\theta_3 - \theta_2)} \nonumber \\
- &- (m_1 - m2) g \sin \theta_3
+f_3 = &- m_1 l_1 \dot{\theta_1}^2 \sin{(\theta_3 - \theta_1)} \nonumber \\
+    &+ m_2 l_2 \dot{\theta_2}^2 \sin{(\theta_3 - \theta_2)} \nonumber \\
+    &- (m_1 - m2) g \sin \theta_3
 \end{align}
 
 \end{document}
