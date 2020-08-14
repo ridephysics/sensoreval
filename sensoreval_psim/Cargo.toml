@@ -10,5 +10,9 @@ sensoreval_gui = { path = "../sensoreval_gui" }
 sensoreval_graphics = { path = "../sensoreval_graphics" }
 
 cairo-rs = { version = "0.8" }
+clap = "2.33"
 eom = { git = "https://github.com/M1cha/eom", branch = "master" }
+lapack-src = { version = "*", features = ["openblas"] }
 ndarray = { version = "0.13" }
+ndarray-linalg = "0.12"
+pango = "0.8"
