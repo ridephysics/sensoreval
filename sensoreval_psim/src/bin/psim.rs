@@ -67,6 +67,7 @@ impl<F: Fn(&mut cairo::Context, &State)> sensoreval_gui::Callback for GuiCallbac
 
 fn main() {
     let app_m = clap::App::new("psim")
+        .setting(clap::AppSettings::AllowLeadingHyphen)
         .arg(
             clap::Arg::with_name("dt")
                 .default_value("0.001")
