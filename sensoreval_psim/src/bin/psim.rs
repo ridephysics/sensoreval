@@ -1,3 +1,4 @@
+use clap::value_t;
 use sensoreval_graphics::utils::CairoEx;
 use sensoreval_graphics::utils::ToUtilFont;
 use sensoreval_psim::Model;
@@ -160,46 +161,14 @@ fn main() {
 
     match app_m.subcommand() {
         ("double_pendulum", Some(sub_m)) => {
-            let m1: f64 = sub_m
-                .value_of("m1")
-                .unwrap()
-                .parse()
-                .expect("can't parse m1");
-            let m2: f64 = sub_m
-                .value_of("m2")
-                .unwrap()
-                .parse()
-                .expect("can't parse m2");
-            let l1: f64 = sub_m
-                .value_of("l1")
-                .unwrap()
-                .parse()
-                .expect("can't parse l1");
-            let l2: f64 = sub_m
-                .value_of("l2")
-                .unwrap()
-                .parse()
-                .expect("can't parse l2");
-            let t1: f64 = sub_m
-                .value_of("t1")
-                .unwrap()
-                .parse()
-                .expect("can't parse t1");
-            let t1d: f64 = sub_m
-                .value_of("t1d")
-                .unwrap()
-                .parse()
-                .expect("can't parse t1d");
-            let t2: f64 = sub_m
-                .value_of("t2")
-                .unwrap()
-                .parse()
-                .expect("can't parse t2");
-            let t2d: f64 = sub_m
-                .value_of("t2d")
-                .unwrap()
-                .parse()
-                .expect("can't parse t2d");
+            let m1: f64 = value_t!(sub_m, "m1", f64).unwrap();
+            let m2: f64 = value_t!(sub_m, "m2", f64).unwrap();
+            let l1: f64 = value_t!(sub_m, "l1", f64).unwrap();
+            let l2: f64 = value_t!(sub_m, "l2", f64).unwrap();
+            let t1: f64 = value_t!(sub_m, "t1", f64).unwrap();
+            let t1d: f64 = value_t!(sub_m, "t1d", f64).unwrap();
+            let t2: f64 = value_t!(sub_m, "t2", f64).unwrap();
+            let t2d: f64 = value_t!(sub_m, "t2d", f64).unwrap();
 
             gui.set_callback(Some(GuiCallback::new(
                 sensoreval_psim::models::DoublePendulum::new(m1, m2, l1, l2, dt),
@@ -214,13 +183,9 @@ fn main() {
             )));
         }
         ("pendulum", Some(sub_m)) => {
-            let l: f64 = sub_m.value_of("l").unwrap().parse().expect("can't parse l");
-            let t: f64 = sub_m.value_of("t").unwrap().parse().expect("can't parse t");
-            let td: f64 = sub_m
-                .value_of("td")
-                .unwrap()
-                .parse()
-                .expect("can't parse td");
+            let l: f64 = value_t!(sub_m, "l", f64).unwrap();
+            let t: f64 = value_t!(sub_m, "t", f64).unwrap();
+            let td: f64 = value_t!(sub_m, "td", f64).unwrap();
 
             gui.set_callback(Some(GuiCallback::new(
                 sensoreval_psim::models::Pendulum::new(l, dt),
