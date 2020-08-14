@@ -120,9 +120,11 @@ fn main() {
             gui.set_callback(Some(GuiCallback::new(
                 sensoreval_psim::models::Pendulum::new(l, dt),
                 ndarray::array![t, td],
-                |cr, state| {
-                    let m1a = state.read().unwrap()[0];
-                    sensoreval_graphics::pendulum_2d::draw(cr, m1a);
+                move |cr, state| {
+                    let state = state.read().unwrap().clone();
+                    sensoreval_graphics::pendulum_2d::draw(cr, state[0]);
+
+                    font.draw(cr, &format!("t: {}\ntd: {}", state[0], state[1]));
                 },
             )));
         }
