@@ -8,10 +8,6 @@ macro_rules! unwrap_opt_or {
     };
 }
 
-// this forces them to get linked into the binaries
-extern crate blas_src;
-extern crate lapack_src;
-
 pub mod config;
 pub mod datareader;
 mod hudrenderers;

@@ -3,6 +3,10 @@ use sensoreval_utils::IntoIteratorMap;
 use serde::Deserialize;
 use std::io::Write;
 
+// this forces them to get linked into the binaries
+extern crate blas_src;
+extern crate lapack_src;
+
 #[derive(Deserialize, Debug, Clone)]
 struct FFProbeStream {
     width: usize,

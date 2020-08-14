@@ -4,6 +4,10 @@ use ndarray_linalg::norm::Norm;
 use sensoreval::PlotUtils;
 use std::io::Write;
 
+// this forces them to get linked into the binaries
+extern crate blas_src;
+extern crate lapack_src;
+
 #[allow(clippy::many_single_char_names)]
 fn main() {
     // parse args
