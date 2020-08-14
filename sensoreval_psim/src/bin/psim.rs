@@ -65,15 +65,41 @@ impl<F: Fn(&mut cairo::Context, &State)> sensoreval_gui::Callback for GuiCallbac
 }
 
 fn main() {
-    let matches = clap::App::new("psim")
+    let app_m = clap::App::new("psim")
         .arg(
-            clap::Arg::with_name("NAME")
-                .help("name of the simulation")
-                .required(true)
-                .index(1),
+            clap::Arg::with_name("dt")
+                .default_value("0.001")
+                .long("dt")
+                .takes_value(true)
+                .help("integration time step in seconds"),
+        )
+        .subcommand(
+            clap::SubCommand::with_name("pendulum")
+                .arg(
+                    clap::Arg::with_name("l")
+                        .help("length")
+                        .long("l")
+                        .default_value("1.0"),
+                )
+                .arg(
+                    clap::Arg::with_name("t")
+                        .help("theta")
+                        .long("t")
+                        .default_value("3.0"),
+                )
+                .arg(
+                    clap::Arg::with_name("td")
+                        .help("theta-dot")
+                        .long("td")
+                        .default_value("0.0"),
+                ),
         )
         .get_matches();
-    let name = matches.value_of("NAME").unwrap();
+    let dt: f64 = app_m
+        .value_of("dt")
+        .unwrap()
+        .parse()
+        .expect("can't parse dt");
     let mut gui = sensoreval_gui::Context::default();
 
     let mut font = pango::FontDescription::new();
@@ -81,18 +107,26 @@ fn main() {
     font.set_absolute_size(30.0 * f64::from(pango::SCALE));
     let font = font.to_utilfont();
 
-    match name {
-        "pendulum" => {
+    match app_m.subcommand() {
+        ("pendulum", Some(sub_m)) => {
+            let l: f64 = sub_m.value_of("l").unwrap().parse().expect("can't parse l");
+            let t: f64 = sub_m.value_of("t").unwrap().parse().expect("can't parse t");
+            let td: f64 = sub_m
+                .value_of("td")
+                .unwrap()
+                .parse()
+                .expect("can't parse td");
+
             gui.set_callback(Some(GuiCallback::new(
-                sensoreval_psim::models::Pendulum::new(1.0, 0.001),
-                ndarray::array![std::f64::consts::PI - 0.1, 0.0],
+                sensoreval_psim::models::Pendulum::new(l, dt),
+                ndarray::array![t, td],
                 |cr, state| {
                     let m1a = state.read().unwrap()[0];
                     sensoreval_graphics::pendulum_2d::draw(cr, m1a);
                 },
             )));
         }
-        _ => panic!("unsupported sim {}", name),
+        _ => panic!("invalid subcommand"),
     }
 
     gui.set_timer_ms(15);
