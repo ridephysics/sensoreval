@@ -74,6 +74,57 @@ fn main() {
                 .help("integration time step in seconds"),
         )
         .subcommand(
+            clap::SubCommand::with_name("double_pendulum")
+                .arg(
+                    clap::Arg::with_name("m1")
+                        .help("m1")
+                        .long("m1")
+                        .default_value("1.0"),
+                )
+                .arg(
+                    clap::Arg::with_name("m2")
+                        .help("m2")
+                        .long("m2")
+                        .default_value("1.0"),
+                )
+                .arg(
+                    clap::Arg::with_name("l1")
+                        .help("l1")
+                        .long("l1")
+                        .default_value("1.0"),
+                )
+                .arg(
+                    clap::Arg::with_name("l2")
+                        .help("l2")
+                        .long("l2")
+                        .default_value("1.0"),
+                )
+                .arg(
+                    clap::Arg::with_name("t1")
+                        .help("theta1")
+                        .long("t1")
+                        .default_value("3.0"),
+                )
+                .arg(
+                    clap::Arg::with_name("t1d")
+                        .help("theta1-dot")
+                        .long("t1d")
+                        .default_value("0.0"),
+                )
+                .arg(
+                    clap::Arg::with_name("t2")
+                        .help("theta2")
+                        .long("t2")
+                        .default_value("2.0"),
+                )
+                .arg(
+                    clap::Arg::with_name("t2d")
+                        .help("theta2-dot")
+                        .long("t2d")
+                        .default_value("0.0"),
+                ),
+        )
+        .subcommand(
             clap::SubCommand::with_name("pendulum")
                 .arg(
                     clap::Arg::with_name("l")
@@ -108,6 +159,60 @@ fn main() {
     let font = font.to_utilfont();
 
     match app_m.subcommand() {
+        ("double_pendulum", Some(sub_m)) => {
+            let m1: f64 = sub_m
+                .value_of("m1")
+                .unwrap()
+                .parse()
+                .expect("can't parse m1");
+            let m2: f64 = sub_m
+                .value_of("m2")
+                .unwrap()
+                .parse()
+                .expect("can't parse m2");
+            let l1: f64 = sub_m
+                .value_of("l1")
+                .unwrap()
+                .parse()
+                .expect("can't parse l1");
+            let l2: f64 = sub_m
+                .value_of("l2")
+                .unwrap()
+                .parse()
+                .expect("can't parse l2");
+            let t1: f64 = sub_m
+                .value_of("t1")
+                .unwrap()
+                .parse()
+                .expect("can't parse t1");
+            let t1d: f64 = sub_m
+                .value_of("t1d")
+                .unwrap()
+                .parse()
+                .expect("can't parse t1d");
+            let t2: f64 = sub_m
+                .value_of("t2")
+                .unwrap()
+                .parse()
+                .expect("can't parse t2");
+            let t2d: f64 = sub_m
+                .value_of("t2d")
+                .unwrap()
+                .parse()
+                .expect("can't parse t2d");
+
+            gui.set_callback(Some(GuiCallback::new(
+                sensoreval_psim::models::DoublePendulum::new(m1, m2, l1, l2, dt),
+                ndarray::array![t1d, t2d, t1, t2],
+                move |cr, state| {
+                    let state = state.read().unwrap();
+                    let m1a = state[2];
+                    let m2a = state[3];
+                    drop(state);
+                    sensoreval_graphics::double_pendulum_2d::draw(cr, m1a, m2a, l1, l2);
+                },
+            )));
+        }
         ("pendulum", Some(sub_m)) => {
             let l: f64 = sub_m.value_of("l").unwrap().parse().expect("can't parse l");
             let t: f64 = sub_m.value_of("t").unwrap().parse().expect("can't parse t");
