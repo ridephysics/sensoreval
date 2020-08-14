@@ -12,6 +12,7 @@ use ndarray::array;
 use ndarray::azip;
 use ndarray::s;
 use sensoreval_graphics::utils::CairoEx;
+use sensoreval_graphics::utils::ToUtilFont;
 use serde::Deserialize;
 
 #[derive(Deserialize, Debug, Clone)]
@@ -440,7 +441,7 @@ impl render::HudRenderer for Pendulum {
         let dataset = ctx.get_dataset().unwrap();
         let est = self.est(ctx.actual_ts, dataset, dataid);
 
-        let mut utilfont = sensoreval_graphics::utils::Font::new(&self.font);
+        let mut utilfont = self.font.utilfont();
         utilfont.line_width = ctx.dp2px(3.0);
 
         // swingboat

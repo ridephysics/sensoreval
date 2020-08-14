@@ -105,16 +105,16 @@ pub fn circle_coords(r: f64, angle: f64) -> (f64, f64) {
 }
 
 pub struct Font<'a> {
-    pgfont: &'a pango::FontDescription,
+    pgfont: std::borrow::Cow<'a, pango::FontDescription>,
     pub color_fill: u32,
     pub color_border: u32,
     pub line_width: f64,
 }
 
 impl<'a> Font<'a> {
-    pub fn new(pgfont: &'a pango::FontDescription) -> Self {
+    pub fn new<F: Into<std::borrow::Cow<'a, pango::FontDescription>>>(pgfont: F) -> Self {
         Self {
-            pgfont,
+            pgfont: pgfont.into(),
             color_fill: 0xffff_ffff,
             color_border: 0x0000_00ff,
             line_width: 1.0,
@@ -123,7 +123,7 @@ impl<'a> Font<'a> {
 
     pub fn layout(&self, cr: &cairo::Context, text: &str) -> pango::Layout {
         let layout = pangocairo::functions::create_layout(cr).unwrap();
-        layout.set_font_description(Some(self.pgfont));
+        layout.set_font_description(Some(self.pgfont.as_ref()));
         layout.set_text(text);
 
         layout
@@ -149,6 +149,21 @@ impl<'a> Font<'a> {
         self.draw_layout(cr, &layout);
 
         layout.get_pixel_size()
+    }
+}
+
+pub trait ToUtilFont {
+    fn to_utilfont<'a>(self) -> Font<'a>;
+    fn utilfont(&self) -> Font;
+}
+
+impl ToUtilFont for pango::FontDescription {
+    fn to_utilfont<'a>(self) -> Font<'a> {
+        Font::new(std::borrow::Cow::Owned(self))
+    }
+
+    fn utilfont(&self) -> Font {
+        Font::new(std::borrow::Cow::Borrowed(self))
     }
 }
 

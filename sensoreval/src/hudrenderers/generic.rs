@@ -4,6 +4,7 @@ use crate::render::HudRenderer;
 use crate::Error;
 use crate::PlotUtils;
 use ndarray_linalg::norm::Norm;
+use sensoreval_graphics::utils::ToUtilFont;
 
 pub(crate) struct Generic {
     font: pango::FontDescription,
@@ -34,7 +35,7 @@ impl render::HudRenderer for Generic {
         let dataid = unwrap_opt_or!(ctx.current_data_id(), return Err(Error::SampleNotFound));
         let dataset = ctx.get_dataset().unwrap();
 
-        let mut utilfont = sensoreval_graphics::utils::Font::new(&self.font);
+        let mut utilfont = self.font.utilfont();
         utilfont.line_width = ctx.dp2px(3.0);
 
         let dataslice = &dataset[0..dataid];
