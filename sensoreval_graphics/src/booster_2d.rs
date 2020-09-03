@@ -3,7 +3,6 @@ use crate::utils::CairoEx;
 pub fn draw(cr: &cairo::Context, m1a: f64, m2a: f64, m3a: f64) {
     let ssz = cr.surface_sz_user();
     let m1r = 10.0;
-    let m1y = ssz.1 / 2.0 - m1r;
 
     cr.save();
     cr.translate(ssz.0 / 2.0, ssz.1 / 2.0);
