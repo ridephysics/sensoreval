@@ -11,13 +11,13 @@ where
     Sm: ndarray::RawData<Elem = Am>,
     Sc: ndarray::RawData<Elem = Ac>,
 {
-    let dim = dim.unwrap_or(mean.len());
+    let dim = dim.unwrap_or_else(|| mean.len());
 
     if mean.shape()[0] != dim {
         return Err(Error::WrongVecLen(dim));
     }
 
-    if cov.shape() != &[dim, dim] {
+    if cov.shape() != [dim, dim] {
         return Err(Error::NotSquare);
     }
 
