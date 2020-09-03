@@ -3,6 +3,7 @@ mod native {
     #![allow(non_camel_case_types)]
     #![allow(non_snake_case)]
     #![allow(dead_code)]
+    #![allow(clippy::redundant_static_lifetimes)]
     include!(concat!(env!("OUT_DIR"), "/bindings.rs"));
 }
 
@@ -114,7 +115,7 @@ impl<'a, 'b> Context<'a, 'b> {
             .videopath
             .as_ref()
             .map(|v| v.as_ptr())
-            .unwrap_or_else(|| std::ptr::null())
+            .unwrap_or_else(std::ptr::null)
     }
 
     pub fn set_callback<C>(&mut self, callback: Option<C>)
