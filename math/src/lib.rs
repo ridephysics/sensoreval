@@ -104,6 +104,43 @@ where
     ]
 }
 
+pub trait Cross<Rhs> {
+    type Output;
+    fn cross(&self, rhs: &Rhs) -> Self::Output;
+}
+
+impl<A, S, S2> Cross<ndarray::ArrayBase<S2, ndarray::Ix1>> for ndarray::ArrayBase<S, ndarray::Ix1>
+where
+    S: ndarray::Data<Elem = A>,
+    S2: ndarray::Data<Elem = A>,
+    A: ndarray::LinalgScalar,
+{
+    type Output = ndarray::Array1<A>;
+
+    fn cross(&self, rhs: &ndarray::ArrayBase<S2, ndarray::Ix1>) -> Self::Output {
+        let a = self;
+        let b = rhs;
+
+        assert_eq!(a.dim(), (3));
+        assert_eq!(b.dim(), (3));
+
+        array![
+            a[1] * b[2] - a[2] * b[1],
+            a[2] * b[0] - a[0] * b[2],
+            a[0] * b[1] - a[1] * b[0]
+        ]
+    }
+}
+
+/// Source: https://stackoverflow.com/a/33920320/2035624
+pub fn line_angle_2d(x1: f64, y1: f64, x2: f64, y2: f64) -> f64 {
+    let a = array![1.0, 0.0, 0.0];
+    let b = array![x2 - x1, y2 - y1, 0.0];
+    let n = array![0.0, 0.0, -1.0];
+
+    b.cross(&a).dot(&n).atan2(a.dot(&b))
+}
+
 #[cfg(test)]
 mod tests {
     use approx::assert_abs_diff_eq;
@@ -180,5 +217,56 @@ mod tests {
 
         let x = super::rot2d(&array![0.0, 1.0], -std::f64::consts::FRAC_PI_2);
         testlib::assert_arr1_eq(&x, &array![1.0, 0.0]);
+    }
+
+    #[test]
+    fn line_angle_2d() {
+        // 0deg
+        assert_abs_diff_eq!(
+            super::line_angle_2d(0.0, 0.0, 1.0, 0.0),
+            0.0,
+            epsilon = 1.0e-3
+        );
+        assert_abs_diff_eq!(
+            super::line_angle_2d(0.0, 0.0, -1.0, 0.0),
+            std::f64::consts::PI,
+            epsilon = 1.0e-3
+        );
+
+        // +-45deg
+        assert_abs_diff_eq!(
+            super::line_angle_2d(0.0, 0.0, 1.0, 1.0),
+            std::f64::consts::FRAC_PI_4,
+            epsilon = 1.0e-3
+        );
+        assert_abs_diff_eq!(
+            super::line_angle_2d(0.0, 0.0, 1.0, -1.0),
+            -std::f64::consts::FRAC_PI_4,
+            epsilon = 1.0e-3
+        );
+
+        // +-90deg
+        assert_abs_diff_eq!(
+            super::line_angle_2d(0.0, 0.0, 0.0, 1.0),
+            std::f64::consts::FRAC_PI_2,
+            epsilon = 1.0e-3
+        );
+        assert_abs_diff_eq!(
+            super::line_angle_2d(0.0, 0.0, 0.0, -1.0),
+            -std::f64::consts::FRAC_PI_2,
+            epsilon = 1.0e-3
+        );
+
+        // +-135deg
+        assert_abs_diff_eq!(
+            super::line_angle_2d(0.0, 0.0, -1.0, 1.0),
+            std::f64::consts::FRAC_PI_2 + std::f64::consts::FRAC_PI_4,
+            epsilon = 1.0e-3
+        );
+        assert_abs_diff_eq!(
+            super::line_angle_2d(0.0, 0.0, -1.0, -1.0),
+            -std::f64::consts::FRAC_PI_2 - std::f64::consts::FRAC_PI_4,
+            epsilon = 1.0e-3
+        );
     }
 }
