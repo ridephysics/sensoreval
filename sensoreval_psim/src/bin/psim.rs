@@ -65,6 +65,14 @@ impl<F: Fn(&mut cairo::Context, &State)> sensoreval_gui::Callback for GuiCallbac
     }
 }
 
+fn vararg<'a, 'b>(name: &'a str, dval: &'a str) -> clap::Arg<'a, 'b> {
+    clap::Arg::with_name(name)
+        .help(name)
+        .long(name)
+        .default_value(dval)
+        .takes_value(true)
+}
+
 fn main() {
     let app_m = clap::App::new("psim")
         .setting(clap::AppSettings::AllowLeadingHyphen)
@@ -77,75 +85,20 @@ fn main() {
         )
         .subcommand(
             clap::SubCommand::with_name("double_pendulum")
-                .arg(
-                    clap::Arg::with_name("m1")
-                        .help("m1")
-                        .long("m1")
-                        .default_value("1.0"),
-                )
-                .arg(
-                    clap::Arg::with_name("m2")
-                        .help("m2")
-                        .long("m2")
-                        .default_value("1.0"),
-                )
-                .arg(
-                    clap::Arg::with_name("l1")
-                        .help("l1")
-                        .long("l1")
-                        .default_value("1.0"),
-                )
-                .arg(
-                    clap::Arg::with_name("l2")
-                        .help("l2")
-                        .long("l2")
-                        .default_value("1.0"),
-                )
-                .arg(
-                    clap::Arg::with_name("t1")
-                        .help("theta1")
-                        .long("t1")
-                        .default_value("3.0"),
-                )
-                .arg(
-                    clap::Arg::with_name("t1d")
-                        .help("theta1-dot")
-                        .long("t1d")
-                        .default_value("0.0"),
-                )
-                .arg(
-                    clap::Arg::with_name("t2")
-                        .help("theta2")
-                        .long("t2")
-                        .default_value("2.0"),
-                )
-                .arg(
-                    clap::Arg::with_name("t2d")
-                        .help("theta2-dot")
-                        .long("t2d")
-                        .default_value("0.0"),
-                ),
+                .arg(vararg("m1", "1.0"))
+                .arg(vararg("m2", "1.0"))
+                .arg(vararg("l1", "1.0"))
+                .arg(vararg("l2", "1.0"))
+                .arg(vararg("t1", "3.0"))
+                .arg(vararg("t1d", "0.0"))
+                .arg(vararg("t2", "2.0"))
+                .arg(vararg("t2d", "0.0")),
         )
         .subcommand(
             clap::SubCommand::with_name("pendulum")
-                .arg(
-                    clap::Arg::with_name("l")
-                        .help("length")
-                        .long("l")
-                        .default_value("1.0"),
-                )
-                .arg(
-                    clap::Arg::with_name("t")
-                        .help("theta")
-                        .long("t")
-                        .default_value("3.0"),
-                )
-                .arg(
-                    clap::Arg::with_name("td")
-                        .help("theta-dot")
-                        .long("td")
-                        .default_value("0.0"),
-                ),
+                .arg(vararg("l", "1.0"))
+                .arg(vararg("t", "3.0"))
+                .arg(vararg("td", "0.0")),
         )
         .get_matches();
     let dt: f64 = app_m
