@@ -7,7 +7,7 @@ pub fn draw(cr: &cairo::Context, m1a: f64) {
 
     cr.save();
     cr.translate(ssz.0 / 2.0, ssz.1 / 2.0);
-    cr.rotate(m1a);
+    cr.rotate(-m1a);
 
     // rod
     cr.set_line_width(10.0);
