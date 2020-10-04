@@ -5,7 +5,7 @@ authors = ["Michael Zimmermann <sigmaepsilon92@gmail.com>"]
 edition = "2018"
 
 [dependencies]
-cairo-rs = "0.8"
+cairo-rs = "0.8.0"
 math = { path = "../math" }
 gio = "*"
 glib = "*"

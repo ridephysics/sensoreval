@@ -9,7 +9,7 @@ math = { path = "../math" }
 sensoreval_gui = { path = "../sensoreval_gui" }
 sensoreval_graphics = { path = "../sensoreval_graphics" }
 
-cairo-rs = { version = "0.8" }
+cairo-rs = { version = "0.8.0" }
 clap = "2.33"
 eom = { git = "https://github.com/M1cha/eom", branch = "master" }
 lapack-src = { version = "*", features = ["openblas"] }
