@@ -17,3 +17,4 @@ nalgebra = "0.22"
 ndarray = { version = "0.13" }
 ndarray-linalg = "0.12"
 pango = "0.8"
+serde = "1.0"

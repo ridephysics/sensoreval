@@ -9,13 +9,21 @@ pub trait Model {
 }
 
 pub trait ToImuSample {
-    fn to_imusample<S>(
+    fn to_accel<Sa, Sb>(
         &self,
-        state: &ndarray::ArrayBase<S, ndarray::Ix1>,
-        accel: &mut ndarray::ArrayBase<S, ndarray::Ix1>,
-        gyro: &mut ndarray::ArrayBase<S, ndarray::Ix1>,
+        state: &ndarray::ArrayBase<Sa, ndarray::Ix1>,
+        accel: &mut ndarray::ArrayBase<Sb, ndarray::Ix1>,
     ) where
-        S: ndarray::DataMut<Elem = f64>;
+        Sa: ndarray::Data<Elem = f64>,
+        Sb: ndarray::DataMut<Elem = f64>;
+
+    fn to_gyro<Sa, Sb>(
+        &self,
+        state: &ndarray::ArrayBase<Sa, ndarray::Ix1>,
+        gyro: &mut ndarray::ArrayBase<Sb, ndarray::Ix1>,
+    ) where
+        Sa: ndarray::Data<Elem = f64>,
+        Sb: ndarray::DataMut<Elem = f64>;
 }
 
 macro_rules! impl_model_inner {

@@ -1,6 +1,5 @@
 use crate::datareader;
 use crate::hudrenderers;
-use crate::simulator;
 use crate::Error;
 
 use serde::Deserialize;
@@ -104,6 +103,33 @@ pub struct SensorData {
     pub calibration: Option<String>,
 }
 
+#[derive(Deserialize, Debug)]
+#[serde(tag = "type")]
+pub enum SimulatorModel {
+    #[serde(rename = "pendulum")]
+    Pendulum(sensoreval_psim::models::PendulumParams),
+}
+
+#[derive(Deserialize, Debug)]
+pub struct SimulatorData {
+    /// optional control input
+    /// each element is an array where the first element is a time in seconds
+    /// with model-specific arguments following
+    #[serde(default)]
+    control_input: Vec<Vec<f64>>,
+    /// unit: seconds
+    dt: f64,
+    /// unit: seconds
+    duration: f64,
+    /// initial eom vector
+    initial: Vec<f64>,
+    /// unit: seconds
+    #[serde(default)]
+    start_off: f64,
+
+    model: SimulatorModel,
+}
+
 /// data source type and information
 #[derive(Deserialize, Debug)]
 #[serde(tag = "type")]
@@ -111,9 +137,8 @@ pub enum DataSource {
     /// use actual sensor data
     #[serde(rename = "sensordata")]
     SensorData(SensorData),
-    /// use the pendulum simulator
-    #[serde(rename = "sim_pendulum")]
-    SimPendulum(simulator::pendulum::Config),
+    #[serde(rename = "simulator")]
+    SimulatorData(SimulatorData),
 }
 
 /// noise for X, Y and Z
@@ -152,6 +177,9 @@ pub struct Data {
     /// optionally add noise to the data using thread_rng
     #[serde(default)]
     pub noise: DataNoise,
+    /// rotate IMU data, 3 axis(ENU), unit: rad
+    #[serde(default)]
+    pub rot: Option<Vec<f64>>,
 }
 
 /// renderer type for the HUD and the data plot
@@ -255,17 +283,78 @@ impl Config {
         }
     }
 
+    fn rotate_sample(&self, sample: &mut crate::Data) {
+        let rot = unwrap_opt_or!(self.data.rot.as_ref(), return);
+        sensoreval_psim::utils::rotate_imudata(rot, &mut sample.accel);
+        sensoreval_psim::utils::rotate_imudata(rot, &mut sample.gyro);
+    }
+
+    fn next_control_input_time(d: &SimulatorData, id: usize) -> Option<f64> {
+        if id >= d.control_input.len() {
+            None
+        } else {
+            Some(d.control_input[id][0])
+        }
+    }
+
+    fn load_data_model<M: sensoreval_psim::Model + sensoreval_psim::ToImuSample>(
+        d: &SimulatorData,
+        mut model: M,
+    ) -> Result<Vec<crate::Data>, Error> {
+        let nsamples = (d.duration / d.dt) as usize;
+        let mut ret = Vec::new();
+
+        let mut x = ndarray::Array::from(d.initial.clone());
+        let mut ciid = 0;
+        let mut next_input_time = Self::next_control_input_time(d, ciid);
+
+        for id in 0..nsamples {
+            let t = id as f64 * d.dt + d.start_off;
+            let t_us = (t * 1_000_000.0) as u64;
+
+            let mut sample = crate::Data::default();
+            sample.time = t_us;
+            sample.time_baro = t_us;
+            sample.actual = Some(x.clone());
+            model.to_accel(&x, &mut sample.accel);
+            model.to_gyro(&x, &mut sample.gyro);
+            ret.push(sample);
+
+            if let Some(nit) = next_input_time {
+                if t + d.dt >= nit {
+                    model.set_control_input(Some(&d.control_input[ciid][1..]));
+
+                    ciid += 1;
+                    next_input_time = Self::next_control_input_time(d, ciid);
+                }
+            }
+
+            model.step(&mut x);
+        }
+
+        Ok(ret)
+    }
+
+    fn load_data_sim(d: &SimulatorData) -> Result<Vec<crate::Data>, Error> {
+        match &d.model {
+            SimulatorModel::Pendulum(cfg) => {
+                Self::load_data_model(d, sensoreval_psim::models::Pendulum::new(cfg.clone(), d.dt))
+            }
+        }
+    }
+
     /// load data from configured source
     pub fn load_data(&self) -> Result<Vec<crate::Data>, Error> {
         let mut ret = match &self.data.source {
             DataSource::SensorData(_) => datareader::read_all_samples_cfg(self),
-            DataSource::SimPendulum(cfg) => simulator::pendulum::generate(cfg),
+            DataSource::SimulatorData(d) => Self::load_data_sim(d),
         };
 
         if let Ok(samples) = &mut ret {
             let mut rng = rand::thread_rng();
 
-            for sample in samples {
+            for mut sample in samples {
+                self.rotate_sample(&mut sample);
                 Self::add_noise(&mut sample.accel, &self.data.noise.accel, &mut rng);
                 Self::add_noise(&mut sample.gyro, &self.data.noise.gyro, &mut rng);
                 Self::add_noise(&mut sample.mag, &self.data.noise.mag, &mut rng);
@@ -290,6 +379,7 @@ impl Config {
                     calibration: None,
                 }),
                 noise: DataNoise::default(),
+                rot: None,
             },
             hud: Hud::default(),
         }

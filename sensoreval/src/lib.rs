@@ -12,7 +12,6 @@ pub mod config;
 pub mod datareader;
 mod hudrenderers;
 pub mod render;
-mod simulator;
 
 mod data;
 pub use data::id_for_time;

@@ -9,6 +9,7 @@ kalman = { path = "../kalman" }
 math = { path = "../math" }
 sensoreval_gui = { path = "../sensoreval_gui" }
 sensoreval_graphics = { path = "../sensoreval_graphics" }
+sensoreval_psim = { path = "../sensoreval_psim" }
 sensoreval_utils = { path = "../sensoreval_utils" }
 
 approx = "0.3"

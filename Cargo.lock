@@ -2105,6 +2105,7 @@ dependencies = [
  "regex",
  "sensoreval_graphics",
  "sensoreval_gui",
+ "sensoreval_psim",
  "sensoreval_utils",
  "serde",
  "serde-pickle",
@@ -2157,6 +2158,7 @@ dependencies = [
  "pango",
  "sensoreval_graphics",
  "sensoreval_gui",
+ "serde",
 ]
 
 [[package]]

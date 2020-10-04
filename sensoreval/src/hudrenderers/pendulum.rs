@@ -5,14 +5,14 @@ use crate::Data;
 use crate::Error;
 use crate::PlotUtils;
 use bincode::config::Options;
-use eom::traits::Scheme;
-use eom::traits::TimeEvolution;
 use kalman::ukf::Functions;
 use ndarray::array;
 use ndarray::azip;
 use ndarray::s;
 use sensoreval_graphics::utils::CairoEx;
 use sensoreval_graphics::utils::ToUtilFont;
+use sensoreval_psim::Model;
+use sensoreval_psim::ToImuSample;
 use serde::Deserialize;
 
 #[derive(Deserialize, Debug, Clone)]
@@ -65,21 +65,25 @@ impl<'a> kalman::ukf::Functions for StateFunctions {
         let pa = x[0];
         let va = x[1];
         let r = x[2];
-        let orientation_offset = x[3];
+        let sensor_pos = x[3];
         let rot_east = x[4];
         let rot_north = x[5];
         let rot_up = x[6];
 
-        let mut teo =
-            eom::explicit::RK4::new(crate::simulator::pendulum::EomFns::from_radius(r), dt);
-        let mut ic = array![pa, va];
-        let next = teo.iterate(&mut ic);
+        let mut next = array![pa, va];
+        let params = sensoreval_psim::models::PendulumParams {
+            radius: r,
+            sensor_pos,
+            motor: None,
+        };
+        let mut model = sensoreval_psim::models::Pendulum::new(params, dt);
+        model.step(&mut next);
 
         array![
             math::normalize_angle(next[0]),
             next[1],
             r,
-            math::normalize_angle(orientation_offset),
+            math::normalize_angle(sensor_pos),
             math::normalize_angle(rot_east),
             math::normalize_angle(rot_north),
             math::normalize_angle(rot_up),
@@ -155,38 +159,25 @@ impl<'a> kalman::ukf::Functions for StateFunctions {
     where
         S: ndarray::Data<Elem = Self::Elem>,
     {
-        let pa = x[0];
-        let va = x[1];
+        let modelstate = x.slice(ndarray::s![0..2]);
         let r = x[2];
-        let orientation_offset = x[3];
-        let rot_east = x[4];
-        let rot_north = x[5];
-        let rot_up = x[6];
-        let ac = va.powi(2) * r;
+        let sensor_pos = x[3];
+        let rot = x.slice(ndarray::s![4..7]);
+        let rot = rot.as_slice().unwrap();
 
-        let accel = nalgebra::Vector3::new(
-            0.0,
-            0.0,
-            ac + math::GRAVITY * (pa + orientation_offset).cos(),
-        );
-        let gyro = nalgebra::Vector3::new(va, 0.0, 0.0);
+        let params = sensoreval_psim::models::PendulumParams {
+            radius: r,
+            sensor_pos,
+            motor: None,
+        };
+        let model = sensoreval_psim::models::Pendulum::new(params, 0.1);
 
-        let axis_east = nalgebra::Unit::new_normalize(nalgebra::Vector3::new(1.0, 0.0, 0.0));
-        let q = nalgebra::UnitQuaternion::from_axis_angle(&axis_east, rot_east);
-        let accel = q * accel;
-        let gyro = q * gyro;
-
-        let axis_north = nalgebra::Unit::new_normalize(nalgebra::Vector3::new(0.0, 1.0, 0.0));
-        let q = nalgebra::UnitQuaternion::from_axis_angle(&axis_north, rot_north);
-        let accel = q * accel;
-        let gyro = q * gyro;
-
-        let axis_up = nalgebra::Unit::new_normalize(nalgebra::Vector3::new(0.0, 0.0, 1.0));
-        let q = nalgebra::UnitQuaternion::from_axis_angle(&axis_up, rot_up);
-        let accel = q * accel;
-        let gyro = q * gyro;
-
-        array![accel[0], accel[1], accel[2], gyro[0], gyro[1], gyro[2]]
+        let mut z = ndarray::Array::zeros(6);
+        model.to_accel(&modelstate, &mut z.slice_mut(ndarray::s![0..3]));
+        model.to_gyro(&modelstate, &mut z.slice_mut(ndarray::s![3..6]));
+        sensoreval_psim::utils::rotate_imudata(rot, &mut z.slice_mut(ndarray::s![0..3]));
+        sensoreval_psim::utils::rotate_imudata(rot, &mut z.slice_mut(ndarray::s![3..6]));
+        z
     }
 
     #[allow(non_snake_case)]

@@ -140,9 +140,14 @@ fn main() {
             let l: f64 = value_t!(sub_m, "l", f64).unwrap();
             let t: f64 = value_t!(sub_m, "t", f64).unwrap();
             let td: f64 = value_t!(sub_m, "td", f64).unwrap();
+            let params = sensoreval_psim::models::PendulumParams {
+                radius: l,
+                sensor_pos: 0.0,
+                motor: None,
+            };
 
             gui.set_callback(Some(GuiCallback::new(
-                sensoreval_psim::models::Pendulum::new(l, dt),
+                sensoreval_psim::models::Pendulum::new(params, dt),
                 ndarray::array![t, td],
                 move |cr, state| {
                     let state = state.read().unwrap().clone();
