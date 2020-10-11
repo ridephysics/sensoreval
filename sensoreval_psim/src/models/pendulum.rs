@@ -4,6 +4,7 @@ use eom::traits::TimeStep;
 use std::convert::TryInto;
 
 #[derive(Clone, serde::Deserialize, Debug)]
+#[serde(deny_unknown_fields)]
 pub struct GroundMotor {
     /// defines how long half the ship is. This is used to determine at which
     /// angle the motor starts contacting the ship. unit: rad
@@ -18,6 +19,7 @@ pub enum Motor {
 }
 
 #[derive(Clone, serde::Deserialize, Debug)]
+#[serde(deny_unknown_fields)]
 pub struct Params {
     pub radius: f64,
     #[serde(default)]

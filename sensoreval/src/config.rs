@@ -7,6 +7,7 @@ use std::io::Read;
 
 /// video source information
 #[derive(Deserialize, Debug)]
+#[serde(deny_unknown_fields)]
 pub struct Video {
     /// start offset in milli seconds
     #[serde(default)]
@@ -35,6 +36,7 @@ impl Default for Video {
 
 /// map sensor axes. index: destination, value: source + 1, can be negative
 #[derive(Deserialize, Debug)]
+#[serde(deny_unknown_fields)]
 pub struct AxisMap(Vec<isize>);
 
 impl Default for AxisMap {
@@ -77,6 +79,7 @@ impl AxisMap {
 
 /// sensordata data source
 #[derive(Deserialize, Debug)]
+#[serde(deny_unknown_fields)]
 pub struct SensorData {
     /// time offset relative to the start of the video (ignoring it's startoff), unit: micro seconds
     #[serde(default)]
@@ -111,6 +114,7 @@ pub enum SimulatorModel {
 }
 
 #[derive(Deserialize, Debug)]
+#[serde(deny_unknown_fields)]
 pub struct SimulatorData {
     /// optional control input
     /// each element is an array where the first element is a time in seconds
@@ -143,6 +147,7 @@ pub enum DataSource {
 
 /// noise for X, Y and Z
 #[derive(Deserialize, Debug, Default)]
+#[serde(deny_unknown_fields)]
 pub struct NoiseXYZ {
     /// range passed to [gen_range](../../rand/trait.Rng.html#method.gen_range)
     #[serde(default)]
@@ -157,6 +162,7 @@ pub struct NoiseXYZ {
 
 /// noise for all sensor types
 #[derive(Deserialize, Debug, Default)]
+#[serde(deny_unknown_fields)]
 pub struct DataNoise {
     /// accelerometer noise, unit: same as [Config.accel](../struct.Data.html#structfield.accel)
     #[serde(default)]
@@ -171,6 +177,7 @@ pub struct DataNoise {
 
 /// data configuration
 #[derive(Deserialize, Debug)]
+#[serde(deny_unknown_fields)]
 pub struct Data {
     /// data source type and information
     pub source: DataSource,
@@ -214,6 +221,7 @@ impl Default for OrientationMode {
 
 /// HUD config
 #[derive(Deserialize, Debug)]
+#[serde(deny_unknown_fields)]
 pub struct Hud {
     /// renderer type and information
     #[serde(default)]
@@ -234,6 +242,7 @@ impl Default for Hud {
 
 /// global configuration
 #[derive(Deserialize, Debug)]
+#[serde(deny_unknown_fields)]
 pub struct Config {
     /// video config
     #[serde(default)]
@@ -247,6 +256,7 @@ pub struct Config {
 
 /// standard deviation for one sensor's XYZ axes
 #[derive(Deserialize, Debug, Clone)]
+#[serde(deny_unknown_fields)]
 pub struct SensorStdevXYZ {
     pub x: f64,
     pub y: f64,
@@ -255,6 +265,7 @@ pub struct SensorStdevXYZ {
 
 /// standard deviation for all sensors
 #[derive(Deserialize, Debug, Clone)]
+#[serde(deny_unknown_fields)]
 pub struct SensorStdev {
     /// unit: same as [Config.accel](../struct.Data.html#structfield.accel)
     pub accel: SensorStdevXYZ,
