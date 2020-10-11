@@ -4,6 +4,8 @@ pub trait Model {
         S: ndarray::DataMut<Elem = f64>;
     fn set_dt(&mut self, dt: f64);
     fn dt(&self) -> f64;
+
+    fn set_control_input(&mut self, _ci: Option<&[f64]>) {}
 }
 
 pub trait ToImuSample {
