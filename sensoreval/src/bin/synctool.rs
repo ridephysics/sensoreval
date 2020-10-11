@@ -10,12 +10,24 @@ extern crate lapack_src;
 #[allow(clippy::many_single_char_names)]
 fn main() {
     // parse args
-    let args: Vec<String> = std::env::args().collect();
-    if args.len() != 2 {
-        println!("Usage: {} CONFIG", args[0]);
-        std::process::exit(1);
-    }
-    let cfgname = &args[1];
+    let matches = clap::App::new("synctool")
+        .version("0.1")
+        .arg(
+            clap::Arg::with_name("CONFIG")
+                .help("config file to use")
+                .required(true)
+                .index(1),
+        )
+        .arg(
+            clap::Arg::with_name("seconds")
+                .long("seconds")
+                .required(false)
+                .takes_value(false)
+                .help("use seconds instead of indices for the x-axis"),
+        )
+        .get_matches();
+    let cfgname = matches.value_of("CONFIG").unwrap();
+    let seconds = matches.is_present("seconds");
 
     // load config
     let mut cfg = config::load(&cfgname).expect("can't load config");
@@ -39,7 +51,17 @@ fn main() {
 
     // plot
     let mut plot = sensoreval_utils::Plot::new("/tmp/sensoreval-plot.html").unwrap();
-    let x: Vec<f64> = samples.iter().enumerate().map(|(i, _)| i as f64).collect();
+    let x: Vec<f64> = samples
+        .iter()
+        .enumerate()
+        .map(|(i, sample)| {
+            if seconds {
+                sample.time_seconds()
+            } else {
+                i as f64
+            }
+        })
+        .collect();
 
     plot.add_measurements(&samples, &x).unwrap();
 
