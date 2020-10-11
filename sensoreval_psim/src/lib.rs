@@ -46,3 +46,4 @@ macro_rules! impl_model {
 }
 
 pub mod models;
+pub mod utils;

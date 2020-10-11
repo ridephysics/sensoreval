@@ -2151,6 +2151,7 @@ dependencies = [
  "eom",
  "lapack-src",
  "math",
+ "nalgebra 0.22.0",
  "ndarray",
  "ndarray-linalg",
  "pango",
