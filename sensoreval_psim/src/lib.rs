@@ -6,6 +6,16 @@ pub trait Model {
     fn dt(&self) -> f64;
 }
 
+pub trait ToImuSample {
+    fn to_imusample<S>(
+        &self,
+        state: &ndarray::ArrayBase<S, ndarray::Ix1>,
+        accel: &mut ndarray::ArrayBase<S, ndarray::Ix1>,
+        gyro: &mut ndarray::ArrayBase<S, ndarray::Ix1>,
+    ) where
+        S: ndarray::DataMut<Elem = f64>;
+}
+
 macro_rules! impl_model_inner {
     ($field:ident) => {
         fn step<S>(&mut self, x: &mut ndarray::ArrayBase<S, ndarray::Ix1>)
