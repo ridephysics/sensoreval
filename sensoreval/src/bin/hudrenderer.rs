@@ -202,12 +202,23 @@ fn main() {
                 .value_name("SIMCFG")
                 .help("simulation config"),
         )
+        .arg(
+            clap::Arg::with_name("force_generic")
+                .long("force-generic")
+                .required(false)
+                .takes_value(false)
+                .help("force using generic hudrenderer"),
+        )
         .get_matches();
 
     let cfgname = matches.value_of("CONFIG").unwrap();
+    let force_generic = matches.is_present("force_generic");
 
     // load config
-    let cfg = config::load(&cfgname).expect("can't load config");
+    let mut cfg = config::load(&cfgname).expect("can't load config");
+    if force_generic {
+        cfg.hud.renderer = config::HudRenderer::Generic;
+    }
     println!("config: {:#?}", cfg);
 
     // load data
@@ -236,7 +247,11 @@ fn main() {
             renderctx.plot(&mut plot).expect("can't plot");
 
             if let Some(simcfgname) = matches.value_of("simcfg") {
-                let simcfg = config::load(&simcfgname).expect("can't load sim config");
+                let mut simcfg = config::load(&simcfgname).expect("can't load sim config");
+                if force_generic {
+                    simcfg.hud.renderer = config::HudRenderer::Generic;
+                }
+
                 let simsamples = simcfg.load_data().expect("can't read sim samples");
                 let simrenderctx = render::Context::new(&simcfg, Some(&simsamples));
 
