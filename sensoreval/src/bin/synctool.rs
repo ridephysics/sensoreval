@@ -1,6 +1,5 @@
 use sensoreval::*;
 
-use ndarray_linalg::norm::Norm;
 use sensoreval::PlotUtils;
 use std::io::Write;
 
@@ -47,11 +46,6 @@ fn main() {
     let mut trace = sensoreval_utils::Plot::default_line();
     trace.x(&x).name("measurement");
     trace.line().color(sensoreval_utils::COLOR_M);
-
-    let y: Vec<f64> = samples.iter().map(|s| s.accel.norm_l2()).collect();
-    trace.y(&y);
-    plot.add_row(Some("norm-a")).unwrap();
-    plot.add_trace(&mut trace).unwrap();
 
     let y: Vec<f64> = samples
         .iter()
