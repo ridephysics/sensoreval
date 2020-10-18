@@ -9,7 +9,7 @@ math = { path = "../math" }
 sensoreval_gui = { path = "../sensoreval_gui" }
 sensoreval_graphics = { path = "../sensoreval_graphics" }
 
-cairo-rs = { version = "0.8.0" }
+cairo-rs = "0.8.0"
 clap = "2.33"
 enum_dispatch = "0.3"
 eom = { git = "https://github.com/M1cha/eom", branch = "master" }
@@ -18,4 +18,4 @@ nalgebra = "0.22"
 ndarray = { version = "0.13" }
 ndarray-linalg = "0.12"
 pango = "0.8"
-serde = "1.0"
+serde = { version = "1.0", features = ["derive"] }
