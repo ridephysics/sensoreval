@@ -2,6 +2,8 @@ use crate::datareader;
 use crate::hudrenderers;
 use crate::Error;
 
+use sensoreval_psim::Model;
+use sensoreval_psim::ToImuSample;
 use serde::Deserialize;
 use std::io::Read;
 
@@ -107,13 +109,6 @@ pub struct SensorData {
 }
 
 #[derive(Deserialize, Debug)]
-#[serde(tag = "type")]
-pub enum SimulatorModel {
-    #[serde(rename = "pendulum")]
-    Pendulum(sensoreval_psim::models::PendulumParams),
-}
-
-#[derive(Deserialize, Debug)]
 #[serde(deny_unknown_fields)]
 pub struct SimulatorData {
     /// optional control input
@@ -131,7 +126,7 @@ pub struct SimulatorData {
     #[serde(default)]
     start_off: f64,
 
-    model: SimulatorModel,
+    model: sensoreval_psim::models::Params,
 }
 
 /// data source type and information
@@ -308,10 +303,8 @@ impl Config {
         }
     }
 
-    fn load_data_model<M: sensoreval_psim::Model + sensoreval_psim::ToImuSample>(
-        d: &SimulatorData,
-        mut model: M,
-    ) -> Result<Vec<crate::Data>, Error> {
+    fn load_data_sim(d: &SimulatorData) -> Result<Vec<crate::Data>, Error> {
+        let mut model = d.model.to_model_enum(d.dt);
         let nsamples = (d.duration / d.dt) as usize;
         let mut ret = Vec::new();
 
@@ -344,14 +337,6 @@ impl Config {
         }
 
         Ok(ret)
-    }
-
-    fn load_data_sim(d: &SimulatorData) -> Result<Vec<crate::Data>, Error> {
-        match &d.model {
-            SimulatorModel::Pendulum(cfg) => {
-                Self::load_data_model(d, sensoreval_psim::models::Pendulum::new(cfg.clone(), d.dt))
-            }
-        }
     }
 
     /// load data from configured source
