@@ -5,6 +5,7 @@ pub mod pendulum;
 pub use pendulum::Params as PendulumParams;
 pub use pendulum::Pendulum;
 
+use crate::DrawState;
 use crate::Model;
 use crate::ToImuSample;
 
@@ -23,6 +24,7 @@ impl Params {
     }
 }
 
+#[enum_dispatch::enum_dispatch(DrawState)]
 #[enum_dispatch::enum_dispatch(Model)]
 #[enum_dispatch::enum_dispatch(ToImuSample)]
 pub enum ModelEnum {

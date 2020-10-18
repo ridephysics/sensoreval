@@ -125,3 +125,12 @@ impl crate::ToImuSample for Pendulum {
         gyro.assign(&ndarray::array![state[1], 0.0, 0.0]);
     }
 }
+
+impl crate::DrawState for Pendulum {
+    fn draw_state<S>(&self, cr: &cairo::Context, state: &ndarray::ArrayBase<S, ndarray::Ix1>)
+    where
+        S: ndarray::DataMut<Elem = f64>,
+    {
+        sensoreval_graphics::pendulum_2d::draw(cr, state[0]);
+    }
+}

@@ -28,6 +28,13 @@ pub trait ToImuSample {
         Sb: ndarray::DataMut<Elem = f64>;
 }
 
+#[enum_dispatch::enum_dispatch]
+pub trait DrawState {
+    fn draw_state<S>(&self, cr: &cairo::Context, state: &ndarray::ArrayBase<S, ndarray::Ix1>)
+    where
+        S: ndarray::DataMut<Elem = f64>;
+}
+
 macro_rules! impl_model_inner {
     ($field:ident) => {
         fn step<S>(&mut self, x: &mut ndarray::ArrayBase<S, ndarray::Ix1>)
