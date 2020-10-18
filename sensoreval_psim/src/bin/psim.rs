@@ -1,9 +1,20 @@
-use clap::value_t;
 use sensoreval_graphics::utils::CairoEx;
 use sensoreval_graphics::utils::ToUtilFont;
+use sensoreval_psim::DrawState;
 use sensoreval_psim::Model;
 
 extern crate lapack_src;
+
+#[derive(serde::Deserialize)]
+struct SimConfig {
+    state: Vec<f64>,
+    params: sensoreval_psim::models::Params,
+}
+
+#[derive(serde::Deserialize)]
+struct Config {
+    sim: SimConfig,
+}
 
 type State = std::sync::Arc<std::sync::RwLock<ndarray::Array1<f64>>>;
 struct GuiCallback<F> {
@@ -65,14 +76,6 @@ impl<F: Fn(&mut cairo::Context, &State)> sensoreval_gui::Callback for GuiCallbac
     }
 }
 
-fn vararg<'a, 'b>(name: &'a str, dval: &'a str) -> clap::Arg<'a, 'b> {
-    clap::Arg::with_name(name)
-        .help(name)
-        .long(name)
-        .default_value(dval)
-        .takes_value(true)
-}
-
 fn main() {
     let app_m = clap::App::new("psim")
         .setting(clap::AppSettings::AllowLeadingHyphen)
@@ -83,22 +86,11 @@ fn main() {
                 .takes_value(true)
                 .help("integration time step in seconds"),
         )
-        .subcommand(
-            clap::SubCommand::with_name("double_pendulum")
-                .arg(vararg("m1", "1.0"))
-                .arg(vararg("m2", "1.0"))
-                .arg(vararg("l1", "1.0"))
-                .arg(vararg("l2", "1.0"))
-                .arg(vararg("t1", "3.0"))
-                .arg(vararg("t1d", "0.0"))
-                .arg(vararg("t2", "2.0"))
-                .arg(vararg("t2d", "0.0")),
-        )
-        .subcommand(
-            clap::SubCommand::with_name("pendulum")
-                .arg(vararg("l", "1.0"))
-                .arg(vararg("t", "3.0"))
-                .arg(vararg("td", "0.0")),
+        .arg(
+            clap::Arg::with_name("CONFIG")
+                .help("config file to use")
+                .required(true)
+                .index(1),
         )
         .get_matches();
     let dt: f64 = app_m
@@ -106,59 +98,25 @@ fn main() {
         .unwrap()
         .parse()
         .expect("can't parse dt");
-    let mut gui = sensoreval_gui::Context::default();
+    let cfgname = app_m.value_of("CONFIG").unwrap();
+
+    let cfgstr = std::fs::read_to_string(cfgname).unwrap();
+    let cfg: Config = toml::from_str(&cfgstr).unwrap();
+    let model = cfg.sim.params.to_model_enum(dt);
+    let model_copy = cfg.sim.params.to_model_enum(dt);
+    let state = ndarray::Array::from(cfg.sim.state);
 
     let mut font = pango::FontDescription::new();
     font.set_family("Archivo Black");
     font.set_absolute_size(30.0 * f64::from(pango::SCALE));
-    let font = font.to_utilfont();
+    let _font = font.to_utilfont();
 
-    match app_m.subcommand() {
-        ("double_pendulum", Some(sub_m)) => {
-            let m1: f64 = value_t!(sub_m, "m1", f64).unwrap();
-            let m2: f64 = value_t!(sub_m, "m2", f64).unwrap();
-            let l1: f64 = value_t!(sub_m, "l1", f64).unwrap();
-            let l2: f64 = value_t!(sub_m, "l2", f64).unwrap();
-            let t1: f64 = value_t!(sub_m, "t1", f64).unwrap();
-            let t1d: f64 = value_t!(sub_m, "t1d", f64).unwrap();
-            let t2: f64 = value_t!(sub_m, "t2", f64).unwrap();
-            let t2d: f64 = value_t!(sub_m, "t2d", f64).unwrap();
-
-            gui.set_callback(Some(GuiCallback::new(
-                sensoreval_psim::models::DoublePendulum::new(m1, m2, l1, l2, dt),
-                ndarray::array![t1d, t2d, t1, t2],
-                move |cr, state| {
-                    let state = state.read().unwrap();
-                    let m1a = state[2];
-                    let m2a = state[3];
-                    drop(state);
-                    sensoreval_graphics::double_pendulum_2d::draw(cr, m1a, m2a, l1, l2);
-                },
-            )));
-        }
-        ("pendulum", Some(sub_m)) => {
-            let l: f64 = value_t!(sub_m, "l", f64).unwrap();
-            let t: f64 = value_t!(sub_m, "t", f64).unwrap();
-            let td: f64 = value_t!(sub_m, "td", f64).unwrap();
-            let params = sensoreval_psim::models::PendulumParams {
-                radius: l,
-                sensor_pos: 0.0,
-                motor: None,
-            };
-
-            gui.set_callback(Some(GuiCallback::new(
-                sensoreval_psim::models::Pendulum::new(params, dt),
-                ndarray::array![t, td],
-                move |cr, state| {
-                    let state = state.read().unwrap().clone();
-                    sensoreval_graphics::pendulum_2d::draw(cr, state[0]);
-
-                    font.draw(cr, &format!("t: {}\ntd: {}", state[0], state[1]));
-                },
-            )));
-        }
-        _ => panic!("invalid subcommand"),
-    }
+    let mut gui = sensoreval_gui::Context::default();
+    gui.set_callback(Some(GuiCallback::new(model, state, move |cr, state| {
+        // clone state so the lock can stay unlocked while drawing
+        let state = state.read().unwrap().clone();
+        model_copy.draw_state(cr, &state);
+    })));
 
     gui.set_timer_ms(15);
     gui.start().unwrap();
