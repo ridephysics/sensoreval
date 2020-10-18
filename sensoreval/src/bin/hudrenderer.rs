@@ -481,6 +481,20 @@ fn main() {
             println!("DONE RENDERING");
             wait_for_child(&mut child);
         }
+        "psim" => {
+            let sd = match &cfg.data.source {
+                crate::config::DataSource::SimulatorData(d) => d,
+                _ => panic!("psim works with a simulator data source only"),
+            };
+
+            // TODO: add control_input support
+
+            sensoreval_psim::run::run_sim(
+                sd.dt,
+                &sd.model,
+                ndarray::Array::from(sd.initial.clone()),
+            );
+        }
         mode => {
             eprintln!("invalid mode: {}", mode);
         }
