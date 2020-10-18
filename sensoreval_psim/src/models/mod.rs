@@ -27,6 +27,7 @@ impl Params {
 #[enum_dispatch::enum_dispatch(DrawState)]
 #[enum_dispatch::enum_dispatch(Model)]
 #[enum_dispatch::enum_dispatch(ToImuSample)]
+#[derive(Clone)]
 pub enum ModelEnum {
     Pendulum,
 }

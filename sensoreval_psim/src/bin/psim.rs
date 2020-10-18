@@ -103,7 +103,7 @@ fn main() {
     let cfgstr = std::fs::read_to_string(cfgname).unwrap();
     let cfg: Config = toml::from_str(&cfgstr).unwrap();
     let model = cfg.sim.params.to_model_enum(dt);
-    let model_copy = cfg.sim.params.to_model_enum(dt);
+    let model_copy = model.clone();
     let state = ndarray::Array::from(cfg.sim.state);
 
     let mut font = pango::FontDescription::new();

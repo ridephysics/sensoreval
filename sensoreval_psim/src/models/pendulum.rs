@@ -75,6 +75,7 @@ impl eom::traits::Explicit for ParamsInternal {
     }
 }
 
+#[derive(Clone)]
 pub struct Pendulum {
     eom: eom::explicit::RK4<ParamsInternal>,
 }
