@@ -86,7 +86,7 @@ impl<'b> HudContext<'b> {
 /// rendering context
 pub struct Context<'a, 'b, 'c> {
     pub cfg: &'a config::Config,
-    hudrenderer: Option<Box<dyn HudRenderer>>,
+    hudrenderer: Option<HudRendererEnum>,
     hudctx: HudContext<'b>,
     blenderdir: Option<&'c std::path::Path>,
     videosz: Option<(usize, usize)>,
@@ -94,6 +94,7 @@ pub struct Context<'a, 'b, 'c> {
 }
 
 /// HUD renderer trait
+#[enum_dispatch::enum_dispatch]
 pub trait HudRenderer {
     /// called when the data source has changed, also called directly after constructor
     fn data_changed(&mut self, ctx: &render::HudContext);
@@ -119,14 +120,32 @@ pub trait HudRenderer {
     ) -> Result<(), Error>;
 }
 
+/// enum_dispatch doesn't support namespaces
+/// So create the enum within a module so we don't have to pollute ours
+mod hre {
+    use crate::config;
+    use crate::hudrenderers::generic::Generic;
+    use crate::hudrenderers::pendulum::Pendulum;
+    use crate::render;
+    use crate::render::HudRenderer;
+    use crate::Error;
+
+    #[enum_dispatch::enum_dispatch(HudRenderer)]
+    pub(crate) enum HudRendererEnum {
+        Pendulum,
+        Generic,
+    }
+}
+use hre::HudRendererEnum;
+
 /// create a new HUD renderer
-fn renderer_from_ctx(ctx: &Context) -> Option<Box<dyn HudRenderer>> {
+fn renderer_from_ctx(ctx: &Context) -> Option<HudRendererEnum> {
     match &ctx.cfg.hud.renderer {
-        config::HudRenderer::Pendulum(cfg) => Some(Box::new(
-            hudrenderers::pendulum::Pendulum::new(&ctx.hudctx, cfg),
-        )),
+        config::HudRenderer::Pendulum(cfg) => {
+            Some(hudrenderers::pendulum::Pendulum::new(&ctx.hudctx, cfg).into())
+        }
         config::HudRenderer::Generic => {
-            Some(Box::new(hudrenderers::generic::Generic::new(&ctx.hudctx)))
+            Some(hudrenderers::generic::Generic::new(&ctx.hudctx).into())
         }
     }
 }

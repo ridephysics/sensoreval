@@ -2100,6 +2100,7 @@ dependencies = [
  "blas-src 0.6.1",
  "cairo-rs",
  "clap",
+ "enum_dispatch",
  "eom",
  "half",
  "kalman",
