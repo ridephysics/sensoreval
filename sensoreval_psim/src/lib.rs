@@ -1,3 +1,4 @@
+#[enum_dispatch::enum_dispatch]
 pub trait Model {
     fn step<S>(&mut self, x: &mut ndarray::ArrayBase<S, ndarray::Ix1>)
     where
@@ -8,6 +9,7 @@ pub trait Model {
     fn set_control_input(&mut self, _ci: Option<&[f64]>) {}
 }
 
+#[enum_dispatch::enum_dispatch]
 pub trait ToImuSample {
     fn to_accel<Sa, Sb>(
         &self,
