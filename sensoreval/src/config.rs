@@ -114,18 +114,18 @@ pub struct SimulatorData {
     /// each element is an array where the first element is a time in seconds
     /// with model-specific arguments following
     #[serde(default)]
-    control_input: Vec<Vec<f64>>,
+    pub control_input: Vec<Vec<f64>>,
     /// unit: seconds
-    dt: f64,
+    pub dt: f64,
     /// unit: seconds
-    duration: f64,
+    pub duration: f64,
     /// initial eom vector
-    initial: Vec<f64>,
+    pub initial: Vec<f64>,
     /// unit: seconds
     #[serde(default)]
-    start_off: f64,
+    pub start_off: f64,
 
-    model: sensoreval_psim::models::Params,
+    pub model: sensoreval_psim::models::Params,
 }
 
 /// data source type and information
