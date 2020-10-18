@@ -5,7 +5,6 @@ use crate::Error;
 use sensoreval_psim::Model;
 use sensoreval_psim::ToImuSample;
 use serde::Deserialize;
-use std::io::Read;
 
 /// video source information
 #[derive(Deserialize, Debug)]
@@ -388,15 +387,11 @@ fn path2abs(dir: &std::path::Path, relpath: &str) -> String {
 
 /// load config file
 pub fn load<P: AsRef<std::path::Path>>(filename: P) -> Result<Config, Error> {
-    let mut file = std::fs::File::open(filename.as_ref())?;
-    let mut buffer = String::new();
     let cfgdir = std::path::Path::new(filename.as_ref())
         .parent()
         .expect("can't get parent dir of config");
 
-    file.read_to_string(&mut buffer)?;
-    drop(file);
-
+    let buffer = std::fs::read_to_string(filename.as_ref())?;
     let mut parser = toml::de::Deserializer::new(&buffer);
     let value = toml::Value::deserialize(&mut parser)?;
     let mut has_unsupported: bool = false;
