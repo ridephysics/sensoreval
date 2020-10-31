@@ -68,7 +68,11 @@ extern "C" int sensorevalgui_native_create(struct context **pctx,
     ctx->engine->rootContext()->setContextProperty("main_videoPath", url);
     ctx->engine->rootContext()->setContextProperty("main_videoStartOffset",
                                                    (double)ctx->cfg->startoff);
-    ctx->engine->rootContext()->setContextProperty("main_videoEndOffset", (double)ctx->cfg->endoff);
+
+    if (ctx->cfg->endoff != UINT64_MAX) {
+        ctx->engine->rootContext()->setContextProperty("main_videoEndOffset",
+                                                       (double)ctx->cfg->endoff);
+    }
 
     ctx->engine->load(QUrl(QStringLiteral("qrc:/qml/main.qml")));
     assert(!ctx->engine->rootObjects().isEmpty());

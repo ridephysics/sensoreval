@@ -54,9 +54,16 @@ Window {
         Connections {
             target: player
             function onPositionChanged() {
-                if (player.playbackState == MediaPlayer.PlayingState && player.duration > 0 && player.position >= main_videoEndOffset) {
+                var dur;
+                if (typeof(main_videoEndOffset) == "undefined") {
+                    dur = player.duration;
+                } else {
+                    dur = main_videoEndOffset;
+                };
+
+                if (player.playbackState == MediaPlayer.PlayingState && player.duration > 0 && player.position >= dur) {
                     player.stop();
-                    player.seek(main_videoEndOffset);
+                    player.seek(dur);
                 }
             }
         }
@@ -94,7 +101,16 @@ Window {
                 margins: 10
                 bottom: parent.bottom
             }
-            duration: main_videoEndOffset - main_videoStartOffset
+            duration: {
+                var dur;
+                if (typeof(main_videoEndOffset) == "undefined") {
+                    dur = player.duration;
+                } else {
+                    dur = main_videoEndOffset;
+                };
+
+                return dur - main_videoStartOffset;
+            }
             playPosition: player.position - main_videoStartOffset
             onSeekPositionChanged: player.seek(seekPosition + main_videoStartOffset)
             visible: player.source != ""
