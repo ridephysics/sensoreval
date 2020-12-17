@@ -161,6 +161,7 @@ impl<'a> Plot<'a> {
         let mut t = plotly::traces::scatter::Scatter::default();
         t.xaxis("x");
         t.line().simplify(false);
+        t.hoverlabel().namelength(-1);
         t
     }
 
