@@ -9,7 +9,7 @@ math = { path = "../math" }
 sensoreval_gui = { path = "../sensoreval_gui" }
 sensoreval_graphics = { path = "../sensoreval_graphics" }
 
-cairo-rs = "0.8.0"
+cairo-rs = "0.8"
 clap = "2.33"
 enum_dispatch = "0.3"
 eom = { git = "https://github.com/M1cha/eom", branch = "master" }

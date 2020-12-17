@@ -15,7 +15,7 @@ sensoreval_utils = { path = "../sensoreval_utils" }
 approx = "0.3"
 bincode = "1.3"
 blas-src = { version = "*", features = ["openblas"] }
-cairo-rs = "0.8.0"
+cairo-rs = "0.8"
 clap = "2.33"
 enum_dispatch = "0.3"
 eom = { git = "https://github.com/M1cha/eom", branch = "master" }
