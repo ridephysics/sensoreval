@@ -16,6 +16,8 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
+    - name: apt update
+      run: sudo apt-get update
     - name: Install Dependencies
       run: sudo apt-get install libpango1.0-dev qt5-default qtdeclarative5-dev qtmultimedia5-dev
     - name: Build
