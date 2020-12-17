@@ -114,6 +114,15 @@ impl<'a> Plot<'a> {
         }
     }
 
+    pub fn add_trace_to_rowname_ensure<A: AsRef<str>>(
+        &mut self,
+        trace: &mut plotly::traces::scatter::Scatter,
+        name: A,
+    ) -> Result<(), Error> {
+        let rowid = self.ensure_row(name)?;
+        self.add_trace_to_rowid(trace, rowid)
+    }
+
     pub fn add_trace_to_rowid(
         &mut self,
         trace: &mut plotly::traces::scatter::Scatter,
