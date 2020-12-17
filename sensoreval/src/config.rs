@@ -315,10 +315,13 @@ impl Config {
             let t = id as f64 * d.dt + d.start_off;
             let t_us = (t * 1_000_000.0) as u64;
 
+            let mut actual = x.clone();
+            model.normalize(&mut actual);
+
             let mut sample = crate::Data::default();
             sample.time = t_us;
             sample.time_baro = t_us;
-            sample.actual = Some(x.clone());
+            sample.actual = Some(actual);
             model.to_accel(&x, &mut sample.accel);
             model.to_gyro(&x, &mut sample.gyro);
             ret.push(sample);
