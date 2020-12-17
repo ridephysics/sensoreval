@@ -37,6 +37,30 @@ impl Default for Data {
     }
 }
 
+impl std::ops::AddAssign<&Self> for Data {
+    fn add_assign(&mut self, other: &Self) {
+        self.accel += &other.accel;
+        self.gyro += &other.gyro;
+        self.mag += &other.mag;
+        self.temperature += other.temperature;
+        self.pressure += other.pressure;
+    }
+}
+
+impl std::ops::Div<usize> for Data {
+    type Output = Self;
+
+    fn div(mut self, rhs: usize) -> Self::Output {
+        self.accel /= rhs as f64;
+        self.gyro /= rhs as f64;
+        self.mag /= rhs as f64;
+        self.temperature /= rhs as f64;
+        self.pressure /= rhs as f64;
+
+        self
+    }
+}
+
 impl Data {
     fn pressure_altitude_feet(&self) -> f64 {
         145_366.45 * (1.0 - (self.pressure / 1013.25).powf(0.190_284))
