@@ -3,6 +3,11 @@ pub trait Model {
     fn step<S>(&mut self, x: &mut ndarray::ArrayBase<S, ndarray::Ix1>)
     where
         S: ndarray::DataMut<Elem = f64>;
+    fn normalize<S>(&self, _x: &mut ndarray::ArrayBase<S, ndarray::Ix1>)
+    where
+        S: ndarray::DataMut<Elem = f64>,
+    {
+    }
     fn set_dt(&mut self, dt: f64);
     fn dt(&self) -> f64;
 
