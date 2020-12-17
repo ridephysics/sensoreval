@@ -137,7 +137,7 @@ impl<'a> Plot<'a> {
     }
 
     pub fn finish(mut self) -> Result<(), Error> {
-        self.plot.layout().grid().rows(self.nrows as u64).columns(1);
+        self.plot.layout().grid().rows(self.nrows as i64).columns(1);
 
         let mut f = self.plot.finish()?;
 
