@@ -141,6 +141,28 @@ pub fn line_angle_2d(x1: f64, y1: f64, x2: f64, y2: f64) -> f64 {
     b.cross(&a).dot(&n).atan2(a.dot(&b))
 }
 
+pub fn agm(mut a: f64, mut g: f64) -> f64 {
+    if a <= 0.0 || g <= 0.0 {
+        return 0.0;
+    }
+
+    loop {
+        let a0 = a;
+        let g0 = g;
+
+        a = (a0 + g0) / 2.0;
+        g = (a0 * g0).sqrt();
+
+        if a == g || (a - g).abs() >= (a0 - g0).abs() {
+            return a;
+        }
+    }
+}
+
+pub fn pendulum_period(r: f64, theta: f64, g: f64) -> f64 {
+    2.0 * std::f64::consts::PI * (r / g).sqrt() / agm(1.0, (theta / 2.0).cos())
+}
+
 #[cfg(test)]
 mod tests {
     use approx::assert_abs_diff_eq;
@@ -267,6 +289,40 @@ mod tests {
             super::line_angle_2d(0.0, 0.0, -1.0, -1.0),
             -std::f64::consts::FRAC_PI_2 - std::f64::consts::FRAC_PI_4,
             epsilon = 1.0e-3
+        );
+    }
+
+    #[test]
+    fn agm() {
+        assert_abs_diff_eq!(super::agm(1.0, 2.0), 1.456791031046907, epsilon = 1.0e-15);
+        assert_abs_diff_eq!(
+            super::agm(12.345, 98.765),
+            44.638129792342220,
+            epsilon = 1.0e-15
+        );
+    }
+
+    #[test]
+    fn pendulum_period() {
+        assert_abs_diff_eq!(
+            super::pendulum_period(1.0, (1.0f64).to_radians(), 9.807),
+            2.006411688292279,
+            epsilon = 1.0e-15
+        );
+        assert_abs_diff_eq!(
+            super::pendulum_period(1.0, (10.0f64).to_radians(), 9.807),
+            2.010200020835200,
+            epsilon = 1.0e-15
+        );
+        assert_abs_diff_eq!(
+            super::pendulum_period(1.0, (30.0f64).to_radians(), 9.807),
+            2.041302039079650,
+            epsilon = 1.0e-15
+        );
+        assert_abs_diff_eq!(
+            super::pendulum_period(1.0, (100.0f64).to_radians(), 9.807),
+            2.472311992836434,
+            epsilon = 1.0e-15
         );
     }
 }
