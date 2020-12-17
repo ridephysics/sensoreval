@@ -56,6 +56,7 @@ impl<'a> Plot<'a> {
         self.trace_prefix = trace_prefix.map(|v| v.as_ref().to_string());
     }
 
+    /// adds a new row to the end. `name` must be unique
     pub fn add_row<A: AsRef<str>>(&mut self, name: Option<A>) -> Result<usize, Error> {
         if let Some(name) = name {
             if self.row_ids.get(name.as_ref()).is_some() {
