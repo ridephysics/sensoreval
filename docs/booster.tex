@@ -67,7 +67,10 @@ Furthermore, since we don't know the mass distribution of the gondola we model $
 
 \section{Trigonometric Identities}
 \begin{equation} \label{eq:ti_coscos_sinsin}
-\cos a \cos b + \sin a \sin b = \cos{a - b}
+\cos a \cos b +- \sin a \sin b = \cos{a -+ b}
+\end{equation}
+\begin{equation} \label{eq:ti_sincos_cossin}
+\sin a \cos b +- \cos a \sin b = \sin{a +- b}
 \end{equation}
 \begin{equation} \label{eq:ti_sin2_cos2}
 \sin^2 a + \cos^2 a = 1
@@ -87,6 +90,23 @@ y_i = -r_B \cos \theta_B - r_i \cos{(\theta_0 + \theta_i)}
 \end{equation}
 \begin{equation} \label{eq:y_i_dot}
 \dot{y_i} = r_B \sin \theta_B \dot{\theta_B} + r_i \sin{(\theta_0 + \theta_i)} \dot{\theta_0}
+\end{equation}
+
+\section{Accelerations}
+\begin{equation} \label{eq:x_i_ddot}
+\ddot{x_i} =
+    - r_B \sin \theta_B \dot{\theta_B}^2
+    + r_B \cos \theta_B \ddot{\theta_B}
+    - r_i \sin{(\theta_0 + \theta_i)} \dot{\theta_0}^2
+    + r_i \cos{(\theta_0 + \theta_i)} \ddot{\theta_0}
+\end{equation}
+\begin{equation} \label{eq:y_i_ddot}
+\ddot{y_i} = 
+    r_B \cos \theta_B \dot{\theta_B}^2
+    r_B \sin \theta_B \ddot{\theta_B}
+    + r_i \cos{(\theta_0 + \theta_i)} \dot{\theta_0}^2
+    + r_i \sin{(\theta_0 + \theta_i)} \ddot{\theta_0}
+    + g
 \end{equation}
 
 \section{Potential Energy}
@@ -269,4 +289,97 @@ rewrite as state space:
 \!\right\}
 \end{equation}
 
+\section{Sensor data}
+Like all the masses, the Sensor is located at $(\theta_s, r_s)$ which is defined relative to $\theta_0$ in the gondola frame.
+
+\subsection{Accelerometer}
+\subsubsection{$x$}
+Rotate $\ddot{x_s}$ into inertial frame:
+\begin{align}
+\ddot{x_s}_{inertial} = \ddot{x_s} \cos \theta_s - \ddot{y_s} \sin \theta_s 
+\end{align}
+Substitute:
+\begin{align}
+\ddot{x_s}_{inertial} &= \nonumber \\
+    &- r_B \sin \theta_B \cos{(-\theta_0 - \theta_s)} \dot{\theta_B}^2
+     + r_B \cos \theta_B \cos{(-\theta_0 - \theta_s)} \ddot{\theta_B} \nonumber \\
+    &- r_s \sin{(\theta_0 + \theta_s)} \cos{(-\theta_0 - \theta_s)} \dot{\theta_0}^2
+     + r_s \cos{(\theta_0 + \theta_s)} \cos{(-\theta_0 - \theta_s)} \ddot{\theta_0} \nonumber \\
+    &- r_B \cos \theta_B \sin{(-\theta_0 - \theta_s)} \dot{\theta_B}^2
+     - r_B \sin \theta_B \sin{(-\theta_0 - \theta_s)} \ddot{\theta_B} \nonumber \\
+    &- r_s \cos{(\theta_0 + \theta_s)} \sin{(-\theta_0 - \theta_s)} \dot{\theta_0}^2
+     - r_s \sin{(\theta_0 + \theta_s)} \sin{(-\theta_0 - \theta_s)} \ddot{\theta_0} \nonumber \\
+    &- g \sin{(-\theta_0 - \theta_s)}
+\end{align}
+Simplify using \ref{eq:ti_coscos_sinsin} and \ref{eq:ti_sincos_cossin}:
+\begin{align}
+\ddot{x_s}_{inertial} &= \nonumber \\
+    &- r_B \dot{\theta_B}^2 \sin{(\theta_B - \theta_0 - \theta_s)}
+     + r_B \ddot{\theta_B} \cos{(\theta_B -\theta_0 - \theta_s)} \nonumber \\
+    &- r_s \dot{\theta_0}^2 \sin{(\theta_0 + \theta_s -\theta_0 - \theta_s)}
+     + r_s \ddot{\theta_0} \cos{(\theta_0 + \theta_s -\theta_0 - \theta_s)} \nonumber \\
+    &- g \sin{(-\theta_0 - \theta_s)}
+\end{align}
+Remove 0/1-terms:
+\begin{align}
+\ddot{x_s}_{inertial} &= \nonumber \\
+    &- r_B \dot{\theta_B}^2 \sin{(\theta_B - \theta_0 - \theta_s)}
+     + r_B \ddot{\theta_B} \cos{(\theta_B -\theta_0 - \theta_s)} \nonumber \\
+    &+ r_s \ddot{\theta_0} \nonumber \\
+    &- g \sin{(-\theta_0 - \theta_s)}
+\end{align}
+
+\subsubsection{$y$}
+Rotate $\ddot{y_s}$ into inertial frame:
+\begin{align}
+\ddot{y_s}_{inertial} = \ddot{x_s} \sin \theta_s + \ddot{y_s} \cos \theta_s 
+\end{align}
+\begin{align}
+\ddot{y_s}_{inertial} &= \nonumber \\
+    &- r_B \sin \theta_B \sin{(-\theta_0 - \theta_s)} \dot{\theta_B}^2
+     + r_B \cos \theta_B \sin{(-\theta_0 - \theta_s)} \ddot{\theta_B} \nonumber \\
+    &- r_s \sin{(\theta_0 + \theta_s)} \sin{(-\theta_0 - \theta_s)} \dot{\theta_0}^2
+     + r_s \cos{(\theta_0 + \theta_s)} \sin{(-\theta_0 - \theta_s)} \ddot{\theta_0} \nonumber \\
+    &+ r_B \cos \theta_B \cos{(-\theta_0 - \theta_s)} \dot{\theta_B}^2
+     + r_B \sin \theta_B \cos{(-\theta_0 - \theta_s)} \ddot{\theta_B} \nonumber \\
+    &+ r_s \cos{(\theta_0 + \theta_s)} \cos{(-\theta_0 - \theta_s)} \dot{\theta_0}^2
+     + r_s \sin{(\theta_0 + \theta_s)} \cos{(-\theta_0 - \theta_s)} \ddot{\theta_0} \nonumber \\
+    &+ g \cos{(-\theta_0 - \theta_s)}
+\end{align}
+Simplify using \ref{eq:ti_coscos_sinsin} and \ref{eq:ti_sincos_cossin}:
+\begin{align}
+\ddot{y_s}_{inertial} &= \nonumber \\
+    &- r_B \dot{\theta_B}^2 \cos{(\theta_B - \theta_0 - \theta_s)}
+     + r_B \ddot{\theta_B} \sin{(\theta_B - \theta_0 - \theta_s)} \nonumber \\
+    &+ r_s \dot{\theta_0}^2 \cos{(\theta_0 + \theta_s - \theta_0 - \theta_s)}
+     + r_s \ddot{\theta_0} \sin{(\theta_0 + \theta_s - \theta_0 - \theta_s)} \nonumber \\
+    &+ g \cos{(-\theta_0 - \theta_s)}
+\end{align}
+Remove 0/1-terms:
+\begin{align}
+\ddot{y_s}_{inertial} &= \nonumber \\
+    &- r_B \dot{\theta_B}^2 \cos{(\theta_B - \theta_0 - \theta_s)}
+     + r_B \ddot{\theta_B} \sin{(\theta_B - \theta_0 - \theta_s)} \nonumber \\
+    &+ r_s \dot{\theta_0}^2 \nonumber \\
+    &+ g \cos{(-\theta_0 - \theta_s)}
+\end{align}
+
+\subsubsection{Vector in ENU coordinates}
+\begin{equation}
+Accelerometer_{ENU} = \left[ \begin{array}{c}
+0 \\
+\ddot{x_s}_{inertial} \\
+\ddot{y_s}_{inertial}
+\end{array} \right]
+\end{equation}
+
+\subsection{Gyroscope}
+Since $\theta_s$ is aligned with the sensor:
+\begin{equation}
+Gyroscope_{ENU} = \left[ \begin{array}{c}
+\dot{\theta_s} \\
+0 \\
+0
+\end{array} \right]
+\end{equation}
 \end{document}
