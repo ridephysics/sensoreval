@@ -5,8 +5,8 @@ authors = ["Michael Zimmermann <sigmaepsilon92@gmail.com>"]
 edition = "2018"
 
 [dependencies]
-ndarray = "*"
-ndarray-linalg = "*"
+ndarray = "0.13"
+ndarray-linalg = "0.12"
 num-traits = "*"
 thiserror = "1.0"
 
