@@ -163,6 +163,30 @@ pub fn pendulum_period(r: f64, theta: f64, g: f64) -> f64 {
     2.0 * std::f64::consts::PI * (r / g).sqrt() / agm(1.0, (theta / 2.0).cos())
 }
 
+pub fn rt2x(r: f64, t: f64) -> f64 {
+    r * t.sin()
+}
+
+pub fn rt2y(r: f64, t: f64) -> f64 {
+    -r * t.cos()
+}
+
+pub fn rt2xy(r: f64, t: f64) -> (f64, f64) {
+    (rt2x(r, t), rt2y(r, t))
+}
+
+pub fn xy2r(x: f64, y: f64) -> f64 {
+    (x.powi(2) + y.powi(2)).sqrt()
+}
+
+pub fn xy2t(x: f64, y: f64) -> f64 {
+    (x / -y).atan()
+}
+
+pub fn xy2rt(x: f64, y: f64) -> (f64, f64) {
+    (xy2r(x, y), xy2t(x, y))
+}
+
 #[cfg(test)]
 mod tests {
     use approx::assert_abs_diff_eq;
