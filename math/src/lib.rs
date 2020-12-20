@@ -153,6 +153,8 @@ pub fn agm(mut a: f64, mut g: f64) -> f64 {
         a = (a0 + g0) / 2.0;
         g = (a0 * g0).sqrt();
 
+        // unlikely as it is, if they're actually equal, we want to stop
+        #[allow(clippy::float_cmp)]
         if a == g || (a - g).abs() >= (a0 - g0).abs() {
             return a;
         }
