@@ -270,7 +270,7 @@ solve for $\ddot{\theta_0}$:
         }
     } {
         \sum_{i=1}^{n}(m_i r_i^2)
-    }
+    } \label{eq:thetadd}
 \end{equation}
 rewrite as state space:
 \begin{equation}
@@ -382,4 +382,194 @@ Gyroscope_{ENU} = \left[ \begin{array}{c}
 0
 \end{array} \right]
 \end{equation}
+
+\section{Simulate multi-mass booster using single-mass equations}
+Doing so allows us to determine $\theta_c$ and $r_c$ for the center of mass using careful analysis of IMU recordings without ever knowing the exact mass distribution of the gondola.
+The math in this section serves as a proof that this is in fact possible and to find formulas for $\theta_c$ and $r_c$ to then compare the two simulations to see if they really are identical.
+
+\bigskip
+\noindent
+\textbf{The interesting finding here is that while - as expected - $\theta_c$ points toward the center of mass as calculated using cartesian coordinates, $r_c$ is actually different from what the center-of-mass calculation tells us.}
+
+\subsection{Convert from cartesian to polar coordinates}
+\begin{align}
+r &= \sqrt{x^2 + y^2} \\
+\theta &= \arctan{\left(\frac{x}{-y}\right)}
+\end{align}
+
+\subsection{Convert from polar to cartesian coordinates}
+\begin{align}
+x &= r \sin \theta \\
+y &= -r \cos \theta
+\end{align}
+
+\subsection{$\theta_c$}
+total mass:
+\begin{equation}
+m_c = \sum_{i=1}^{n}m_i
+\end{equation}
+cartesian center of mass:
+\begin{align}
+R_x &= \frac{1}{m_c} \sum_{i=1}^{n}(m_i r_i \sin \theta_i) \\
+R_y &= \frac{1}{m_c} \sum_{i=1}^{n}(- m_i r_i \cos \theta_i) 
+\end{align}
+convert to polar angle(\textbf{doing this for the radius would yield a wrong result}):
+\begin{align}
+\theta_c &= \arctan{\left(\frac{R_x}{-R_y}\right)} \\
+\theta_c &= \arctan{\left(\frac{
+    \sum_{i=1}^{n}(m_i r_i \sin \theta_i)
+} {
+    \sum_{i=1}^{n}(m_i r_i \cos \theta_i)
+}\right)}
+\end{align}
+Simplify \ref{eq:thetadd} for the special case of a single mass:
+\begin{align}
+\ddot{\theta_0}_c =
+    \frac{
+        - r_B \ddot{\theta_B} \cos{(\theta_B - \theta_0 - \theta_c)}
+        + r_B \dot{\theta_B}^2 \sin{(\theta_B - \theta_0 - \theta_c)}
+        - g \sin{(\theta_0 + \theta_c)}
+    } {
+        r_c
+    } \label{eq:theta0cdd}
+\end{align}
+If we put the second and the third force in a reference frame relative to $\theta_0$, we can see that they both follow the same scheme with $F$ being some force:
+\begin{equation}
+\frac{F}{r_c} \sin \theta_c
+\end{equation}
+Do the same for \ref{eq:thetadd}:
+\begin{equation}
+\frac{F}{\sum_{i=1}^{n}(m_i r_i^2)} \sum_{i=1}^{n}(m_i r_i \sin \theta_i)
+\end{equation}
+We want them to be equal, so  let's do that:
+\begin{equation}
+\frac{F}{r_c} \sin \theta_c = 
+    \frac{F}{\sum_{i=1}^{n}(m_i r_i^2)} \sum_{i=1}^{n}(m_i r_i \sin \theta_i)
+\end{equation}
+Solve for $\theta_c$:
+\begin{equation}
+\sin \theta_c = 
+    \frac{
+        r_c \sum_{i=1}^{n}(m_i r_i \sin \theta_i)
+    } {
+        \sum_{i=1}^{n}(m_i r_i^2)
+    }
+\end{equation}
+\begin{equation}
+\theta_c = 
+\arcsin{\left(
+    \frac{
+        r_c \sum_{i=1}^{n}(m_i r_i \sin \theta_i)
+    } {
+        \sum_{i=1}^{n}(m_i r_i^2)
+    }
+\right)}
+\end{equation}
+We now have two formulas for $\theta_c$, one defined by the center of mass, and one by setting the forces for single- and multi-mass boosters equal.
+Now we can set those two formulas equal as well:
+\begin{equation}
+\arcsin{\left(
+    \frac{
+        r_c \sum_{i=1}^{n}(m_i r_i \sin \theta_i)
+    } {
+        \sum_{i=1}^{n}(m_i r_i^2)
+    }
+\right)}
+= \arctan{\left(\frac{
+    \sum_{i=1}^{n}(m_i r_i \sin \theta_i)
+} {
+    \sum_{i=1}^{n}(m_i r_i \cos \theta_i)
+}\right)}
+\end{equation}
+Now solve for $r_c$. Start by applying $\sin$:
+\begin{equation}
+\frac{
+    r_c \sum_{i=1}^{n}(m_i r_i \sin \theta_i)
+} {
+    \sum_{i=1}^{n}(m_i r_i^2)
+}
+= \sin{\left( \arctan{\left( \frac{
+    \sum_{i=1}^{n}(m_i r_i \sin \theta_i)
+} {
+    \sum_{i=1}^{n}(m_i r_i \cos \theta_i)
+}\right)} \right)}
+\end{equation}
+apply $\sin {\left( \arctan x \right)} = \frac{x}{\sqrt{x^2 + 1}}$:
+\begin{equation}
+\frac{
+    r_c \sum_{i=1}^{n}(m_i r_i \sin \theta_i)
+} {
+    \sum_{i=1}^{n}(m_i r_i^2)
+}
+= \frac{
+    \sum_{i=1}^{n}(m_i r_i \sin \theta_i)
+} {
+    \sum_{i=1}^{n}(m_i r_i \cos \theta_i)
+    \sqrt{\frac{
+        \left(\sum_{i=1}^{n}(m_i r_i \sin \theta_i)\right)^2
+    } {
+        \left(\sum_{i=1}^{n}(m_i r_i \cos \theta_i)\right)^2
+    } + 1 }
+}
+\end{equation}
+Pull in $\sum_{i=1}^{n}(m_i r_i \cos \theta_i)$ by squaring it:
+\begin{equation}
+\frac{
+    r_c \sum_{i=1}^{n}(m_i r_i \sin \theta_i)
+} {
+    \sum_{i=1}^{n}(m_i r_i^2)
+}
+= \frac{
+    \sum_{i=1}^{n}(m_i r_i \sin \theta_i)
+} {
+    \sqrt{\frac{
+        \left(\sum_{i=1}^{n}(m_i r_i \sin \theta_i)\right)^2 \left(\sum_{i=1}^{n}(m_i r_i \cos \theta_i)\right)^2
+    } {
+        \left(\sum_{i=1}^{n}(m_i r_i \cos \theta_i)\right)^2
+    } + \left(\sum_{i=1}^{n}(m_i r_i \cos \theta_i)\right)^2 }
+}
+\end{equation}
+Simplify:
+\begin{equation}
+\frac{
+    r_c \sum_{i=1}^{n}(m_i r_i \sin \theta_i)
+} {
+    \sum_{i=1}^{n}(m_i r_i^2)
+}
+= \frac{
+    \sum_{i=1}^{n}(m_i r_i \sin \theta_i)
+} {
+    \sqrt{
+        \left(\sum_{i=1}^{n}(m_i r_i \sin \theta_i)\right)^2
+      + \left(\sum_{i=1}^{n}(m_i r_i \cos \theta_i)\right)^2
+    }
+}
+\end{equation}
+move the fraction from the left to the right:
+\begin{equation}
+r_c = \frac{
+    \sum_{i=1}^{n}(m_i r_i^2)
+} {
+    \sqrt{
+        \left(\sum_{i=1}^{n}(m_i r_i \sin \theta_i)\right)^2
+      + \left(\sum_{i=1}^{n}(m_i r_i \cos \theta_i)\right)^2
+    }
+}
+\end{equation}
+This radius and $\theta_c$ can be used to simulate any multi-mass pendulum with $\ddot{\theta_B} = 0$.
+Since the first force in \ref{eq:theta0cdd} uses $\cos$ instead of $\sin$, it'd end up using a different radius:
+\begin{equation}
+r_c = \frac{
+    \sum_{i=1}^{n}(m_i r_i^2)
+} {
+    \sqrt{
+        \left(\sum_{i=1}^{n}(m_i r_i \sin \theta_i)\right)^2
+      + \left(\sum_{i=1}^{n}(m_i r_i \cos \theta_i)\right)^2
+    }
+    \sum_{i=1}^{n}(m_i r_i \sin \theta_i)
+}
+\end{equation}
+That means when $\ddot{\theta_B} \neq 0$, one has to find and use two different radi for the simulation.
+
+
 \end{document}
