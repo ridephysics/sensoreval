@@ -103,7 +103,7 @@ y_i = -r_B \cos \theta_B - r_i \cos{(\theta_0 + \theta_i)}
 \begin{equation} \label{eq:y_i_ddot}
 \ddot{y_i} = 
     r_B \cos \theta_B \dot{\theta_B}^2
-    r_B \sin \theta_B \ddot{\theta_B}
+    + r_B \sin \theta_B \ddot{\theta_B}
     + r_i \cos{(\theta_0 + \theta_i)} \dot{\theta_0}^2
     + r_i \sin{(\theta_0 + \theta_i)} \ddot{\theta_0}
     + g
@@ -296,7 +296,7 @@ Like all the masses, the Sensor is located at $(\theta_s, r_s)$ which is defined
 \subsubsection{$x$}
 Rotate $\ddot{x_s}$ into inertial frame:
 \begin{align}
-\ddot{x_s}_{inertial} = \ddot{x_s} \cos \theta_s - \ddot{y_s} \sin \theta_s 
+\ddot{x_s}_{inertial} = \ddot{x_s} \cos{(-\theta_0 - \theta_s)} - \ddot{y_s} \sin{(-\theta_0 - \theta_s)}
 \end{align}
 Substitute:
 \begin{align}
@@ -332,7 +332,7 @@ Remove 0/1-terms:
 \subsubsection{$y$}
 Rotate $\ddot{y_s}$ into inertial frame:
 \begin{align}
-\ddot{y_s}_{inertial} = \ddot{x_s} \sin \theta_s + \ddot{y_s} \cos \theta_s 
+\ddot{y_s}_{inertial} = \ddot{x_s} \sin{(-\theta_0 - \theta_s)} + \ddot{y_s} \cos{(-\theta_0 - \theta_s)} 
 \end{align}
 \begin{align}
 \ddot{y_s}_{inertial} &= \nonumber \\
@@ -349,7 +349,7 @@ Rotate $\ddot{y_s}$ into inertial frame:
 Simplify using \ref{eq:ti_coscos_sinsin} and \ref{eq:ti_sincos_cossin}:
 \begin{align}
 \ddot{y_s}_{inertial} &= \nonumber \\
-    &- r_B \dot{\theta_B}^2 \cos{(\theta_B - \theta_0 - \theta_s)}
+    &+ r_B \dot{\theta_B}^2 \cos{(\theta_B - \theta_0 - \theta_s)}
      + r_B \ddot{\theta_B} \sin{(\theta_B - \theta_0 - \theta_s)} \nonumber \\
     &+ r_s \dot{\theta_0}^2 \cos{(\theta_0 + \theta_s - \theta_0 - \theta_s)}
      + r_s \ddot{\theta_0} \sin{(\theta_0 + \theta_s - \theta_0 - \theta_s)} \nonumber \\
@@ -358,7 +358,7 @@ Simplify using \ref{eq:ti_coscos_sinsin} and \ref{eq:ti_sincos_cossin}:
 Remove 0/1-terms:
 \begin{align}
 \ddot{y_s}_{inertial} &= \nonumber \\
-    &- r_B \dot{\theta_B}^2 \cos{(\theta_B - \theta_0 - \theta_s)}
+    &+ r_B \dot{\theta_B}^2 \cos{(\theta_B - \theta_0 - \theta_s)}
      + r_B \ddot{\theta_B} \sin{(\theta_B - \theta_0 - \theta_s)} \nonumber \\
     &+ r_s \dot{\theta_0}^2 \nonumber \\
     &+ g \cos{(-\theta_0 - \theta_s)}
