@@ -556,20 +556,6 @@ r_c = \frac{
     }
 }
 \end{equation}
-This radius and $\theta_c$ can be used to simulate any multi-mass pendulum with $\ddot{\theta_B} = 0$.
-Since the first force in \ref{eq:theta0cdd} uses $\cos$ instead of $\sin$, it'd end up using a different radius:
-\begin{equation}
-r_c = \frac{
-    \sum_{i=1}^{n}(m_i r_i^2)
-} {
-    \sqrt{
-        \left(\sum_{i=1}^{n}(m_i r_i \sin \theta_i)\right)^2
-      + \left(\sum_{i=1}^{n}(m_i r_i \cos \theta_i)\right)^2
-    }
-    \sum_{i=1}^{n}(m_i r_i \sin \theta_i)
-}
-\end{equation}
-That means when $\ddot{\theta_B} \neq 0$, one has to find and use two different radi for the simulation.
-
+If we do the same calculation with the first force in \ref{eq:theta0cdd} which multiplies by $\cos$ instead of $\sin$ we get the exact same result. This means that $r_c$ and $\theta_c$ can be used to simulate any multi-mass booster.
 
 \end{document}
