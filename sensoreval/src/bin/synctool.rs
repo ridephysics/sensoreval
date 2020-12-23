@@ -36,6 +36,7 @@ fn main() {
     if let config::DataSource::SensorData(sd) = &mut cfg.data.source {
         sd.video_off = 0;
     }
+    cfg.hud.renderer = config::HudRenderer::Generic;
     println!("config: {:#?}", cfg);
 
     // load data
