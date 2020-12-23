@@ -197,6 +197,12 @@ fn main() {
                 .help("render range"),
         )
         .arg(
+            clap::Arg::with_name("trange")
+                .long("trange")
+                .value_name("TRANGE")
+                .help("time range in seconds"),
+        )
+        .arg(
             clap::Arg::with_name("simcfg")
                 .long("simcfg")
                 .value_name("SIMCFG")
@@ -240,6 +246,30 @@ fn main() {
     }
 
     match matches.value_of("MODE").unwrap() {
+        "average" => {
+            let trange: Vec<f64> = matches
+                .value_of("trange")
+                .unwrap()
+                .split(',')
+                .map(|s| s.parse::<f64>().unwrap())
+                .collect();
+
+            let start = trange[0];
+            let end = trange[1];
+            let mut sum = Data::default();
+            let mut n: usize = 0;
+
+            for sample in &samples {
+                let t = sample.time_seconds();
+
+                if t >= start && t <= end {
+                    n += 1;
+                    sum += sample;
+                }
+            }
+
+            println!("avg = {:#?}", sum / n);
+        }
         "plot" => {
             let mut plot = sensoreval_utils::Plot::new("/tmp/sensoreval-plot.html").unwrap();
 
