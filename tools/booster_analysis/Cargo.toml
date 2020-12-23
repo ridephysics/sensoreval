@@ -1,0 +1,20 @@
+[package]
+name = "booster_analysis"
+version = "0.1.0"
+authors = ["Michael Zimmermann <sigmaepsilon92@gmail.com>"]
+edition = "2018"
+
+[dependencies]
+math = { path = "../../math" }
+sensoreval = { path = "../../sensoreval" }
+sensoreval_psim = { path = "../../sensoreval_psim" }
+sensoreval_utils = { path = "../../sensoreval_utils" }
+
+argmin = {version="0.3", features=["ndarrayl"]}
+argmin_testfunctions = "*"
+itertools = "0.9"
+structopt = "^0.3"
+ndarray = "0.13"
+ndarray-linalg = "0.12"
+serde = "1.0"
+toml = "0.5"
