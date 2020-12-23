@@ -8,6 +8,7 @@ edition = "2018"
 math = { path = "../math" }
 sensoreval_gui = { path = "../sensoreval_gui" }
 sensoreval_graphics = { path = "../sensoreval_graphics" }
+sensoreval_psim_macros = { path = "../sensoreval_psim_macros" }
 
 cairo-rs = "0.8"
 clap = "2.33"

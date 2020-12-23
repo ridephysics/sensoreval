@@ -1,0 +1,12 @@
+[package]
+name = "sensoreval_psim_macros"
+version = "0.1.0"
+authors = ["Michael Zimmermann <sigmaepsilon92@gmail.com>"]
+edition = "2018"
+
+[lib]
+proc-macro = true
+
+[dependencies]
+syn = "1.0"
+quote = "1.0"
