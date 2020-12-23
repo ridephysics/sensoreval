@@ -8,6 +8,25 @@ pub const GRAVITY: f64 = 9.80665;
 use ndarray::array;
 use std::ops::Mul;
 
+#[derive(Clone, Debug)]
+pub struct Array1Opt<A> {
+    pub a: ndarray::Array1<A>,
+}
+
+impl<A> std::str::FromStr for Array1Opt<A>
+where
+    A: std::str::FromStr,
+    <A as std::str::FromStr>::Err: std::fmt::Debug,
+{
+    type Err = std::num::ParseFloatError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Ok(Self {
+            a: s.split(',').map(|s| s.parse::<A>().unwrap()).collect(),
+        })
+    }
+}
+
 pub fn outer_product<Sa, Sb, Aa, Ab>(
     a: &ndarray::ArrayBase<Sa, ndarray::Ix1>,
     b: &ndarray::ArrayBase<Sb, ndarray::Ix1>,
