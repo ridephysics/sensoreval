@@ -3,6 +3,12 @@ use eom::traits::TimeEvolution;
 use eom::traits::TimeStep;
 use std::convert::TryInto;
 
+#[derive(sensoreval_psim_macros::State)]
+pub enum State {
+    Theta,
+    ThetaD,
+}
+
 #[derive(Clone, serde::Deserialize, Debug)]
 #[serde(deny_unknown_fields)]
 pub struct GroundMotor {
@@ -53,11 +59,11 @@ impl eom::traits::Explicit for ParamsInternal {
     where
         S: ndarray::DataMut<Elem = f64>,
     {
-        let theta = v[0];
-        let x = v[1];
+        let theta = v[State::Theta];
+        let x = v[State::ThetaD];
 
-        v[0] = x;
-        v[1] = (-math::GRAVITY * theta.sin()) / self.params.radius;
+        v[State::Theta] = x;
+        v[State::ThetaD] = (-math::GRAVITY * theta.sin()) / self.params.radius;
 
         if let (Some(ci), Some(motor)) = (&self.ci, &self.params.motor) {
             match motor {
@@ -65,7 +71,7 @@ impl eom::traits::Explicit for ParamsInternal {
                     if theta.abs() <= m.ship_arc_half_angle {
                         // accelerate into the direction of movement
                         let motor = if x.is_sign_negative() { -ci[0] } else { ci[0] };
-                        v[1] += motor / self.params.radius;
+                        v[State::ThetaD] += motor / self.params.radius;
                     }
                 }
             }
@@ -106,12 +112,12 @@ impl crate::ToImuSample for Pendulum {
         Sb: ndarray::DataMut<Elem = f64>,
     {
         let params = &self.eom.core().params;
-        let ac = state[1].powi(2) * params.radius;
+        let ac = state[State::ThetaD].powi(2) * params.radius;
 
         accel.assign(&ndarray::array![
             0.0,
             0.0,
-            ac + math::GRAVITY * (state[0] + params.sensor_pos).cos()
+            ac + math::GRAVITY * (state[State::Theta] + params.sensor_pos).cos()
         ]);
     }
 
@@ -123,7 +129,7 @@ impl crate::ToImuSample for Pendulum {
         Sa: ndarray::Data<Elem = f64>,
         Sb: ndarray::DataMut<Elem = f64>,
     {
-        gyro.assign(&ndarray::array![state[1], 0.0, 0.0]);
+        gyro.assign(&ndarray::array![state[State::ThetaD], 0.0, 0.0]);
     }
 }
 
@@ -132,6 +138,6 @@ impl crate::DrawState for Pendulum {
     where
         S: ndarray::DataMut<Elem = f64>,
     {
-        sensoreval_graphics::pendulum_2d::draw(cr, state[0]);
+        sensoreval_graphics::pendulum_2d::draw(cr, state[State::Theta]);
     }
 }
