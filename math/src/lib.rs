@@ -208,6 +208,33 @@ pub fn xy2rt(x: f64, y: f64) -> (f64, f64) {
     (xy2r(x, y), xy2t(x, y))
 }
 
+pub struct IIR<T> {
+    coeff: T,
+    prev: Option<T>,
+}
+
+impl<T> IIR<T>
+where
+    T: std::ops::Sub<Output = T>
+        + std::ops::Mul<Output = T>
+        + std::ops::Add<Output = T>
+        + std::ops::Div<Output = T>
+        + From<i32>
+        + Copy,
+{
+    pub fn new(coeff: T) -> Self {
+        Self { coeff, prev: None }
+    }
+
+    pub fn next(&mut self, mut val: T) -> T {
+        if let Some(prev) = self.prev {
+            val = (prev * (self.coeff - T::from(1)) + val) / self.coeff;
+        }
+        self.prev = Some(val);
+        val
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use approx::assert_abs_diff_eq;
