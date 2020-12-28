@@ -375,7 +375,7 @@ Accelerometer_{ENU} = \left[ \begin{array}{c}
 0 \\
 \ddot{x_s}_{inertial} \\
 \ddot{y_s}_{inertial}
-\end{array} \right]
+\end{array} \right] \label{eq:accel_vec}
 \end{equation}
 
 \subsection{Gyroscope}
@@ -563,4 +563,60 @@ r_c = \frac{
 \end{equation}
 If we do the same calculation with the first force in \ref{eq:theta0cdd} which multiplies by $\cos$ instead of $\sin$ we get the exact same result. This means that $r_c$ and $\theta_c$ can be used to simulate any multi-mass booster.
 
+\section{Estimating parameters from IMU data}
+All equations in this chapter assume an IMU that is perfectly positioned and oriented with respect to $r_s$ and $\theta_s$.
+
+\subsection{$\theta_c$}
+Given accelerometer data from a situation without any movement, \ref{eq:accel_vec} can substituted and be simplified:
+\begin{align}
+\ddot{x_s}_{inertial} = g \sin{\theta_0} \\
+\ddot{y_s}_{inertial} = g \cos{\theta_0}
+\end{align}
+Solving these for $\theta_0$ we get two equations:
+\begin{align}
+\theta_0 = \arcsin{\left(\frac{\ddot{x_s}_{inertial}}{g}\right)} \\
+\theta_0 = \arccos{\left(\frac{\ddot{y_s}_{inertial}}{g}\right)}
+\end{align}
+Since our data will be noisy we can estimate the real value calculating the average for all recorded samples:
+\begin{align}
+\theta_0 = \frac{
+    \sum_{i=1}^{n}\left(
+        \arcsin{\left(\frac{\ddot{x_s}_{inertial_i}}{g}\right)}
+        + \arccos{\left(\frac{\ddot{y_s}_{inertial_i}}{g}\right)}
+    \right)
+} {
+    2 n
+}
+\end{align}
+The center of mass is located at 0 degrees, so:
+\begin{equation}
+\theta_c = - \theta_0
+\end{equation}
+
+\subsection{$r_c$}
+\subsubsection{$\theta_0$ at any given point}
+Since there's no closed form solution to \ref{eq:theta0cdd}, a root-finding algorithm has to be used to find $\theta_0$ for any given acceleration. Since manual analysis has shown that there's two solutions for most accelerations I ended up brute-forcing that by iterating over all possible values for $\theta_0$ in appropiately small steps and return the two closest solutions that have a certain distance from each other.
+
+\noindent
+This can be done for the accelerations of both the x-axis and the y-axis. The correct result is the one that appears twice in the combined list of results. Since the results may have slight differences, they have to be identified by looking for the two values with the smallest difference. The approximation can be improved by using the average of these two values as the final result for $\theta_0$.
+
+\subsubsection{$r_c$}
+Solve \ref{eq:theta0cdd} for $r_c$:
+\begin{equation}
+r_c =
+    \frac{
+        - r_B \ddot{\theta_B} \cos{(\theta_B - \theta_0 - \theta_c)}
+        + r_B \dot{\theta_B}^2 \sin{(\theta_B - \theta_0 - \theta_c)}
+        - g \sin{(\theta_0 + \theta_c)}
+    } {
+        \ddot{\theta_0}_c
+    } 
+\end{equation}
+Due to noise this has to be done for every sample and then averaged appropiately. Samples with small values for $\ddot{\theta_0}_c$ should be skipped because of the division by that value. Negative or otherwise impossible results for $r_c$ should also be skipped. The approximation is most accurate when $\dot{\theta_B}$ and $\ddot{\theta_B}$ are $0$.
+
+\subsection{Fine-tuning $r_c$ and finding friction}
+By running a simulation with the acquired values for a situation where $\ddot{\theta_B} = 0$ and overlaying it on top of the IMU data, $r_c$ and friction can be fine tuned to be as close as possible. It's unlikely to simulate a whole ride correctly and that's not really necessary because that's what kalman filters are for.
+
+\noindent
+Friction scales with $(\dot{\theta_0} - \dot{\theta_B})$ which is the angle between the booster and the gondola.
 \end{document}
