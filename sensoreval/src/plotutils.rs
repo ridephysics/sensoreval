@@ -55,6 +55,11 @@ impl<'a> PlotUtils for sensoreval_utils::Plot<'a> {
             self.add_trace_to_rowname_ensure(&mut t.clone().y(&y), "baro")?;
         }
 
+        {
+            let y: Vec<f64> = samples.iter().map(|s| s.temperature).collect();
+            self.add_trace_to_rowname_ensure(&mut t.clone().y(&y), "temp")?;
+        }
+
         let (has_actual, actual_len) = match samples.first() {
             Some(sample) => match sample.actual.as_ref() {
                 Some(actual) => (true, actual.len()),
