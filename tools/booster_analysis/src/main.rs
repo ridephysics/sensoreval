@@ -233,6 +233,8 @@ trait MedianFilterEx<T> {
 
 impl<T: Clone + PartialOrd> MedianFilterEx<T> for median::Filter<T> {
     fn consume_ex(&mut self, value: T) -> T {
+        // this is the window size and len sounds more natural than is_empty
+        #[allow(clippy::len_zero)]
         if self.len() > 0 {
             self.consume(value)
         } else {
