@@ -2,7 +2,7 @@ use eom::traits::Scheme;
 use eom::traits::TimeEvolution;
 use eom::traits::TimeStep;
 
-#[derive(sensoreval_psim_macros::State)]
+#[derive(sensoreval_macros::State)]
 pub enum State {
     ThetaB,
     ThetaBD,

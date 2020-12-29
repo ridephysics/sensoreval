@@ -3,7 +3,7 @@ use eom::traits::TimeEvolution;
 use eom::traits::TimeStep;
 use std::convert::TryInto;
 
-#[derive(sensoreval_psim_macros::State)]
+#[derive(sensoreval_macros::State)]
 pub enum State {
     Theta,
     ThetaD,
