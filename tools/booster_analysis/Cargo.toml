@@ -13,6 +13,7 @@ sensoreval_utils = { path = "../../sensoreval_utils" }
 argmin = {version="0.3", features=["ndarrayl"]}
 argmin_testfunctions = "*"
 itertools = "0.9"
+median = "^0.3"
 structopt = "^0.3"
 ndarray = "0.13"
 ndarray-linalg = "0.12"
