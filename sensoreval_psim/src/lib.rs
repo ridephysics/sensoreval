@@ -31,6 +31,14 @@ pub trait ToImuSample {
     ) where
         Sa: ndarray::Data<Elem = f64>,
         Sb: ndarray::DataMut<Elem = f64>;
+
+    /// returns the height in meters
+    fn to_height<S>(&self, _state: &ndarray::ArrayBase<S, ndarray::Ix1>) -> f64
+    where
+        S: ndarray::Data<Elem = f64>,
+    {
+        0.0
+    }
 }
 
 #[enum_dispatch::enum_dispatch]
