@@ -115,6 +115,11 @@ pub struct SimulatorData {
     /// with model-specific arguments following
     #[serde(default)]
     pub control_input: Vec<Vec<f64>>,
+    /// optional state updates, overrides the current state at certain times.
+    /// each element is an array where the first element is a time in seconds
+    /// with model-specific state following, nan values will be ignored.
+    #[serde(default)]
+    pub state_updates: Vec<Vec<f64>>,
     /// unit: seconds
     pub dt: f64,
     /// unit: seconds
@@ -340,7 +345,8 @@ impl Config {
         let mut ret = Vec::new();
 
         let mut x = ndarray::Array::from(d.initial.clone());
-        let mut timed_array = TimedArray::new(&d.control_input);
+        let mut timed_array_ci = TimedArray::new(&d.control_input);
+        let mut timed_array_su = TimedArray::new(&d.state_updates);
 
         for id in 0..nsamples {
             let t = id as f64 * d.dt + d.start_off;
@@ -357,8 +363,16 @@ impl Config {
             model.to_gyro(&x, &mut sample.gyro);
             ret.push(sample);
 
-            if let Some(control_input) = timed_array.next(t + d.dt) {
+            if let Some(control_input) = timed_array_ci.next(t + d.dt) {
                 model.set_control_input(Some(control_input));
+            }
+
+            if let Some(newstate) = timed_array_su.next(t + d.dt) {
+                for (i, val) in newstate.iter().enumerate() {
+                    if !val.is_nan() {
+                        x[i] = *val;
+                    }
+                }
             }
 
             model.step(&mut x);
