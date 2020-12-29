@@ -15,3 +15,6 @@ pub use plot::COLOR_M;
 
 mod python;
 pub use python::Python;
+
+mod timedarray;
+pub use timedarray::TimedArray;
