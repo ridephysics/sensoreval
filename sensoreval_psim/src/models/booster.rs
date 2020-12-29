@@ -243,6 +243,19 @@ impl crate::ToImuSample for Booster {
         let theta0d = state[State::Theta0D];
         gyro.assign(&ndarray::array![theta0d, 0.0, 0.0]);
     }
+
+    fn to_height<S>(&self, state: &ndarray::ArrayBase<S, ndarray::Ix1>) -> f64
+    where
+        S: ndarray::Data<Elem = f64>,
+    {
+        let params = self.eom.core();
+        let thetab = state[State::ThetaB];
+        let theta0 = state[State::Theta0];
+
+        -params.rb * thetab.cos() - params.rs * (theta0 + params.thetas).cos()
+            + params.rb
+            + params.rs
+    }
 }
 
 impl crate::DrawState for Booster {
