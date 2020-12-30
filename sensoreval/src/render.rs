@@ -131,6 +131,7 @@ mod hre {
     use crate::Error;
 
     #[enum_dispatch::enum_dispatch(HudRenderer)]
+    #[allow(clippy::large_enum_variant)]
     pub(crate) enum HudRendererEnum {
         Pendulum,
         Generic,
