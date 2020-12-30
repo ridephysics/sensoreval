@@ -3,6 +3,7 @@ use sensoreval::PlotUtils;
 use sensoreval_psim::models::booster::State;
 use sensoreval_psim::Model;
 use sensoreval_psim::ToImuSample;
+use sensoreval_utils::StateUtils;
 use structopt::StructOpt;
 
 #[derive(Debug, StructOpt)]

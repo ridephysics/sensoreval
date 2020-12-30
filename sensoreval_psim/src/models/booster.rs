@@ -1,6 +1,7 @@
 use eom::traits::Scheme;
 use eom::traits::TimeEvolution;
 use eom::traits::TimeStep;
+use sensoreval_utils::StateUtils;
 
 #[derive(sensoreval_utils::macros::State)]
 pub enum State {

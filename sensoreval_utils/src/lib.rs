@@ -19,4 +19,8 @@ pub use python::Python;
 mod timedarray;
 pub use timedarray::TimedArray;
 
+pub trait StateUtils {
+    fn len() -> usize;
+    fn id(&self) -> usize;
+}
 pub use sensoreval_macros as macros;

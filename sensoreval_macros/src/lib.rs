@@ -67,13 +67,13 @@ pub fn derive_state_index(input: TokenStream) -> TokenStream {
         }
 
         #[automatically_derived]
-        impl #ident {
+        impl ::sensoreval_utils::StateUtils for #ident {
             #[inline]
-            pub fn len() -> usize {
+            fn len() -> usize {
                 #num_variants
             }
 
-            pub fn id(&self) -> usize {
+            fn id(&self) -> usize {
                 match self {
                     #(
                         #ident::#variant_idents3 => #variant_indices3,
