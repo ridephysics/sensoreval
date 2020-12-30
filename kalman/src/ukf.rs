@@ -4,6 +4,8 @@ use crate::Error;
 use ndarray::azip;
 use ndarray_linalg::solve::Inverse;
 
+type RTSResult<A> = (Vec<ndarray::Array1<A>>, Vec<ndarray::Array2<A>>);
+
 pub trait Functions {
     type Elem;
 
@@ -147,9 +149,9 @@ where
         Pxz
     }
 
-    pub fn predict(&mut self, dt: A) {
+    pub fn predict(&mut self, dt: A) -> Result<(), crate::Error> {
         // calculate sigma points for given mean and covariance
-        let sigmas = self.points_fn.sigma_points(&self.x, &self.P);
+        let sigmas = self.points_fn.sigma_points(&self.x, &self.P)?;
 
         for i in 0..sigmas.nrows() {
             self.sigmas_f
@@ -171,10 +173,15 @@ where
         self.P = P_prior;
 
         // update sigma points to reflect the new variance of the points
-        self.sigmas_f = self.points_fn.sigma_points(&self.x, &self.P);
+        self.sigmas_f = self.points_fn.sigma_points(&self.x, &self.P)?;
+
+        Ok(())
     }
 
-    pub fn update<Sz>(&mut self, z: &ndarray::ArrayBase<Sz, ndarray::Ix1>)
+    pub fn update<Sz>(
+        &mut self,
+        z: &ndarray::ArrayBase<Sz, ndarray::Ix1>,
+    ) -> Result<(), crate::Error>
     where
         Sz: ndarray::Data<Elem = A>,
     {
@@ -202,7 +209,7 @@ where
         let Pxz = self.cross_variance(&self.x, &zp, &self.sigmas_f, &self.sigmas_h);
 
         // Kalman gain
-        let K = Pxz.dot(&S.inv().unwrap());
+        let K = Pxz.dot(&S.inv()?);
 
         // new state estimate
         self.x = &self.x + &K.dot(&y);
@@ -211,6 +218,8 @@ where
         // provide internal results
         self.y = y;
         self.S = S;
+
+        Ok(())
     }
 
     /// log-likelihood of the last measurement
@@ -240,7 +249,7 @@ where
         Ps: &[ndarray::ArrayBase<Sx, ndarray::Ix2>],
         Qs: Option<&[ndarray::Array2<A>]>,
         dts: &[A],
-    ) -> (Vec<ndarray::Array1<A>>, Vec<ndarray::Array2<A>>)
+    ) -> Result<RTSResult<A>, crate::Error>
     where
         Sx: ndarray::Data<Elem = A>,
     {
@@ -249,7 +258,7 @@ where
         let mut Pss = Vec::with_capacity(Ps.len());
 
         if xs.is_empty() {
-            return (xss, Pss);
+            return Ok((xss, Pss));
         }
 
         xss.push(xs.last().unwrap().to_owned());
@@ -266,7 +275,7 @@ where
             let dt = dts[k];
 
             // create sigma points from state estimate
-            let sigmas = self.points_fn.sigma_points(x, P);
+            let sigmas = self.points_fn.sigma_points(x, P)?;
 
             // pass sigmas through state function
             for i in 0..sigmas.nrows() {
@@ -293,7 +302,7 @@ where
             });
 
             // compute gain
-            let K = Pxb.dot(&Pb.inv().unwrap());
+            let K = Pxb.dot(&Pb.inv()?);
 
             // residual
             let residual = self.fns.x_residual(&xss.last().unwrap(), &xb);
@@ -306,6 +315,6 @@ where
         xss.reverse();
         Pss.reverse();
 
-        (xss, Pss)
+        Ok((xss, Pss))
     }
 }

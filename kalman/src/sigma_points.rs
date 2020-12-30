@@ -12,7 +12,7 @@ pub trait SigmaPoints {
         &self,
         x: &ndarray::ArrayBase<S, ndarray::Ix1>,
         P: &ndarray::ArrayBase<S, ndarray::Ix2>,
-    ) -> ndarray::Array2<Self::Elem>
+    ) -> Result<ndarray::Array2<Self::Elem>, crate::Error>
     where
         S: ndarray::Data<Elem = Self::Elem>;
 
@@ -85,7 +85,7 @@ where
         &self,
         x: &ndarray::ArrayBase<S, ndarray::Ix1>,
         P: &ndarray::ArrayBase<S, ndarray::Ix2>,
-    ) -> ndarray::Array2<Self::Elem>
+    ) -> Result<ndarray::Array2<Self::Elem>, crate::Error>
     where
         S: ndarray::Data<Elem = Self::Elem>,
     {
@@ -94,8 +94,7 @@ where
 
         let lambda = self.lambda();
         let U = (((self.n as Self::Elem) + lambda) * P)
-            .cholesky(ndarray_linalg::lapack::UPLO::Upper)
-            .unwrap();
+            .cholesky(ndarray_linalg::lapack::UPLO::Upper)?;
 
         let mut sigmas = ndarray::Array2::<Self::Elem>::zeros((2 * self.n + 1, self.n));
         sigmas.index_axis_mut(ndarray::Axis(0), 0).assign(&x);
@@ -110,7 +109,7 @@ where
                 .assign(&self.fns.subtract(&Uk.neg().view(), &x.neg()));
         }
 
-        sigmas
+        Ok(sigmas)
     }
 
     fn weights_covariance(&self) -> ndarray::Array1<Self::Elem> {
@@ -159,7 +158,7 @@ where
         &self,
         x: &ndarray::ArrayBase<S, ndarray::Ix1>,
         P: &ndarray::ArrayBase<S, ndarray::Ix2>,
-    ) -> ndarray::Array2<Self::Elem>
+    ) -> Result<ndarray::Array2<Self::Elem>, crate::Error>
     where
         S: ndarray::Data<Elem = Self::Elem>,
     {
@@ -167,8 +166,7 @@ where
         assert_eq!(P.dim(), (self.n, self.n));
 
         let U = (((self.n as Self::Elem) + self.kappa) * P)
-            .cholesky(ndarray_linalg::lapack::UPLO::Upper)
-            .unwrap();
+            .cholesky(ndarray_linalg::lapack::UPLO::Upper)?;
 
         let mut sigmas = ndarray::Array2::<Self::Elem>::zeros((2 * self.n + 1, self.n));
         sigmas.index_axis_mut(ndarray::Axis(0), 0).assign(&x);
@@ -183,7 +181,7 @@ where
                 .assign(&self.fns.subtract(&Uk.neg().view(), &x.neg()));
         }
 
-        sigmas
+        Ok(sigmas)
     }
 
     fn weights_covariance(&self) -> ndarray::Array1<Self::Elem> {
@@ -227,7 +225,9 @@ pub(crate) mod tests {
     fn merwe() {
         let fns = LinFns::default();
         let points = MerweScaledSigmaPoints::new(2, 0.1, 2.0, 1.0, &fns);
-        let sigmas = points.sigma_points(&array![0.0, 0.0], &array![[1.0, 0.1], [0.1, 1.0]]);
+        let sigmas = points
+            .sigma_points(&array![0.0, 0.0], &array![[1.0, 0.1], [0.1, 1.0]])
+            .unwrap();
         let wc = points.weights_covariance();
         let wm = points.weights_mean();
 
@@ -269,7 +269,9 @@ pub(crate) mod tests {
     fn julier() {
         let fns = LinFns::default();
         let points = JulierSigmaPoints::new(2, 1.0, &fns);
-        let sigmas = points.sigma_points(&array![0.0, 0.0], &array![[1.0, 0.1], [0.1, 1.0]]);
+        let sigmas = points
+            .sigma_points(&array![0.0, 0.0], &array![[1.0, 0.1], [0.1, 1.0]])
+            .unwrap();
         let wc = points.weights_covariance();
         let wm = points.weights_mean();
 

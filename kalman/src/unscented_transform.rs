@@ -61,7 +61,7 @@ mod tests {
         let fns = super::super::sigma_points::tests::LinFns::default();
         let points =
             super::super::sigma_points::MerweScaledSigmaPoints::new(2, 0.1, 2.0, 1.0, &fns);
-        let sigmas = points.sigma_points(&x, &P);
+        let sigmas = points.sigma_points(&x, &P).unwrap();
         let Wc = points.weights_covariance();
         let Wm = points.weights_mean();
 

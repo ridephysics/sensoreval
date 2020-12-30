@@ -381,8 +381,8 @@ impl render::HudRenderer for Pendulum {
                 .slice_mut(s![4..7, 4..7])
                 .assign(&kalman::discretization::Q_discrete_white_noise(3, dt, 0.001).unwrap());
 
-            ukf.predict(dt);
-            ukf.update(&z);
+            ukf.predict(dt).unwrap();
+            ukf.update(&z).unwrap();
 
             self.est.push(ukf.x.clone());
 
@@ -396,7 +396,7 @@ impl render::HudRenderer for Pendulum {
         }
 
         if self.cfg.enable_rts_smoother {
-            let (xss, _) = ukf.rts_smoother(&self.est, &Ps, Some(&Qs), &dts);
+            let (xss, _) = ukf.rts_smoother(&self.est, &Ps, Some(&Qs), &dts).unwrap();
             self.est = xss;
         }
 
