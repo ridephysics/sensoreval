@@ -18,3 +18,5 @@ pub use python::Python;
 
 mod timedarray;
 pub use timedarray::TimedArray;
+
+pub use sensoreval_macros as macros;

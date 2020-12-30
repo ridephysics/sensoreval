@@ -5,6 +5,9 @@ authors = ["Michael Zimmermann <sigmaepsilon92@gmail.com>"]
 edition = "2018"
 
 [dependencies]
+sensoreval_macros = { path = "../sensoreval_macros" }
+
+ndarray = "0.13"
 plotly-types = { git = "https://github.com/M1cha/plotly-types-rs", branch = "master" }
 serde = "1.0"
 serde-pickle = "0.6"
