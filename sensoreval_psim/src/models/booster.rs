@@ -7,6 +7,7 @@ use sensoreval_utils::StateUtils;
 pub enum State {
     ThetaB,
     ThetaBD,
+    ThetaBDD,
     Theta0,
     Theta0D,
 }
@@ -62,6 +63,7 @@ impl Params {
     {
         let thetab = state[State::ThetaB];
         let thetabd = state[State::ThetaBD];
+        let thetabdd = state[State::ThetaBDD];
         let theta0 = state[State::Theta0];
         let theta0d = state[State::Theta0D];
 
@@ -70,17 +72,25 @@ impl Params {
             let thetac = self.objects[0].t;
             let rc = self.objects[0].r;
 
-            (self.rb * thetabd.powi(2) * (thetab - theta0 - thetac).sin()
+            (-self.rb * thetabdd * rc * (thetab - theta0 - thetac).cos()
+                + self.rb * thetabd.powi(2) * (thetab - theta0 - thetac).sin()
                 - math::GRAVITY * (theta0 + thetac).sin())
                 / rc
         } else {
-            (self.rb
-                * thetabd.powi(2)
+            (-self.rb
+                * thetabdd
                 * self
                     .objects
                     .iter()
-                    .map(|o| o.m * o.r * (thetab - theta0 - o.t).sin())
+                    .map(|o| o.m * o.r * (thetab - theta0 - o.t).cos())
                     .sum::<f64>()
+                + self.rb
+                    * thetabd.powi(2)
+                    * self
+                        .objects
+                        .iter()
+                        .map(|o| o.m * o.r * (thetab - theta0 - o.t).sin())
+                        .sum::<f64>()
                 - math::GRAVITY
                     * self
                         .objects
@@ -116,11 +126,13 @@ impl eom::traits::Explicit for Params {
         S: ndarray::DataMut<Elem = f64>,
     {
         let thetabd = v[State::ThetaBD];
+        let thetabdd = v[State::ThetaBDD];
         let theta0d = v[State::Theta0D];
         let theta0dd = self.theta0dd(v);
 
         v[State::ThetaB] = thetabd;
-        v[State::ThetaBD] = 0.0;
+        v[State::ThetaBD] = thetabdd;
+        v[State::ThetaBDD] = 0.0;
 
         v[State::Theta0] = theta0d;
         v[State::Theta0D] = theta0dd;
@@ -216,6 +228,7 @@ impl crate::ToImuSample for Booster {
         let params = self.eom.core();
         let thetab = state[State::ThetaB];
         let thetabd = state[State::ThetaBD];
+        let thetabdd = state[State::ThetaBDD];
         let theta0 = state[State::Theta0];
         let theta0d = state[State::Theta0D];
         let theta0dd = params.theta0dd(state);
@@ -223,10 +236,12 @@ impl crate::ToImuSample for Booster {
         accel.assign(&ndarray::array![
             0.0,
             -params.rb * thetabd.powi(2) * (thetab - theta0).sin()
+                + params.rb * thetabdd * (thetab - theta0).cos()
                 - params.rs * theta0d.powi(2) * params.thetas.sin()
                 + params.rs * theta0dd * params.thetas.cos()
                 + math::GRAVITY * theta0.sin(),
             params.rb * thetabd.powi(2) * (thetab - theta0).cos()
+                + params.rb * thetabdd * (thetab - theta0).sin()
                 + params.rs * theta0d.powi(2) * params.thetas.cos()
                 + params.rs * theta0dd * params.thetas.sin()
                 + math::GRAVITY * theta0.cos()
