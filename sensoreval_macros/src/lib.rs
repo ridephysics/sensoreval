@@ -1,3 +1,4 @@
+use convert_case::{Case, Casing};
 use proc_macro::TokenStream;
 use quote::quote;
 use syn::{parse_macro_input, DeriveInput};
@@ -6,6 +7,8 @@ use syn::{parse_macro_input, DeriveInput};
 pub fn derive_state_index(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
     let ident = input.ident;
+    let ident_args =
+        proc_macro2::Ident::new(&format!("{}Args", ident), proc_macro2::Span::call_site());
 
     let data = match &input.data {
         syn::Data::Enum(d) => d,
@@ -35,6 +38,14 @@ pub fn derive_state_index(input: TokenStream) -> TokenStream {
     let variant_idents3 = variant_idents1.clone();
     let variant_indices3 = variant_indices1.clone();
 
+    let variant_idents_lower1 = data.variants.iter().map(|v| {
+        proc_macro2::Ident::new(
+            &v.ident.to_string().to_case(Case::Snake),
+            proc_macro2::Span::call_site(),
+        )
+    });
+    let variant_idents_lower2 = variant_idents_lower1.clone();
+
     TokenStream::from(quote! {
         #[automatically_derived]
         impl<S, A> std::ops::Index<#ident> for ndarray::ArrayBase<S, ndarray::Ix1>
@@ -63,6 +74,26 @@ pub fn derive_state_index(input: TokenStream) -> TokenStream {
                         #ident::#variant_idents2 => &mut self[#variant_indices2],
                     )*
                 }
+            }
+        }
+
+
+        #[automatically_derived]
+        pub struct #ident_args<A> {
+            #(
+                pub #variant_idents_lower1: A,
+            )*
+        }
+
+        #[automatically_derived]
+        impl<A> From<#ident_args<A>> for ::ndarray::Array1<A>
+        {
+            fn from(args: #ident_args<A>) -> Self {
+                ::ndarray::array![
+                    #(
+                        args.#variant_idents_lower2,
+                    )*
+                ]
             }
         }
 
