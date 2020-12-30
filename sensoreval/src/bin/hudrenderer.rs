@@ -147,7 +147,7 @@ struct GuiCallback<'a, 'b, 'c> {
 
 impl<'a, 'b, 'c> sensoreval_gui::Callback for GuiCallback<'a, 'b, 'c> {
     fn set_ts(&mut self, ctx: &mut sensoreval_gui::RuntimeContext, ts: u64) {
-        self.renderctx.set_ts(ts).unwrap();
+        let _ = self.renderctx.set_ts(ts);
 
         if let Ok(q) = self.renderctx.orientation() {
             ctx.set_orientation(*q);
