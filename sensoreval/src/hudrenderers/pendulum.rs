@@ -6,6 +6,7 @@ use crate::Error;
 use crate::PlotUtils;
 use bincode::config::Options;
 use kalman::ukf::Functions;
+use kalman::Filter;
 use ndarray::array;
 use ndarray::azip;
 use ndarray::s;
