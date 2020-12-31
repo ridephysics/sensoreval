@@ -68,6 +68,7 @@ pub trait Functions {
         Sb: ndarray::Data<Elem = Self::Elem>;
 }
 
+#[derive(Clone, Debug)]
 pub struct UKF<'a, FP, FNS, A> {
     fns: &'a FNS,
 

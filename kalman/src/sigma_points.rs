@@ -33,6 +33,7 @@ pub trait Functions {
         Sb: ndarray::Data<Elem = Self::Elem>;
 }
 
+#[derive(Clone, Debug)]
 pub struct MerweScaledSigmaPoints<'a, FNS> {
     fns: &'a FNS,
 
@@ -128,6 +129,7 @@ where
     }
 }
 
+#[derive(Clone, Debug)]
 pub struct JulierSigmaPoints<'a, FNS> {
     fns: &'a FNS,
 
