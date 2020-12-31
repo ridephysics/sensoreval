@@ -1,4 +1,5 @@
 pub mod discretization;
+pub mod kalman;
 pub mod sigma_points;
 pub mod ukf;
 
