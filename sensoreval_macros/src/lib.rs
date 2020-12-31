@@ -46,6 +46,9 @@ pub fn derive_state_index(input: TokenStream) -> TokenStream {
     });
     let variant_idents_lower2 = variant_idents_lower1.clone();
 
+    let variant_idents_lower3 = variant_idents_lower1.clone();
+    let variant_indices_lower3 = variant_indices1.clone();
+
     TokenStream::from(quote! {
         #[automatically_derived]
         impl<S, A> std::ops::Index<#ident> for ndarray::ArrayBase<S, ndarray::Ix1>
@@ -94,6 +97,19 @@ pub fn derive_state_index(input: TokenStream) -> TokenStream {
                         args.#variant_idents_lower2,
                     )*
                 ]
+            }
+        }
+
+        #[automatically_derived]
+        impl<S, A> ::sensoreval_utils::AssignState<#ident_args<A>>
+            for ::ndarray::ArrayBase<S, ndarray::Ix1>
+        where
+            S: ndarray::DataMut<Elem = A>,
+        {
+            fn assign_state(&mut self, args: #ident_args<A>) {
+                #(
+                    self[#variant_indices_lower3] = args.#variant_idents_lower3;
+                )*
             }
         }
 

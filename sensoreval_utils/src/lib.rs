@@ -23,4 +23,7 @@ pub trait StateUtils {
     fn len() -> usize;
     fn id(&self) -> usize;
 }
+pub trait AssignState<A> {
+    fn assign_state(&mut self, args: A);
+}
 pub use sensoreval_macros as macros;
