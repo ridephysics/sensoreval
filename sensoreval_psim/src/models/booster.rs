@@ -1,6 +1,7 @@
 use eom::traits::Scheme;
 use eom::traits::TimeEvolution;
 use eom::traits::TimeStep;
+use sensoreval_utils::AssignState;
 use sensoreval_utils::StateUtils;
 
 #[derive(sensoreval_utils::macros::State)]
@@ -130,12 +131,13 @@ impl eom::traits::Explicit for Params {
         let theta0d = v[State::Theta0D];
         let theta0dd = self.theta0dd(v);
 
-        v[State::ThetaB] = thetabd;
-        v[State::ThetaBD] = thetabdd;
-        v[State::ThetaBDD] = 0.0;
-
-        v[State::Theta0] = theta0d;
-        v[State::Theta0D] = theta0dd;
+        v.assign_state(StateArgs {
+            theta_b: thetabd,
+            theta_bd: thetabdd,
+            theta_bdd: 0.0,
+            theta_0: theta0d,
+            theta_0_d: theta0dd,
+        });
 
         v
     }
