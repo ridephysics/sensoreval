@@ -9,4 +9,8 @@ pub enum Error {
     FloatConversion,
     #[error("invalid argument")]
     InvalidArgument,
+    #[error("filters have different shapes")]
+    DifferentFilterShapes,
+    #[error("not enough filters")]
+    NotEnoughFilters,
 }
