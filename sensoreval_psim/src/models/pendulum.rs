@@ -1,6 +1,8 @@
 use eom::traits::Scheme;
 use eom::traits::TimeEvolution;
 use eom::traits::TimeStep;
+use sensoreval_utils::AssignState;
+use sensoreval_utils::StateUtils;
 use std::convert::TryInto;
 
 #[derive(sensoreval_utils::macros::State)]
@@ -47,7 +49,7 @@ impl eom::traits::ModelSpec for ParamsInternal {
     type Dim = ndarray::Ix1;
 
     fn model_size(&self) -> usize {
-        2
+        State::len()
     }
 }
 
@@ -60,22 +62,29 @@ impl eom::traits::Explicit for ParamsInternal {
         S: ndarray::DataMut<Elem = f64>,
     {
         let theta = v[State::Theta];
-        let x = v[State::ThetaD];
-
-        v[State::Theta] = x;
-        v[State::ThetaD] = (-math::GRAVITY * theta.sin()) / self.params.radius;
+        let thetad = v[State::ThetaD];
+        let mut thetadd = (-math::GRAVITY * theta.sin()) / self.params.radius;
 
         if let (Some(ci), Some(motor)) = (&self.ci, &self.params.motor) {
             match motor {
                 Motor::GroundMotor(m) => {
                     if theta.abs() <= m.ship_arc_half_angle {
                         // accelerate into the direction of movement
-                        let motor = if x.is_sign_negative() { -ci[0] } else { ci[0] };
-                        v[State::ThetaD] += motor / self.params.radius;
+                        let motor = if thetad.is_sign_negative() {
+                            -ci[0]
+                        } else {
+                            ci[0]
+                        };
+                        thetadd += motor / self.params.radius;
                     }
                 }
             }
         }
+
+        v.assign_state(StateArgs {
+            theta: thetad,
+            theta_d: thetadd,
+        });
 
         v
     }
