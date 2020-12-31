@@ -1,6 +1,7 @@
 use itertools::Itertools;
 use sensoreval::PlotUtils;
 use sensoreval_psim::models::booster::State;
+use sensoreval_psim::models::booster::StateArgs;
 use sensoreval_psim::Model;
 use sensoreval_psim::ToImuSample;
 use sensoreval_utils::StateUtils;
@@ -600,7 +601,13 @@ fn plot(plotopt: &PlotOpt) {
 
         // calculate all states
         let mut states = Vec::with_capacity(samples.len());
-        let mut state = ndarray::array![y_thetab[0], opt.thetabd, y_theta0l[0], y_theta0d[0]];
+        let mut state = ndarray::Array::from(StateArgs {
+            theta_b: y_thetab[0],
+            theta_bd: opt.thetabd,
+            theta_bdd: 0.0,
+            theta_0: y_theta0l[0],
+            theta_0_d: y_theta0d[0],
+        });
         for (i, s) in samples.iter().enumerate() {
             if i != 0 {
                 model.set_dt(s.time_seconds() - samples[i - 1].time_seconds());
