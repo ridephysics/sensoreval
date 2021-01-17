@@ -43,10 +43,7 @@ impl<'a> PlotUtils for sensoreval_utils::Plot<'a> {
         }
 
         {
-            let y: Vec<f64> = samples
-                .iter()
-                .map(|s| s.gyro.norm_l2().copysign(s.gyro[0]))
-                .collect();
+            let y: Vec<f64> = samples.iter().map(|s| s.gyro.norm_l2()).collect();
             self.add_trace_to_rowname_ensure(&mut t.clone().y(&y), "norm-g")?;
         }
 
