@@ -51,6 +51,11 @@ impl<'a> PlotUtils for sensoreval_utils::Plot<'a> {
         }
 
         {
+            let y: Vec<f64> = samples.iter().map(|s| s.mag.norm_l2()).collect();
+            self.add_trace_to_rowname_ensure(&mut t.clone().y(&y), "mag-g")?;
+        }
+
+        {
             let y: Vec<f64> = samples.iter().map(|s| s.pressure).collect();
             self.add_trace_to_rowname_ensure(&mut t.clone().y(&y), "baro")?;
         }
