@@ -39,7 +39,7 @@ fn pendulum_period(opt: &PendulumPeriodOpt) {
 
 #[derive(Debug, StructOpt)]
 struct Multi2SingleOpt {
-    #[structopt(long, default_value = "0.0,0.0,0.0,0.0")]
+    #[structopt(long, default_value = "0.0,0.0,0.0,0.0,0.0")]
     psim_init: math::Array1Opt<f64>,
     #[structopt(long, default_value = "1.0")]
     rb: f64,
