@@ -134,12 +134,13 @@ impl Context {
             let rawdata: RawData = bincode::deserialize(&self.buf)?;
 
             // turn rawdata into data
-            let mut data = Data::default();
-
-            data.time = rawdata.time_imu;
-            data.time_baro = rawdata.time_baro;
-            data.temperature = rawdata.temperature;
-            data.pressure = rawdata.pressure;
+            let mut data = Data {
+                time: rawdata.time_imu,
+                time_baro: rawdata.time_baro,
+                temperature: rawdata.temperature,
+                pressure: rawdata.pressure,
+                ..Data::default()
+            };
 
             let mut accel = array![rawdata.accel[0], rawdata.accel[1], rawdata.accel[2]];
             let mut gyro = array![rawdata.gyro[0], rawdata.gyro[1], rawdata.gyro[2]];

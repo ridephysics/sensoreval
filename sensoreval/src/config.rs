@@ -315,10 +315,12 @@ impl Config {
             let mut actual = x.clone();
             model.normalize(&mut actual);
 
-            let mut sample = crate::Data::default();
-            sample.time = t_us;
-            sample.time_baro = t_us;
-            sample.actual = Some(actual);
+            let mut sample = crate::Data {
+                time: t_us,
+                time_baro: t_us,
+                actual: Some(actual),
+                ..crate::Data::default()
+            };
             model.to_accel(&x, &mut sample.accel);
             model.to_gyro(&x, &mut sample.gyro);
             ret.push(sample);
