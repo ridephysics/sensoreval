@@ -150,12 +150,12 @@ where
         }
     }
 
-    fn process_nested(&self, nestedmeta: &syn::NestedMeta) -> Option<Attribute> {
+    fn process_nested(&self, nestedmeta: &syn::NestedMeta) -> Attribute {
         match nestedmeta {
             syn::NestedMeta::Meta(meta) => match meta {
                 syn::Meta::Path(path) => {
                     if path.is_ident("angle") {
-                        Some(Attribute::Angle)
+                        Attribute::Angle
                     } else {
                         abort!(path, "unsupported path identifier");
                     }
@@ -163,7 +163,7 @@ where
                 syn::Meta::NameValue(nv) => {
                     if nv.path.is_ident("fnstruct") {
                         match &nv.lit {
-                            syn::Lit::Str(s) => Some(Attribute::FnStruct(s.value())),
+                            syn::Lit::Str(s) => Attribute::FnStruct(s.value()),
                             _ => abort!(nv.path, "unsupported value for fnstruct"),
                         }
                     } else {
@@ -178,13 +178,11 @@ where
 
     fn next_nested(&mut self) -> Option<Attribute> {
         if let Some(nested_iter) = &mut self.nested_iter {
-            match &nested_iter.next() {
-                Some(nested) => self.process_nested(nested),
-                None => {
-                    self.nested_iter = None;
-                    None
-                }
+            let next = nested_iter.next().map(|o| self.process_nested(&o));
+            if next.is_none() {
+                self.nested_iter = None;
             }
+            next
         } else {
             None
         }
