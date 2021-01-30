@@ -1,7 +1,9 @@
 #![allow(non_snake_case)]
 
+use crate::ApplyDt;
 use crate::Error;
 use crate::Filter;
+use crate::SetDt;
 use ndarray::azip;
 use ndarray_linalg::solve::Inverse;
 
@@ -10,11 +12,7 @@ type RTSResult<A> = (Vec<ndarray::Array1<A>>, Vec<ndarray::Array2<A>>);
 pub trait Functions {
     type Elem;
 
-    fn fx<S>(
-        &self,
-        x: &ndarray::ArrayBase<S, ndarray::Ix1>,
-        dt: Self::Elem,
-    ) -> ndarray::Array1<Self::Elem>
+    fn fx<S>(&self, x: &ndarray::ArrayBase<S, ndarray::Ix1>) -> ndarray::Array1<Self::Elem>
     where
         S: ndarray::Data<Elem = Self::Elem>;
 
@@ -69,8 +67,8 @@ pub trait Functions {
 }
 
 #[derive(Clone, Debug)]
-pub struct UKF<'a, FP, FNS, A> {
-    fns: &'a FNS,
+pub struct UKF<'a, FP, FNS, A, Sz> {
+    fns: FNS,
 
     // state
     pub x: ndarray::Array1<A>,
@@ -93,9 +91,21 @@ pub struct UKF<'a, FP, FNS, A> {
     sigmas_h: ndarray::Array2<A>,
     pub y: ndarray::Array1<A>,
     pub S: ndarray::Array2<A>,
+
+    pd_Sz: std::marker::PhantomData<Sz>,
 }
 
-impl<'a, FP, FNS, A> Filter<A> for UKF<'a, FP, FNS, A>
+impl<'a, FP, FNS, A, Sz, T> SetDt<T> for UKF<'a, FP, FNS, A, Sz>
+where
+    FNS: SetDt<T> + ApplyDt<T, Self>,
+{
+    fn set_dt(&mut self, dt: &T) {
+        self.fns.set_dt(dt);
+        FNS::apply_dt(dt, self);
+    }
+}
+
+impl<'a, FP, FNS, A, Sz> Filter<A, ndarray::ArrayBase<Sz, ndarray::Ix1>> for UKF<'a, FP, FNS, A, Sz>
 where
     FP: crate::sigma_points::SigmaPoints<Elem = A>,
     FNS: Functions<Elem = A>,
@@ -106,15 +116,16 @@ where
         + ndarray_linalg::types::Lapack
         + std::convert::From<f32>,
     <A as ndarray_linalg::Scalar>::Real: std::convert::From<f32>,
+    Sz: ndarray::Data<Elem = A>,
 {
-    fn predict(&mut self, dt: A) -> Result<(), crate::Error> {
+    fn predict(&mut self) -> Result<(), crate::Error> {
         // calculate sigma points for given mean and covariance
         let sigmas = self.points_fn.sigma_points(&self.x, &self.P)?;
 
         for i in 0..sigmas.nrows() {
             self.sigmas_f
                 .index_axis_mut(ndarray::Axis(0), i)
-                .assign(&self.fns.fx(&sigmas.index_axis(ndarray::Axis(0), i), dt));
+                .assign(&self.fns.fx(&sigmas.index_axis(ndarray::Axis(0), i)));
         }
 
         // and pass sigmas through the unscented transform to compute prior
@@ -136,10 +147,7 @@ where
         Ok(())
     }
 
-    fn update<Sz>(&mut self, z: &ndarray::ArrayBase<Sz, ndarray::Ix1>) -> Result<(), crate::Error>
-    where
-        Sz: ndarray::Data<Elem = A>,
-    {
+    fn update(&mut self, z: &ndarray::ArrayBase<Sz, ndarray::Ix1>) -> Result<(), crate::Error> {
         // transform sigma points into measurement space
         for i in 0..self.sigmas_f.nrows() {
             self.sigmas_h
@@ -196,12 +204,12 @@ where
         &self.x
     }
 
-    fn P(&self) -> &ndarray::Array2<A> {
-        &self.P
-    }
-
     fn x_mut(&mut self) -> &mut ndarray::Array1<A> {
         &mut self.x
+    }
+
+    fn P(&self) -> &ndarray::Array2<A> {
+        &self.P
     }
 
     fn P_mut(&mut self) -> &mut ndarray::Array2<A> {
@@ -209,7 +217,7 @@ where
     }
 }
 
-impl<'a, FP, FNS, A> UKF<'a, FP, FNS, A>
+impl<'a, FP, FNS, A, Sz> UKF<'a, FP, FNS, A, Sz>
 where
     FP: crate::sigma_points::SigmaPoints<Elem = A>,
     FNS: Functions<Elem = A>,
@@ -221,7 +229,7 @@ where
         + std::convert::From<f32>,
     <A as ndarray_linalg::Scalar>::Real: std::convert::From<f32>,
 {
-    pub fn new(dim_x: usize, dim_z: usize, points_fn: &'a FP, fns: &'a FNS) -> Self {
+    pub fn new(dim_x: usize, dim_z: usize, points_fn: &'a FP, fns: FNS) -> Self {
         Self {
             fns,
 
@@ -240,19 +248,21 @@ where
             sigmas_h: ndarray::Array::zeros((points_fn.num_sigmas(), dim_z)),
             y: ndarray::Array::zeros(dim_z),
             S: ndarray::Array::zeros((dim_z, dim_z)),
+
+            pd_Sz: std::marker::PhantomData,
         }
     }
 
-    fn cross_variance<Sx, Sz, Sf, Sh>(
+    fn cross_variance<Sx, Szl, Sf, Sh>(
         &self,
         x: &ndarray::ArrayBase<Sx, ndarray::Ix1>,
-        z: &ndarray::ArrayBase<Sz, ndarray::Ix1>,
+        z: &ndarray::ArrayBase<Szl, ndarray::Ix1>,
         sigmas_f: &ndarray::ArrayBase<Sf, ndarray::Ix2>,
         sigmas_h: &ndarray::ArrayBase<Sh, ndarray::Ix2>,
     ) -> ndarray::Array2<A>
     where
         Sx: ndarray::Data<Elem = A>,
-        Sz: ndarray::Data<Elem = A>,
+        Szl: ndarray::Data<Elem = A>,
         Sf: ndarray::Data<Elem = A>,
         Sh: ndarray::Data<Elem = A>,
     {
@@ -280,6 +290,7 @@ where
     ) -> Result<RTSResult<A>, crate::Error>
     where
         Sx: ndarray::Data<Elem = A>,
+        FNS: SetDt<A>,
     {
         assert_eq!(xs.len(), Ps.len());
         let mut xss = Vec::with_capacity(xs.len());
@@ -301,6 +312,7 @@ where
                 None => &self.Q,
             };
             let dt = dts[k];
+            self.fns.set_dt(&dt);
 
             // create sigma points from state estimate
             let sigmas = self.points_fn.sigma_points(x, P)?;
@@ -309,7 +321,7 @@ where
             for i in 0..sigmas.nrows() {
                 self.sigmas_f
                     .index_axis_mut(ndarray::Axis(0), i)
-                    .assign(&self.fns.fx(&sigmas.index_axis(ndarray::Axis(0), i), dt));
+                    .assign(&self.fns.fx(&sigmas.index_axis(ndarray::Axis(0), i)));
             }
 
             let (xb, Pb) = crate::unscented_transform(

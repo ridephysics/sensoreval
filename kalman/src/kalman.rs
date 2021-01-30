@@ -3,7 +3,7 @@
 use ndarray_linalg::solve::Inverse;
 
 #[derive(Clone, Debug)]
-pub struct Kalman<A> {
+pub struct Kalman<A, Sz> {
     dim_x: usize,
     dim_z: usize,
     pub x: ndarray::Array1<A>,
@@ -14,9 +14,11 @@ pub struct Kalman<A> {
     pub R: ndarray::Array2<A>,
     pub y: ndarray::Array1<A>,
     pub S: ndarray::Array2<A>,
+
+    pd_Sz: std::marker::PhantomData<Sz>,
 }
 
-impl<A> crate::Filter<A> for Kalman<A>
+impl<A, Sz> crate::Filter<A, ndarray::ArrayBase<Sz, ndarray::Ix1>> for Kalman<A, Sz>
 where
     A: num_traits::float::Float
         + num_traits::float::FloatConst
@@ -27,17 +29,15 @@ where
         + std::convert::From<f32>
         + std::fmt::Display,
     <A as ndarray_linalg::Scalar>::Real: std::convert::From<f32>,
+    Sz: ndarray::Data<Elem = A>,
 {
-    fn predict(&mut self, _dt: A) -> Result<(), crate::Error> {
+    fn predict(&mut self) -> Result<(), crate::Error> {
         self.x = self.F.dot(&self.x);
         self.P = self.F.dot(&self.P).dot(&self.F.t()) + &self.Q;
         Ok(())
     }
 
-    fn update<Sz>(&mut self, z: &ndarray::ArrayBase<Sz, ndarray::Ix1>) -> Result<(), crate::Error>
-    where
-        Sz: ndarray::Data<Elem = A>,
-    {
+    fn update(&mut self, z: &ndarray::ArrayBase<Sz, ndarray::Ix1>) -> Result<(), crate::Error> {
         self.y = z - &self.H.dot(&self.x);
         let PHT = self.P.dot(&self.H.t());
         self.S = self.H.dot(&PHT) + &self.R;
@@ -78,7 +78,7 @@ where
     }
 }
 
-impl<A> Kalman<A>
+impl<A, Sz> Kalman<A, Sz>
 where
     A: num_traits::float::Float
         + num_traits::float::FloatConst
@@ -100,6 +100,7 @@ where
             R: ndarray::Array2::eye(dim_z),
             y: ndarray::Array1::zeros(dim_z),
             S: ndarray::Array2::zeros((dim_z, dim_z)),
+            pd_Sz: std::marker::PhantomData,
         })
     }
 

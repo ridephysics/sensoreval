@@ -2,7 +2,7 @@
 use std::ops::DivAssign;
 
 #[derive(Debug)]
-pub struct IMM<'a, A, F, MU, M> {
+pub struct IMM<'a, A, F, MU, M, Sz> {
     /// List of N filters. filters[i] is the ith Kalman filter in the IMM
     /// estimator
     filters: &'a mut [F],
@@ -36,12 +36,21 @@ pub struct IMM<'a, A, F, MU, M> {
     /// Total probability, after interaction, that the target is in state j.
     /// We use it as the # normalization constant.
     cbar: ndarray::Array1<A>,
+
+    pd_Sz: std::marker::PhantomData<Sz>,
 }
 
-impl<'a, A, F, Smu, SM> crate::Filter<A>
-    for IMM<'a, A, F, ndarray::ArrayBase<Smu, ndarray::Ix1>, ndarray::ArrayBase<SM, ndarray::Ix2>>
+impl<'a, A, F, Smu, SM, Sz> crate::Filter<A, ndarray::ArrayBase<Sz, ndarray::Ix1>>
+    for IMM<
+        'a,
+        A,
+        F,
+        ndarray::ArrayBase<Smu, ndarray::Ix1>,
+        ndarray::ArrayBase<SM, ndarray::Ix2>,
+        Sz,
+    >
 where
-    F: crate::Filter<A>,
+    F: crate::Filter<A, ndarray::ArrayBase<Sz, ndarray::Ix1>>,
     Smu: ndarray::DataMut<Elem = A>,
     SM: ndarray::Data<Elem = A>,
     A: num_traits::float::Float
@@ -50,8 +59,9 @@ where
         + std::ops::AddAssign
         + std::convert::From<f32>
         + std::fmt::Display,
+    Sz: ndarray::Data<Elem = A>,
 {
-    fn predict(&mut self, dt: A) -> Result<(), crate::Error> {
+    fn predict(&mut self) -> Result<(), crate::Error> {
         let N = self.filters.len();
 
         // compute mixed initial conditions
@@ -78,7 +88,7 @@ where
             // propagate using the mixed state estimate and covariance
             f.x_mut().assign(&xs[i]);
             f.P_mut().assign(&Ps[i]);
-            f.predict(dt)?;
+            f.predict()?;
         }
 
         self.compute_state_estimate();
@@ -86,10 +96,7 @@ where
         Ok(())
     }
 
-    fn update<Sz>(&mut self, z: &ndarray::ArrayBase<Sz, ndarray::Ix1>) -> Result<(), crate::Error>
-    where
-        Sz: ndarray::Data<Elem = A>,
-    {
+    fn update(&mut self, z: &ndarray::ArrayBase<Sz, ndarray::Ix1>) -> Result<(), crate::Error> {
         // run update on each filter, and save the likelihood
         for (i, f) in self.filters.iter_mut().enumerate() {
             f.update(z)?;
@@ -129,16 +136,17 @@ where
     }
 }
 
-impl<'a, A, F, Smu, SM>
-    IMM<'a, A, F, ndarray::ArrayBase<Smu, ndarray::Ix1>, ndarray::ArrayBase<SM, ndarray::Ix2>>
+impl<'a, A, F, Smu, SM, Sz>
+    IMM<'a, A, F, ndarray::ArrayBase<Smu, ndarray::Ix1>, ndarray::ArrayBase<SM, ndarray::Ix2>, Sz>
 where
-    F: crate::Filter<A>,
+    F: crate::Filter<A, ndarray::ArrayBase<Sz, ndarray::Ix1>>,
     Smu: ndarray::DataMut<Elem = A>,
     SM: ndarray::Data<Elem = A>,
     A: num_traits::float::Float
         + ndarray::ScalarOperand
         + std::ops::AddAssign
         + std::convert::From<f32>,
+    Sz: ndarray::Data<Elem = A>,
 {
     pub fn new(
         filters: &'a mut [F],
@@ -167,6 +175,7 @@ where
             likelihood: ndarray::Array::zeros(N),
             omega: ndarray::Array::zeros((N, N)),
             cbar: ndarray::Array::zeros(N),
+            pd_Sz: std::marker::PhantomData,
         };
         o.compute_mixing_probabilities();
 
@@ -274,7 +283,7 @@ mod test {
             zs[(i, 1)] = imm_track[(i, 2, 0)] + rng.gen::<f64>() * r;
         }
 
-        let mut ca = super::super::kalman::Kalman::<f64>::new(6, 2).unwrap();
+        let mut ca = super::super::kalman::Kalman::<f64, _>::new(6, 2).unwrap();
         let dt2 = dt.powi(2) / 2.0f64;
         let F = ndarray::array![[1.0, dt, dt2], [0.0, 1.0, dt], [0.0, 0.0, 1.0]];
 
@@ -318,7 +327,7 @@ mod test {
         let mut xs = Vec::with_capacity(zs.len());
         let mut probs = Vec::with_capacity(zs.len());
         for (i, z) in zs.genrows().into_iter().enumerate() {
-            bank.predict(dt).unwrap();
+            bank.predict().unwrap();
             bank.update(&z).unwrap();
 
             xs.push(bank.x().clone());

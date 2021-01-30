@@ -7,6 +7,7 @@ use crate::PlotUtils;
 use bincode::config::Options;
 use kalman::ukf::Functions;
 use kalman::Filter;
+use kalman::SetDt;
 use ndarray::array;
 use ndarray::azip;
 use ndarray::s;
@@ -33,15 +34,35 @@ pub struct Config {
     pub active_row: usize,
 }
 
-pub struct StateFunctions;
+#[derive(Clone)]
+pub struct StateFunctions {
+    dt: f64,
+}
 
-impl Default for StateFunctions {
-    fn default() -> Self {
-        Self
+impl kalman::SetDt<f64> for StateFunctions {
+    fn set_dt(&mut self, dt: &f64) {
+        self.dt = *dt;
+    }
+}
+
+impl<FP, Sz> kalman::ApplyDt<f64, kalman::ukf::UKF<'_, FP, Self, f64, Sz>> for StateFunctions {
+    fn apply_dt(dt: &f64, ukf: &mut kalman::ukf::UKF<'_, FP, Self, f64, Sz>) {
+        ukf.Q
+            .slice_mut(s![0..2, 0..2])
+            .assign(&kalman::discretization::Q_discrete_white_noise(2, *dt, 0.001).unwrap());
+        ukf.Q[[2, 2]] = 0.0;
+        ukf.Q[[3, 3]] = 0.0;
+        ukf.Q
+            .slice_mut(s![4..7, 4..7])
+            .assign(&kalman::discretization::Q_discrete_white_noise(3, *dt, 0.001).unwrap());
     }
 }
 
 impl StateFunctions {
+    fn new(dt: f64) -> Self {
+        Self { dt }
+    }
+
     fn x_normalize(mut x: ndarray::Array1<f64>) -> ndarray::Array1<f64> {
         x[0] = math::normalize_angle(x[0]);
         x[3] = math::normalize_angle(x[3]);
@@ -55,11 +76,7 @@ impl StateFunctions {
 impl<'a> kalman::ukf::Functions for StateFunctions {
     type Elem = f64;
 
-    fn fx<S>(
-        &self,
-        x: &ndarray::ArrayBase<S, ndarray::Ix1>,
-        dt: Self::Elem,
-    ) -> ndarray::Array1<Self::Elem>
+    fn fx<S>(&self, x: &ndarray::ArrayBase<S, ndarray::Ix1>) -> ndarray::Array1<Self::Elem>
     where
         S: ndarray::Data<Elem = Self::Elem>,
     {
@@ -77,7 +94,7 @@ impl<'a> kalman::ukf::Functions for StateFunctions {
             sensor_pos,
             motor: None,
         };
-        let mut model = sensoreval_psim::models::Pendulum::new(params, dt);
+        let mut model = sensoreval_psim::models::Pendulum::new(params, self.dt);
         model.step(&mut next);
 
         array![
@@ -275,11 +292,9 @@ impl Pendulum {
         let est_sampletime = &self.est[dataid];
 
         let est_now = if actual_ts > sample.time {
-            let fns = StateFunctions::default();
-            Some(fns.fx(
-                est_sampletime,
-                (actual_ts - sample.time) as f64 / 1_000_000.0f64,
-            ))
+            let dt = (actual_ts - sample.time) as f64 / 1_000_000.0f64;
+            let fns = StateFunctions::new(dt);
+            Some(fns.fx(est_sampletime))
         } else {
             None
         };
@@ -338,9 +353,11 @@ impl render::HudRenderer for Pendulum {
     #[allow(non_snake_case)]
     fn data_changed(&mut self, ctx: &render::HudContext) {
         let samples = unwrap_opt_or!(ctx.get_dataset(), return);
-        let fns = StateFunctions::default();
-        let points_fn = kalman::sigma_points::MerweScaledSigmaPoints::new(7, 0.1, 2.0, -4.0, &fns);
-        let mut ukf = kalman::ukf::UKF::new(7, 6, &points_fn, &fns);
+        let fns = StateFunctions::new(0.1);
+        // TODO don't pass fns, use math traits instead
+        let fns2 = fns.clone();
+        let points_fn = kalman::sigma_points::MerweScaledSigmaPoints::new(7, 0.1, 2.0, -4.0, &fns2);
+        let mut ukf = kalman::ukf::UKF::new(7, 6, &points_fn, fns);
 
         ukf.x = ndarray::Array::from(self.cfg.initial.clone());
         ukf.P = ndarray::Array::from_diag(&ndarray::Array::from(self.cfg.initial_cov.clone()));
@@ -373,16 +390,8 @@ impl render::HudRenderer for Pendulum {
             ];
             let dt = (sample.time - t_prev) as f64 / 1_000_000.0f64;
 
-            ukf.Q
-                .slice_mut(s![0..2, 0..2])
-                .assign(&kalman::discretization::Q_discrete_white_noise(2, dt, 0.001).unwrap());
-            ukf.Q[[2, 2]] = 0.0;
-            ukf.Q[[3, 3]] = 0.0;
-            ukf.Q
-                .slice_mut(s![4..7, 4..7])
-                .assign(&kalman::discretization::Q_discrete_white_noise(3, dt, 0.001).unwrap());
-
-            ukf.predict(dt).unwrap();
+            ukf.set_dt(&dt);
+            ukf.predict().unwrap();
             ukf.update(&z).unwrap();
 
             self.est.push(ukf.x.clone());
@@ -531,7 +540,8 @@ impl render::HudRenderer for Pendulum {
     ) -> Result<(), Error> {
         let samples = ctx.get_dataset().ok_or(Error::NoDataSet)?;
         let x: Vec<f64> = samples.iter().map(|s| s.time_seconds()).collect();
-        let fns = StateFunctions::default();
+        // TODO: separate hx and fx?
+        let fns = StateFunctions::new(0.1);
         let has_actual = match samples.first() {
             Some(sample) => sample.actual.is_some(),
             None => false,
