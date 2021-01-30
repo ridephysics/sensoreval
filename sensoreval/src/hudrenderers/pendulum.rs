@@ -17,6 +17,7 @@ use sensoreval_graphics::utils::CairoEx;
 use sensoreval_graphics::utils::ToUtilFont;
 use sensoreval_psim::Model;
 use sensoreval_psim::ToImuSample;
+use sensoreval_utils::macros::*;
 use serde::Deserialize;
 
 #[derive(Deserialize, Debug, Clone)]
@@ -37,10 +38,38 @@ pub struct Config {
 }
 
 #[derive(Default)]
-struct X;
+struct XFunctions;
+
+#[derive(State, KalmanMath, UKFMath)]
+#[state(fnstruct = "XFunctions")]
+enum X {
+    #[state(angle)]
+    Theta,
+    ThetaD,
+    Radius,
+    #[state(angle)]
+    SensorPos,
+    #[state(angle)]
+    RotE,
+    #[state(angle)]
+    RotN,
+    #[state(angle)]
+    RotU,
+}
 
 #[derive(Default)]
-struct Z;
+struct ZFunctions;
+
+#[derive(State, KalmanMath, UKFMath)]
+#[state(fnstruct = "ZFunctions")]
+enum Z {
+    AccelE,
+    AccelN,
+    AccelU,
+    GyroE,
+    GyroN,
+    GyroU,
+}
 
 struct FxArgs {
     dt: f64,
@@ -74,97 +103,7 @@ impl<FP, FNSX, FNSZ, Sz> kalman::ApplyDt<f64, kalman::ukf::UKF<'_, FP, FNSX, Sel
     }
 }
 
-impl kalman::ukf::Mean for X {
-    type Elem = f64;
-
-    #[allow(non_snake_case)]
-    fn mean<Ss, Swm>(
-        &self,
-        sigmas: &ndarray::ArrayBase<Ss, ndarray::Ix2>,
-        Wm: &ndarray::ArrayBase<Swm, ndarray::Ix1>,
-    ) -> ndarray::Array1<Self::Elem>
-    where
-        Ss: ndarray::Data<Elem = Self::Elem>,
-        Swm: ndarray::Data<Elem = Self::Elem>,
-    {
-        let mut ret = Wm.dot(sigmas);
-
-        let mut pa_sum = math::SinCosSum::default();
-        let mut o_sum = math::SinCosSum::default();
-        let mut re_sum = math::SinCosSum::default();
-        let mut rn_sum = math::SinCosSum::default();
-        let mut ru_sum = math::SinCosSum::default();
-
-        azip!((sp in sigmas.genrows(), w in Wm) {
-            assert!(sp[0] >= -std::f64::consts::PI && sp[0] <= std::f64::consts::PI);
-            assert!(sp[3] >= -std::f64::consts::PI && sp[3] <= std::f64::consts::PI);
-            assert!(sp[4] >= -std::f64::consts::PI && sp[4] <= std::f64::consts::PI);
-            assert!(sp[5] >= -std::f64::consts::PI && sp[5] <= std::f64::consts::PI);
-            assert!(sp[6] >= -std::f64::consts::PI && sp[6] <= std::f64::consts::PI);
-
-            pa_sum.add(sp[0], *w);
-            o_sum.add(sp[3], *w);
-            re_sum.add(sp[4], *w);
-            rn_sum.add(sp[5], *w);
-            ru_sum.add(sp[6], *w);
-        });
-
-        ret[0] = pa_sum.avg();
-        ret[3] = o_sum.avg();
-        ret[4] = re_sum.avg();
-        ret[5] = rn_sum.avg();
-        ret[6] = ru_sum.avg();
-
-        ret
-    }
-}
-
-impl kalman::Subtract for X {
-    type Elem = f64;
-
-    fn subtract<Sa, Sb>(
-        &self,
-        a: &ndarray::ArrayBase<Sa, ndarray::Ix1>,
-        b: &ndarray::ArrayBase<Sb, ndarray::Ix1>,
-    ) -> ndarray::Array1<Self::Elem>
-    where
-        Sa: ndarray::Data<Elem = Self::Elem>,
-        Sb: ndarray::Data<Elem = Self::Elem>,
-    {
-        self.normalize(a - b)
-    }
-}
-
-impl kalman::Add for X {
-    type Elem = f64;
-
-    fn add<Sa, Sb>(
-        &self,
-        a: &ndarray::ArrayBase<Sa, ndarray::Ix1>,
-        b: &ndarray::ArrayBase<Sb, ndarray::Ix1>,
-    ) -> ndarray::Array1<Self::Elem>
-    where
-        Sa: ndarray::Data<Elem = Self::Elem>,
-        Sb: ndarray::Data<Elem = Self::Elem>,
-    {
-        self.normalize(a + b)
-    }
-}
-
-impl kalman::Normalize for X {
-    type Elem = f64;
-
-    fn normalize(&self, mut x: ndarray::Array1<Self::Elem>) -> ndarray::Array1<Self::Elem> {
-        x[0] = math::normalize_angle(x[0]);
-        x[3] = math::normalize_angle(x[3]);
-        x[4] = math::normalize_angle(x[4]);
-        x[5] = math::normalize_angle(x[5]);
-        x[6] = math::normalize_angle(x[6]);
-        x
-    }
-}
-
-impl kalman::ukf::Fx<FxArgs> for X {
+impl kalman::ukf::Fx<FxArgs> for XFunctions {
     type Elem = f64;
 
     fn fx<S>(
@@ -204,7 +143,7 @@ impl kalman::ukf::Fx<FxArgs> for X {
     }
 }
 
-impl kalman::ukf::Hx for X {
+impl kalman::ukf::Hx for XFunctions {
     type Elem = f64;
 
     fn hx<S>(&self, x: &ndarray::ArrayBase<S, ndarray::Ix1>) -> ndarray::Array1<Self::Elem>
@@ -230,39 +169,6 @@ impl kalman::ukf::Hx for X {
         sensoreval_psim::utils::rotate_imudata(rot, &mut z.slice_mut(ndarray::s![0..3]));
         sensoreval_psim::utils::rotate_imudata(rot, &mut z.slice_mut(ndarray::s![3..6]));
         z
-    }
-}
-
-impl kalman::ukf::Mean for Z {
-    type Elem = f64;
-
-    #[allow(non_snake_case)]
-    fn mean<Ss, Swm>(
-        &self,
-        sigmas: &ndarray::ArrayBase<Ss, ndarray::Ix2>,
-        Wm: &ndarray::ArrayBase<Swm, ndarray::Ix1>,
-    ) -> ndarray::Array1<Self::Elem>
-    where
-        Ss: ndarray::Data<Elem = Self::Elem>,
-        Swm: ndarray::Data<Elem = Self::Elem>,
-    {
-        Wm.dot(sigmas)
-    }
-}
-
-impl kalman::Subtract for Z {
-    type Elem = f64;
-
-    fn subtract<Sa, Sb>(
-        &self,
-        a: &ndarray::ArrayBase<Sa, ndarray::Ix1>,
-        b: &ndarray::ArrayBase<Sb, ndarray::Ix1>,
-    ) -> ndarray::Array1<Self::Elem>
-    where
-        Sa: ndarray::Data<Elem = Self::Elem>,
-        Sb: ndarray::Data<Elem = Self::Elem>,
-    {
-        a - b
     }
 }
 
@@ -319,7 +225,7 @@ impl Pendulum {
 
         let est_now = if actual_ts > sample.time {
             let dt = (actual_ts - sample.time) as f64 / 1_000_000.0f64;
-            let fns = X::default();
+            let fns = XFunctions::default();
             let fxargs = FxArgs::new(dt);
             Some(fns.fx(est_sampletime, &fxargs))
         } else {
@@ -380,15 +286,20 @@ impl render::HudRenderer for Pendulum {
     #[allow(non_snake_case)]
     fn data_changed(&mut self, ctx: &render::HudContext) {
         let samples = unwrap_opt_or!(ctx.get_dataset(), return);
-        let points_fn =
-            kalman::sigma_points::MerweScaledSigmaPoints::new(7, 0.1, 2.0, -4.0, X::default());
+        let points_fn = kalman::sigma_points::MerweScaledSigmaPoints::new(
+            7,
+            0.1,
+            2.0,
+            -4.0,
+            XFunctions::default(),
+        );
         let mut ukf = kalman::ukf::UKF::new(
             7,
             6,
             &points_fn,
-            X::default(),
+            XFunctions::default(),
             FxArgs::new(0.1),
-            Z::default(),
+            ZFunctions::default(),
         );
 
         ukf.x = ndarray::Array::from(self.cfg.initial.clone());
@@ -572,7 +483,7 @@ impl render::HudRenderer for Pendulum {
     ) -> Result<(), Error> {
         let samples = ctx.get_dataset().ok_or(Error::NoDataSet)?;
         let x: Vec<f64> = samples.iter().map(|s| s.time_seconds()).collect();
-        let fns = X::default();
+        let fns = XFunctions::default();
         let has_actual = match samples.first() {
             Some(sample) => sample.actual.is_some(),
             None => false,
