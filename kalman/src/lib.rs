@@ -34,3 +34,35 @@ pub trait SetDt<T> {
 pub trait ApplyDt<T, F> {
     fn apply_dt(dt: &T, filter: &mut F);
 }
+
+pub trait Subtract {
+    type Elem;
+
+    fn subtract<Sa, Sb>(
+        &self,
+        a: &ndarray::ArrayBase<Sa, ndarray::Ix1>,
+        b: &ndarray::ArrayBase<Sb, ndarray::Ix1>,
+    ) -> ndarray::Array1<Self::Elem>
+    where
+        Sa: ndarray::Data<Elem = Self::Elem>,
+        Sb: ndarray::Data<Elem = Self::Elem>;
+}
+
+pub trait Add {
+    type Elem;
+
+    fn add<Sa, Sb>(
+        &self,
+        a: &ndarray::ArrayBase<Sa, ndarray::Ix1>,
+        b: &ndarray::ArrayBase<Sb, ndarray::Ix1>,
+    ) -> ndarray::Array1<Self::Elem>
+    where
+        Sa: ndarray::Data<Elem = Self::Elem>,
+        Sb: ndarray::Data<Elem = Self::Elem>;
+}
+
+pub trait Normalize {
+    type Elem;
+
+    fn normalize(&self, x: ndarray::Array1<Self::Elem>) -> ndarray::Array1<Self::Elem>;
+}

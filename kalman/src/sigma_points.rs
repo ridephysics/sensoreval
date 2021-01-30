@@ -20,22 +20,9 @@ pub trait SigmaPoints {
     fn weights_mean(&self) -> ndarray::Array1<Self::Elem>;
 }
 
-pub trait Functions {
-    type Elem;
-
-    fn subtract<Sa, Sb>(
-        &self,
-        a: &ndarray::ArrayBase<Sa, ndarray::Ix1>,
-        b: &ndarray::ArrayBase<Sb, ndarray::Ix1>,
-    ) -> ndarray::Array1<Self::Elem>
-    where
-        Sa: ndarray::Data<Elem = Self::Elem>,
-        Sb: ndarray::Data<Elem = Self::Elem>;
-}
-
 #[derive(Clone, Debug)]
-pub struct MerweScaledSigmaPoints<'a, FNS> {
-    fns: &'a FNS,
+pub struct MerweScaledSigmaPoints<FNS> {
+    fns: FNS,
 
     n: usize,
     alpha: f64,
@@ -43,15 +30,12 @@ pub struct MerweScaledSigmaPoints<'a, FNS> {
     kappa: f64,
 }
 
-impl<'a, FNS> MerweScaledSigmaPoints<'a, FNS>
-where
-    FNS: Functions<Elem = f64>,
-{
+impl<FNS> MerweScaledSigmaPoints<FNS> {
     /// n: number of dimensions
     /// alpha: between 0 and 1, a larger value spreads the sigma points further from the mean
     /// beta: 2 is a good choice for gaussian problems
     /// kappa: 3 - n
-    pub fn new(n: usize, alpha: f64, beta: f64, kappa: f64, fns: &'a FNS) -> Self {
+    pub fn new(n: usize, alpha: f64, beta: f64, kappa: f64, fns: FNS) -> Self {
         Self {
             fns,
             n,
@@ -72,9 +56,9 @@ where
     }
 }
 
-impl<'a, FNS> SigmaPoints for MerweScaledSigmaPoints<'a, FNS>
+impl<FNS> SigmaPoints for MerweScaledSigmaPoints<FNS>
 where
-    FNS: Functions<Elem = f64>,
+    FNS: crate::Subtract<Elem = f64>,
 {
     type Elem = f64;
 
@@ -130,25 +114,22 @@ where
 }
 
 #[derive(Clone, Debug)]
-pub struct JulierSigmaPoints<'a, FNS> {
-    fns: &'a FNS,
+pub struct JulierSigmaPoints<FNS> {
+    fns: FNS,
 
     n: usize,
     kappa: f64,
 }
 
-impl<'a, FNS> JulierSigmaPoints<'a, FNS>
-where
-    FNS: Functions<Elem = f64>,
-{
-    pub fn new(n: usize, kappa: f64, fns: &'a FNS) -> Self {
+impl<FNS> JulierSigmaPoints<FNS> {
+    pub fn new(n: usize, kappa: f64, fns: FNS) -> Self {
         Self { fns, n, kappa }
     }
 }
 
-impl<'a, FNS> SigmaPoints for JulierSigmaPoints<'a, FNS>
+impl<FNS> SigmaPoints for JulierSigmaPoints<FNS>
 where
-    FNS: Functions<Elem = f64>,
+    FNS: crate::Subtract<Elem = f64>,
 {
     type Elem = f64;
 
@@ -207,7 +188,7 @@ pub(crate) mod tests {
     #[derive(Default)]
     pub struct LinFns;
 
-    impl Functions for LinFns {
+    impl crate::Subtract for LinFns {
         type Elem = f64;
 
         fn subtract<Sa, Sb>(
@@ -226,7 +207,7 @@ pub(crate) mod tests {
     #[test]
     fn merwe() {
         let fns = LinFns::default();
-        let points = MerweScaledSigmaPoints::new(2, 0.1, 2.0, 1.0, &fns);
+        let points = MerweScaledSigmaPoints::new(2, 0.1, 2.0, 1.0, fns);
         let sigmas = points
             .sigma_points(&array![0.0, 0.0], &array![[1.0, 0.1], [0.1, 1.0]])
             .unwrap();
@@ -270,7 +251,7 @@ pub(crate) mod tests {
     #[test]
     fn julier() {
         let fns = LinFns::default();
-        let points = JulierSigmaPoints::new(2, 1.0, &fns);
+        let points = JulierSigmaPoints::new(2, 1.0, fns);
         let sigmas = points
             .sigma_points(&array![0.0, 0.0], &array![[1.0, 0.1], [0.1, 1.0]])
             .unwrap();

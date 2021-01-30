@@ -9,14 +9,10 @@ use ndarray_linalg::solve::Inverse;
 
 type RTSResult<A> = (Vec<ndarray::Array1<A>>, Vec<ndarray::Array2<A>>);
 
-pub trait Functions {
+pub trait Mean {
     type Elem;
 
-    fn fx<S>(&self, x: &ndarray::ArrayBase<S, ndarray::Ix1>) -> ndarray::Array1<Self::Elem>
-    where
-        S: ndarray::Data<Elem = Self::Elem>;
-
-    fn x_mean<Ss, Swm>(
+    fn mean<Ss, Swm>(
         &self,
         sigmas: &ndarray::ArrayBase<Ss, ndarray::Ix2>,
         Wm: &ndarray::ArrayBase<Swm, ndarray::Ix1>,
@@ -24,51 +20,33 @@ pub trait Functions {
     where
         Ss: ndarray::Data<Elem = Self::Elem>,
         Swm: ndarray::Data<Elem = Self::Elem>;
+}
 
-    fn x_residual<Sa, Sb>(
+pub trait Fx<A> {
+    type Elem;
+
+    fn fx<S>(
         &self,
-        a: &ndarray::ArrayBase<Sa, ndarray::Ix1>,
-        b: &ndarray::ArrayBase<Sb, ndarray::Ix1>,
+        x: &ndarray::ArrayBase<S, ndarray::Ix1>,
+        args: &A,
     ) -> ndarray::Array1<Self::Elem>
     where
-        Sa: ndarray::Data<Elem = Self::Elem>,
-        Sb: ndarray::Data<Elem = Self::Elem>;
+        S: ndarray::Data<Elem = Self::Elem>;
+}
 
-    fn x_add<Sa, Sb>(
-        &self,
-        a: &ndarray::ArrayBase<Sa, ndarray::Ix1>,
-        b: &ndarray::ArrayBase<Sb, ndarray::Ix1>,
-    ) -> ndarray::Array1<Self::Elem>
-    where
-        Sa: ndarray::Data<Elem = Self::Elem>,
-        Sb: ndarray::Data<Elem = Self::Elem>;
+pub trait Hx {
+    type Elem;
 
     fn hx<S>(&self, x: &ndarray::ArrayBase<S, ndarray::Ix1>) -> ndarray::Array1<Self::Elem>
     where
         S: ndarray::Data<Elem = Self::Elem>;
-
-    fn z_mean<Ss, Swm>(
-        &self,
-        sigmas: &ndarray::ArrayBase<Ss, ndarray::Ix2>,
-        Wm: &ndarray::ArrayBase<Swm, ndarray::Ix1>,
-    ) -> ndarray::Array1<Self::Elem>
-    where
-        Ss: ndarray::Data<Elem = Self::Elem>,
-        Swm: ndarray::Data<Elem = Self::Elem>;
-
-    fn z_residual<Sa, Sb>(
-        &self,
-        a: &ndarray::ArrayBase<Sa, ndarray::Ix1>,
-        b: &ndarray::ArrayBase<Sb, ndarray::Ix1>,
-    ) -> ndarray::Array1<Self::Elem>
-    where
-        Sa: ndarray::Data<Elem = Self::Elem>,
-        Sb: ndarray::Data<Elem = Self::Elem>;
 }
 
 #[derive(Clone, Debug)]
-pub struct UKF<'a, FP, FNS, A, Sz> {
-    fns: FNS,
+pub struct UKF<'a, FP, FNSX, ARGSFX, FNSZ, A, Sz> {
+    fns_x: FNSX,
+    args_fx: ARGSFX,
+    fns_z: FNSZ,
 
     // state
     pub x: ndarray::Array1<A>,
@@ -95,20 +73,26 @@ pub struct UKF<'a, FP, FNS, A, Sz> {
     pd_Sz: std::marker::PhantomData<Sz>,
 }
 
-impl<'a, FP, FNS, A, Sz, T> SetDt<T> for UKF<'a, FP, FNS, A, Sz>
+impl<'a, FP, FNSX, ARGSFX, FNSZ, A, Sz, T> SetDt<T> for UKF<'a, FP, FNSX, ARGSFX, FNSZ, A, Sz>
 where
-    FNS: SetDt<T> + ApplyDt<T, Self>,
+    ARGSFX: SetDt<T> + ApplyDt<T, Self>,
 {
     fn set_dt(&mut self, dt: &T) {
-        self.fns.set_dt(dt);
-        FNS::apply_dt(dt, self);
+        self.args_fx.set_dt(dt);
+        ARGSFX::apply_dt(dt, self);
     }
 }
 
-impl<'a, FP, FNS, A, Sz> Filter<A, ndarray::ArrayBase<Sz, ndarray::Ix1>> for UKF<'a, FP, FNS, A, Sz>
+impl<'a, FP, FNSX, ARGSFX, FNSZ, A, Sz> Filter<A, ndarray::ArrayBase<Sz, ndarray::Ix1>>
+    for UKF<'a, FP, FNSX, ARGSFX, FNSZ, A, Sz>
 where
     FP: crate::sigma_points::SigmaPoints<Elem = A>,
-    FNS: Functions<Elem = A>,
+    FNSX: Fx<ARGSFX, Elem = A>
+        + Hx<Elem = A>
+        + Mean<Elem = A>
+        + crate::Add<Elem = A>
+        + crate::Subtract<Elem = A>,
+    FNSZ: Mean<Elem = A> + crate::Subtract<Elem = A>,
     A: Copy
         + num_traits::float::FloatConst
         + num_traits::float::Float
@@ -123,9 +107,11 @@ where
         let sigmas = self.points_fn.sigma_points(&self.x, &self.P)?;
 
         for i in 0..sigmas.nrows() {
-            self.sigmas_f
-                .index_axis_mut(ndarray::Axis(0), i)
-                .assign(&self.fns.fx(&sigmas.index_axis(ndarray::Axis(0), i)));
+            self.sigmas_f.index_axis_mut(ndarray::Axis(0), i).assign(
+                &self
+                    .fns_x
+                    .fx(&sigmas.index_axis(ndarray::Axis(0), i), &self.args_fx),
+            );
         }
 
         // and pass sigmas through the unscented transform to compute prior
@@ -134,8 +120,8 @@ where
             &self.Wm,
             &self.Wc,
             &self.Q,
-            |sigmas, mean| self.fns.x_mean(sigmas, mean),
-            |a, b| self.fns.x_residual(a, b),
+            |sigmas, mean| self.fns_x.mean(sigmas, mean),
+            |a, b| self.fns_x.subtract(a, b),
         );
 
         self.x = x_prior;
@@ -150,9 +136,11 @@ where
     fn update(&mut self, z: &ndarray::ArrayBase<Sz, ndarray::Ix1>) -> Result<(), crate::Error> {
         // transform sigma points into measurement space
         for i in 0..self.sigmas_f.nrows() {
-            self.sigmas_h
-                .index_axis_mut(ndarray::Axis(0), i)
-                .assign(&self.fns.hx(&self.sigmas_f.index_axis(ndarray::Axis(0), i)));
+            self.sigmas_h.index_axis_mut(ndarray::Axis(0), i).assign(
+                &self
+                    .fns_x
+                    .hx(&self.sigmas_f.index_axis(ndarray::Axis(0), i)),
+            );
         }
 
         // mean and covariance of prediction passed through UT
@@ -161,12 +149,12 @@ where
             &self.Wm,
             &self.Wc,
             &self.R,
-            |sigmas, mean| self.fns.z_mean(sigmas, mean),
-            |a, b| self.fns.z_residual(a, b),
+            |sigmas, mean| self.fns_z.mean(sigmas, mean),
+            |a, b| self.fns_z.subtract(a, b),
         );
 
         // residual of z
-        let y = self.fns.z_residual(&z, &zp);
+        let y = self.fns_z.subtract(&z, &zp);
 
         // compute cross variance of the state and the measurements
         let Pxz = self.cross_variance(&self.x, &zp, &self.sigmas_f, &self.sigmas_h);
@@ -217,10 +205,11 @@ where
     }
 }
 
-impl<'a, FP, FNS, A, Sz> UKF<'a, FP, FNS, A, Sz>
+impl<'a, FP, FNSX, ARGSFX, FNSZ, A, Sz> UKF<'a, FP, FNSX, ARGSFX, FNSZ, A, Sz>
 where
     FP: crate::sigma_points::SigmaPoints<Elem = A>,
-    FNS: Functions<Elem = A>,
+    FNSX: Fx<ARGSFX, Elem = A> + Mean<Elem = A> + crate::Add<Elem = A> + crate::Subtract<Elem = A>,
+    FNSZ: Mean<Elem = A> + crate::Subtract<Elem = A>,
     A: Copy
         + num_traits::float::FloatConst
         + num_traits::float::Float
@@ -229,9 +218,18 @@ where
         + std::convert::From<f32>,
     <A as ndarray_linalg::Scalar>::Real: std::convert::From<f32>,
 {
-    pub fn new(dim_x: usize, dim_z: usize, points_fn: &'a FP, fns: FNS) -> Self {
+    pub fn new(
+        dim_x: usize,
+        dim_z: usize,
+        points_fn: &'a FP,
+        fns_x: FNSX,
+        args_fx: ARGSFX,
+        fns_z: FNSZ,
+    ) -> Self {
         Self {
-            fns,
+            fns_x,
+            args_fx,
+            fns_z,
 
             x: ndarray::Array::zeros(dim_x),
             P: ndarray::Array::ones((dim_x, dim_x)),
@@ -268,8 +266,8 @@ where
     {
         let mut Pxz = ndarray::Array2::<A>::zeros((self.x.dim(), self.z.dim()));
         azip!((&Wci in &self.Wc, sfi in sigmas_f.genrows(), shi in sigmas_h.genrows()) {
-            let dx = self.fns.x_residual(&sfi, x);
-            let dz = self.fns.z_residual(&shi, z);
+            let dx = self.fns_x.subtract(&sfi, x);
+            let dz = self.fns_z.subtract(&shi, z);
             Pxz += &(math::outer_product(&dx, &dz) * Wci);
         });
         Pxz
@@ -290,7 +288,7 @@ where
     ) -> Result<RTSResult<A>, crate::Error>
     where
         Sx: ndarray::Data<Elem = A>,
-        FNS: SetDt<A>,
+        ARGSFX: crate::SetDt<A>,
     {
         assert_eq!(xs.len(), Ps.len());
         let mut xss = Vec::with_capacity(xs.len());
@@ -312,16 +310,18 @@ where
                 None => &self.Q,
             };
             let dt = dts[k];
-            self.fns.set_dt(&dt);
+            self.args_fx.set_dt(&dt);
 
             // create sigma points from state estimate
             let sigmas = self.points_fn.sigma_points(x, P)?;
 
             // pass sigmas through state function
             for i in 0..sigmas.nrows() {
-                self.sigmas_f
-                    .index_axis_mut(ndarray::Axis(0), i)
-                    .assign(&self.fns.fx(&sigmas.index_axis(ndarray::Axis(0), i)));
+                self.sigmas_f.index_axis_mut(ndarray::Axis(0), i).assign(
+                    &self
+                        .fns_x
+                        .fx(&sigmas.index_axis(ndarray::Axis(0), i), &self.args_fx),
+                );
             }
 
             let (xb, Pb) = crate::unscented_transform(
@@ -329,15 +329,15 @@ where
                 &self.Wm,
                 &self.Wc,
                 Q,
-                |sigmas, mean| self.fns.x_mean(sigmas, mean),
-                |a, b| self.fns.x_residual(a, b),
+                |sigmas, mean| self.fns_x.mean(sigmas, mean),
+                |a, b| self.fns_x.subtract(a, b),
             );
 
             // compute cross variance
             let mut Pxb = ndarray::Array2::<A>::zeros((self.x.dim(), self.x.dim()));
             azip!((&Wci in &self.Wc, sfi in self.sigmas_f.genrows(), si in sigmas.genrows()) {
-                let y = self.fns.x_residual(&sfi, &xb);
-                let z = self.fns.x_residual(&si, x);
+                let y = self.fns_x.subtract(&sfi, &xb);
+                let z = self.fns_x.subtract(&si, x);
                 Pxb += &(math::outer_product(&z, &y) * Wci);
             });
 
@@ -345,10 +345,10 @@ where
             let K = Pxb.dot(&Pb.inv()?);
 
             // residual
-            let residual = self.fns.x_residual(&xss.last().unwrap(), &xb);
+            let residual = self.fns_x.subtract(&xss.last().unwrap(), &xb);
 
             // update the smoothed estimates
-            xss.push(self.fns.x_add(&x, &K.dot(&residual)));
+            xss.push(self.fns_x.add(&x, &K.dot(&residual)));
             Pss.push(P + &K.dot(&(Pss.last().unwrap() - &Pb)).dot(&K.t()));
         }
 

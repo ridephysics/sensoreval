@@ -5,8 +5,10 @@ use crate::Data;
 use crate::Error;
 use crate::PlotUtils;
 use bincode::config::Options;
-use kalman::ukf::Functions;
+use kalman::ukf::Fx;
+use kalman::ukf::Hx;
 use kalman::Filter;
+use kalman::Normalize;
 use kalman::SetDt;
 use ndarray::array;
 use ndarray::azip;
@@ -34,82 +36,49 @@ pub struct Config {
     pub active_row: usize,
 }
 
-#[derive(Clone)]
-pub struct StateFunctions {
+#[derive(Default)]
+struct X;
+
+#[derive(Default)]
+struct Z;
+
+struct FxArgs {
     dt: f64,
 }
 
-impl kalman::SetDt<f64> for StateFunctions {
+impl FxArgs {
+    pub fn new(dt: f64) -> Self {
+        Self { dt }
+    }
+}
+
+impl kalman::SetDt<f64> for FxArgs {
     fn set_dt(&mut self, dt: &f64) {
         self.dt = *dt;
     }
 }
 
-impl<FP, Sz> kalman::ApplyDt<f64, kalman::ukf::UKF<'_, FP, Self, f64, Sz>> for StateFunctions {
-    fn apply_dt(dt: &f64, ukf: &mut kalman::ukf::UKF<'_, FP, Self, f64, Sz>) {
-        ukf.Q
-            .slice_mut(s![0..2, 0..2])
+impl<FP, FNSX, FNSZ, Sz> kalman::ApplyDt<f64, kalman::ukf::UKF<'_, FP, FNSX, Self, FNSZ, f64, Sz>>
+    for FxArgs
+{
+    #[allow(non_snake_case)]
+    fn apply_dt(dt: &f64, f: &mut kalman::ukf::UKF<'_, FP, FNSX, Self, FNSZ, f64, Sz>) {
+        let Q = &mut f.Q;
+
+        Q.slice_mut(s![0..2, 0..2])
             .assign(&kalman::discretization::Q_discrete_white_noise(2, *dt, 0.001).unwrap());
-        ukf.Q[[2, 2]] = 0.0;
-        ukf.Q[[3, 3]] = 0.0;
-        ukf.Q
-            .slice_mut(s![4..7, 4..7])
+        Q[[2, 2]] = 0.0;
+        Q[[3, 3]] = 0.0;
+        Q.slice_mut(s![4..7, 4..7])
             .assign(&kalman::discretization::Q_discrete_white_noise(3, *dt, 0.001).unwrap());
     }
 }
 
-impl StateFunctions {
-    fn new(dt: f64) -> Self {
-        Self { dt }
-    }
-
-    fn x_normalize(mut x: ndarray::Array1<f64>) -> ndarray::Array1<f64> {
-        x[0] = math::normalize_angle(x[0]);
-        x[3] = math::normalize_angle(x[3]);
-        x[4] = math::normalize_angle(x[4]);
-        x[5] = math::normalize_angle(x[5]);
-        x[6] = math::normalize_angle(x[6]);
-        x
-    }
-}
-
-impl<'a> kalman::ukf::Functions for StateFunctions {
+impl kalman::ukf::Mean for X {
     type Elem = f64;
 
-    fn fx<S>(&self, x: &ndarray::ArrayBase<S, ndarray::Ix1>) -> ndarray::Array1<Self::Elem>
-    where
-        S: ndarray::Data<Elem = Self::Elem>,
-    {
-        let pa = x[0];
-        let va = x[1];
-        let r = x[2];
-        let sensor_pos = x[3];
-        let rot_east = x[4];
-        let rot_north = x[5];
-        let rot_up = x[6];
-
-        let mut next = array![pa, va];
-        let params = sensoreval_psim::models::PendulumParams {
-            radius: r,
-            sensor_pos,
-            motor: None,
-        };
-        let mut model = sensoreval_psim::models::Pendulum::new(params, self.dt);
-        model.step(&mut next);
-
-        array![
-            math::normalize_angle(next[0]),
-            next[1],
-            r,
-            math::normalize_angle(sensor_pos),
-            math::normalize_angle(rot_east),
-            math::normalize_angle(rot_north),
-            math::normalize_angle(rot_up),
-        ]
-    }
-
     #[allow(non_snake_case)]
-    fn x_mean<Ss, Swm>(
+    fn mean<Ss, Swm>(
         &self,
         sigmas: &ndarray::ArrayBase<Ss, ndarray::Ix2>,
         Wm: &ndarray::ArrayBase<Swm, ndarray::Ix1>,
@@ -148,8 +117,12 @@ impl<'a> kalman::ukf::Functions for StateFunctions {
 
         ret
     }
+}
 
-    fn x_residual<Sa, Sb>(
+impl kalman::Subtract for X {
+    type Elem = f64;
+
+    fn subtract<Sa, Sb>(
         &self,
         a: &ndarray::ArrayBase<Sa, ndarray::Ix1>,
         b: &ndarray::ArrayBase<Sb, ndarray::Ix1>,
@@ -158,10 +131,14 @@ impl<'a> kalman::ukf::Functions for StateFunctions {
         Sa: ndarray::Data<Elem = Self::Elem>,
         Sb: ndarray::Data<Elem = Self::Elem>,
     {
-        Self::x_normalize(a - b)
+        self.normalize(a - b)
     }
+}
 
-    fn x_add<Sa, Sb>(
+impl kalman::Add for X {
+    type Elem = f64;
+
+    fn add<Sa, Sb>(
         &self,
         a: &ndarray::ArrayBase<Sa, ndarray::Ix1>,
         b: &ndarray::ArrayBase<Sb, ndarray::Ix1>,
@@ -170,8 +147,65 @@ impl<'a> kalman::ukf::Functions for StateFunctions {
         Sa: ndarray::Data<Elem = Self::Elem>,
         Sb: ndarray::Data<Elem = Self::Elem>,
     {
-        Self::x_normalize(a + b)
+        self.normalize(a + b)
     }
+}
+
+impl kalman::Normalize for X {
+    type Elem = f64;
+
+    fn normalize(&self, mut x: ndarray::Array1<Self::Elem>) -> ndarray::Array1<Self::Elem> {
+        x[0] = math::normalize_angle(x[0]);
+        x[3] = math::normalize_angle(x[3]);
+        x[4] = math::normalize_angle(x[4]);
+        x[5] = math::normalize_angle(x[5]);
+        x[6] = math::normalize_angle(x[6]);
+        x
+    }
+}
+
+impl kalman::ukf::Fx<FxArgs> for X {
+    type Elem = f64;
+
+    fn fx<S>(
+        &self,
+        x: &ndarray::ArrayBase<S, ndarray::Ix1>,
+        args: &FxArgs,
+    ) -> ndarray::Array1<Self::Elem>
+    where
+        S: ndarray::Data<Elem = Self::Elem>,
+    {
+        let pa = x[0];
+        let va = x[1];
+        let r = x[2];
+        let sensor_pos = x[3];
+        let rot_east = x[4];
+        let rot_north = x[5];
+        let rot_up = x[6];
+
+        let mut next = array![pa, va];
+        let params = sensoreval_psim::models::PendulumParams {
+            radius: r,
+            sensor_pos,
+            motor: None,
+        };
+        let mut model = sensoreval_psim::models::Pendulum::new(params, args.dt);
+        model.step(&mut next);
+
+        array![
+            math::normalize_angle(next[0]),
+            next[1],
+            r,
+            math::normalize_angle(sensor_pos),
+            math::normalize_angle(rot_east),
+            math::normalize_angle(rot_north),
+            math::normalize_angle(rot_up),
+        ]
+    }
+}
+
+impl kalman::ukf::Hx for X {
+    type Elem = f64;
 
     fn hx<S>(&self, x: &ndarray::ArrayBase<S, ndarray::Ix1>) -> ndarray::Array1<Self::Elem>
     where
@@ -197,9 +231,13 @@ impl<'a> kalman::ukf::Functions for StateFunctions {
         sensoreval_psim::utils::rotate_imudata(rot, &mut z.slice_mut(ndarray::s![3..6]));
         z
     }
+}
+
+impl kalman::ukf::Mean for Z {
+    type Elem = f64;
 
     #[allow(non_snake_case)]
-    fn z_mean<Ss, Swm>(
+    fn mean<Ss, Swm>(
         &self,
         sigmas: &ndarray::ArrayBase<Ss, ndarray::Ix2>,
         Wm: &ndarray::ArrayBase<Swm, ndarray::Ix1>,
@@ -210,21 +248,9 @@ impl<'a> kalman::ukf::Functions for StateFunctions {
     {
         Wm.dot(sigmas)
     }
-
-    fn z_residual<Sa, Sb>(
-        &self,
-        a: &ndarray::ArrayBase<Sa, ndarray::Ix1>,
-        b: &ndarray::ArrayBase<Sb, ndarray::Ix1>,
-    ) -> ndarray::Array1<Self::Elem>
-    where
-        Sa: ndarray::Data<Elem = Self::Elem>,
-        Sb: ndarray::Data<Elem = Self::Elem>,
-    {
-        a - b
-    }
 }
 
-impl<'a> kalman::sigma_points::Functions for StateFunctions {
+impl kalman::Subtract for Z {
     type Elem = f64;
 
     fn subtract<Sa, Sb>(
@@ -236,7 +262,7 @@ impl<'a> kalman::sigma_points::Functions for StateFunctions {
         Sa: ndarray::Data<Elem = Self::Elem>,
         Sb: ndarray::Data<Elem = Self::Elem>,
     {
-        self.x_residual(a, b)
+        a - b
     }
 }
 
@@ -293,8 +319,9 @@ impl Pendulum {
 
         let est_now = if actual_ts > sample.time {
             let dt = (actual_ts - sample.time) as f64 / 1_000_000.0f64;
-            let fns = StateFunctions::new(dt);
-            Some(fns.fx(est_sampletime))
+            let fns = X::default();
+            let fxargs = FxArgs::new(dt);
+            Some(fns.fx(est_sampletime, &fxargs))
         } else {
             None
         };
@@ -353,11 +380,16 @@ impl render::HudRenderer for Pendulum {
     #[allow(non_snake_case)]
     fn data_changed(&mut self, ctx: &render::HudContext) {
         let samples = unwrap_opt_or!(ctx.get_dataset(), return);
-        let fns = StateFunctions::new(0.1);
-        // TODO don't pass fns, use math traits instead
-        let fns2 = fns.clone();
-        let points_fn = kalman::sigma_points::MerweScaledSigmaPoints::new(7, 0.1, 2.0, -4.0, &fns2);
-        let mut ukf = kalman::ukf::UKF::new(7, 6, &points_fn, fns);
+        let points_fn =
+            kalman::sigma_points::MerweScaledSigmaPoints::new(7, 0.1, 2.0, -4.0, X::default());
+        let mut ukf = kalman::ukf::UKF::new(
+            7,
+            6,
+            &points_fn,
+            X::default(),
+            FxArgs::new(0.1),
+            Z::default(),
+        );
 
         ukf.x = ndarray::Array::from(self.cfg.initial.clone());
         ukf.P = ndarray::Array::from_diag(&ndarray::Array::from(self.cfg.initial_cov.clone()));
@@ -540,8 +572,7 @@ impl render::HudRenderer for Pendulum {
     ) -> Result<(), Error> {
         let samples = ctx.get_dataset().ok_or(Error::NoDataSet)?;
         let x: Vec<f64> = samples.iter().map(|s| s.time_seconds()).collect();
-        // TODO: separate hx and fx?
-        let fns = StateFunctions::new(0.1);
+        let fns = X::default();
         let has_actual = match samples.first() {
             Some(sample) => sample.actual.is_some(),
             None => false,
