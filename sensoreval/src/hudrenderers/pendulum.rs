@@ -15,6 +15,8 @@ use ndarray::azip;
 use ndarray::s;
 use sensoreval_graphics::utils::CairoEx;
 use sensoreval_graphics::utils::ToUtilFont;
+use sensoreval_psim::models::pendulum::State as PendulumState;
+use sensoreval_psim::models::pendulum::StateArgs as PendulumStateArgs;
 use sensoreval_psim::Model;
 use sensoreval_psim::ToImuSample;
 use sensoreval_utils::macros::*;
@@ -62,6 +64,7 @@ struct ZFunctions;
 
 #[derive(State, KalmanMath, UKFMath)]
 #[state(fnstruct = "ZFunctions")]
+#[allow(dead_code)]
 enum Z {
     AccelE,
     AccelN,
@@ -114,32 +117,28 @@ impl kalman::ukf::Fx<FxArgs> for XFunctions {
     where
         S: ndarray::Data<Elem = Self::Elem>,
     {
-        let pa = x[0];
-        let va = x[1];
-        let r = x[2];
-        let sensor_pos = x[3];
-        let rot_east = x[4];
-        let rot_north = x[5];
-        let rot_up = x[6];
-
-        let mut next = array![pa, va];
         let params = sensoreval_psim::models::PendulumParams {
-            radius: r,
-            sensor_pos,
+            radius: x[X::Radius],
+            sensor_pos: x[X::SensorPos],
             motor: None,
         };
         let mut model = sensoreval_psim::models::Pendulum::new(params, args.dt);
-        model.step(&mut next);
 
-        array![
-            math::normalize_angle(next[0]),
-            next[1],
-            r,
-            math::normalize_angle(sensor_pos),
-            math::normalize_angle(rot_east),
-            math::normalize_angle(rot_north),
-            math::normalize_angle(rot_up),
-        ]
+        let mut psim_state = ndarray::Array1::from(PendulumStateArgs {
+            theta: x[X::Theta],
+            theta_d: x[X::ThetaD],
+        });
+        model.step(&mut psim_state);
+
+        self.normalize(ndarray::Array1::from(XArgs {
+            theta: psim_state[PendulumState::Theta],
+            theta_d: psim_state[PendulumState::ThetaD],
+            radius: x[X::Radius],
+            sensor_pos: x[X::SensorPos],
+            rot_e: x[X::RotE],
+            rot_n: x[X::RotN],
+            rot_u: x[X::RotU],
+        }))
     }
 }
 
@@ -150,25 +149,37 @@ impl kalman::ukf::Hx for XFunctions {
     where
         S: ndarray::Data<Elem = Self::Elem>,
     {
-        let modelstate = x.slice(ndarray::s![0..2]);
-        let r = x[2];
-        let sensor_pos = x[3];
         let rot = x.slice(ndarray::s![4..7]);
         let rot = rot.as_slice().unwrap();
 
         let params = sensoreval_psim::models::PendulumParams {
-            radius: r,
-            sensor_pos,
+            radius: x[X::Radius],
+            sensor_pos: x[X::SensorPos],
             motor: None,
         };
         let model = sensoreval_psim::models::Pendulum::new(params, 0.1);
 
-        let mut z = ndarray::Array::zeros(6);
-        model.to_accel(&modelstate, &mut z.slice_mut(ndarray::s![0..3]));
-        model.to_gyro(&modelstate, &mut z.slice_mut(ndarray::s![3..6]));
-        sensoreval_psim::utils::rotate_imudata(rot, &mut z.slice_mut(ndarray::s![0..3]));
-        sensoreval_psim::utils::rotate_imudata(rot, &mut z.slice_mut(ndarray::s![3..6]));
-        z
+        let psim_state = ndarray::Array1::from(PendulumStateArgs {
+            theta: x[X::Theta],
+            theta_d: x[X::ThetaD],
+        });
+
+        let mut accel = ndarray::Array::zeros(3);
+        model.to_accel(&psim_state, &mut accel);
+        sensoreval_psim::utils::rotate_imudata(rot, &mut accel);
+
+        let mut gyro = ndarray::Array::zeros(3);
+        model.to_gyro(&psim_state, &mut gyro);
+        sensoreval_psim::utils::rotate_imudata(rot, &mut gyro);
+
+        ndarray::Array1::from(ZArgs {
+            accel_e: accel[0],
+            accel_n: accel[1],
+            accel_u: accel[2],
+            gyro_e: gyro[0],
+            gyro_n: gyro[1],
+            gyro_u: gyro[2],
+        })
     }
 }
 
@@ -204,19 +215,19 @@ impl Pendulum {
     }
 
     fn est_acceleration(x: &ndarray::Array1<f64>) -> f64 {
-        x[1].powi(2) * x[2] + math::GRAVITY * (x[0] + x[3]).cos()
+        x[X::ThetaD].powi(2) * x[X::Radius] + math::GRAVITY * (x[X::Theta] + x[X::SensorPos]).cos()
     }
 
     fn est_human_angle(x: &ndarray::Array1<f64>) -> f64 {
-        x[0] + x[3]
+        x[X::Theta] + x[X::SensorPos]
     }
 
     fn est_velocity(x: &ndarray::Array1<f64>) -> f64 {
-        x[1] * x[2]
+        x[X::ThetaD] * x[X::Radius]
     }
 
     fn est_altitude(x: &ndarray::Array1<f64>) -> f64 {
-        x[2] - (x[0] + x[3]).cos() * x[2]
+        x[X::Radius] - (x[X::Theta] + x[X::SensorPos]).cos() * x[X::Radius]
     }
 
     fn est(&self, actual_ts: u64, dataset: &[Data], dataid: usize) -> ndarray::Array1<f64> {
@@ -323,14 +334,14 @@ impl render::HudRenderer for Pendulum {
         let mut Qs = Vec::new();
         let mut dts = Vec::new();
         for sample in samples {
-            let z = array![
-                sample.accel[0],
-                sample.accel[1],
-                sample.accel[2],
-                sample.gyro[0],
-                sample.gyro[1],
-                sample.gyro[2]
-            ];
+            let z = ndarray::Array1::from(ZArgs {
+                accel_e: sample.accel[0],
+                accel_n: sample.accel[1],
+                accel_u: sample.accel[2],
+                gyro_e: sample.gyro[0],
+                gyro_n: sample.gyro[1],
+                gyro_u: sample.gyro[2],
+            });
             let dt = (sample.time - t_prev) as f64 / 1_000_000.0f64;
 
             ukf.set_dt(&dt);
@@ -597,7 +608,10 @@ impl render::HudRenderer for Pendulum {
             let est = self.est(us, &dataset, dataid);
             bincode::options().with_big_endian().serialize_into(
                 &mut file,
-                &[half::f16::from_f64(est[0]), half::f16::from_f64(est[1])],
+                &[
+                    half::f16::from_f64(est[X::Theta]),
+                    half::f16::from_f64(est[X::ThetaD]),
+                ],
             )?;
 
             us += TIMESTEP;
