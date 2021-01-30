@@ -227,10 +227,7 @@ impl Graph {
             let was_first = first;
             if first {
                 tnow = time;
-                tstart = match time.checked_sub(self.dt) {
-                    None => 0,
-                    Some(v) => v,
-                };
+                tstart = time.saturating_sub(self.dt);
                 first = false;
                 data_now = data;
             }
