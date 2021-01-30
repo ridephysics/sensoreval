@@ -58,7 +58,7 @@ impl<FNS> MerweScaledSigmaPoints<FNS> {
 
 impl<FNS> SigmaPoints for MerweScaledSigmaPoints<FNS>
 where
-    FNS: crate::Subtract<Elem = f64>,
+    FNS: crate::Subtract<f64>,
 {
     type Elem = f64;
 
@@ -129,7 +129,7 @@ impl<FNS> JulierSigmaPoints<FNS> {
 
 impl<FNS> SigmaPoints for JulierSigmaPoints<FNS>
 where
-    FNS: crate::Subtract<Elem = f64>,
+    FNS: crate::Subtract<f64>,
 {
     type Elem = f64;
 
@@ -188,17 +188,15 @@ pub(crate) mod tests {
     #[derive(Default)]
     pub struct LinFns;
 
-    impl crate::Subtract for LinFns {
-        type Elem = f64;
-
+    impl<A: num_traits::Float> crate::Subtract<A> for LinFns {
         fn subtract<Sa, Sb>(
             &self,
             a: &ndarray::ArrayBase<Sa, ndarray::Ix1>,
             b: &ndarray::ArrayBase<Sb, ndarray::Ix1>,
-        ) -> ndarray::Array1<Self::Elem>
+        ) -> ndarray::Array1<A>
         where
-            Sa: ndarray::Data<Elem = Self::Elem>,
-            Sb: ndarray::Data<Elem = Self::Elem>,
+            Sa: ndarray::Data<Elem = A>,
+            Sb: ndarray::Data<Elem = A>,
         {
             a - b
         }

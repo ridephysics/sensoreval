@@ -35,34 +35,28 @@ pub trait ApplyDt<T, F> {
     fn apply_dt(dt: &T, filter: &mut F);
 }
 
-pub trait Subtract {
-    type Elem;
-
+pub trait Subtract<A> {
     fn subtract<Sa, Sb>(
         &self,
         a: &ndarray::ArrayBase<Sa, ndarray::Ix1>,
         b: &ndarray::ArrayBase<Sb, ndarray::Ix1>,
-    ) -> ndarray::Array1<Self::Elem>
+    ) -> ndarray::Array1<A>
     where
-        Sa: ndarray::Data<Elem = Self::Elem>,
-        Sb: ndarray::Data<Elem = Self::Elem>;
+        Sa: ndarray::Data<Elem = A>,
+        Sb: ndarray::Data<Elem = A>;
 }
 
-pub trait Add {
-    type Elem;
-
+pub trait Add<A> {
     fn add<Sa, Sb>(
         &self,
         a: &ndarray::ArrayBase<Sa, ndarray::Ix1>,
         b: &ndarray::ArrayBase<Sb, ndarray::Ix1>,
-    ) -> ndarray::Array1<Self::Elem>
+    ) -> ndarray::Array1<A>
     where
-        Sa: ndarray::Data<Elem = Self::Elem>,
-        Sb: ndarray::Data<Elem = Self::Elem>;
+        Sa: ndarray::Data<Elem = A>,
+        Sb: ndarray::Data<Elem = A>;
 }
 
-pub trait Normalize {
-    type Elem;
-
-    fn normalize(&self, x: ndarray::Array1<Self::Elem>) -> ndarray::Array1<Self::Elem>;
+pub trait Normalize<A> {
+    fn normalize(&self, x: ndarray::Array1<A>) -> ndarray::Array1<A>;
 }

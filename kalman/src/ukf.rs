@@ -9,17 +9,15 @@ use ndarray_linalg::solve::Inverse;
 
 type RTSResult<A> = (Vec<ndarray::Array1<A>>, Vec<ndarray::Array2<A>>);
 
-pub trait Mean {
-    type Elem;
-
+pub trait Mean<A> {
     fn mean<Ss, Swm>(
         &self,
         sigmas: &ndarray::ArrayBase<Ss, ndarray::Ix2>,
         Wm: &ndarray::ArrayBase<Swm, ndarray::Ix1>,
-    ) -> ndarray::Array1<Self::Elem>
+    ) -> ndarray::Array1<A>
     where
-        Ss: ndarray::Data<Elem = Self::Elem>,
-        Swm: ndarray::Data<Elem = Self::Elem>;
+        Ss: ndarray::Data<Elem = A>,
+        Swm: ndarray::Data<Elem = A>;
 }
 
 pub trait Fx<A> {
@@ -87,12 +85,8 @@ impl<'a, FP, FNSX, ARGSFX, FNSZ, A, Sz> Filter<A, ndarray::ArrayBase<Sz, ndarray
     for UKF<'a, FP, FNSX, ARGSFX, FNSZ, A, Sz>
 where
     FP: crate::sigma_points::SigmaPoints<Elem = A>,
-    FNSX: Fx<ARGSFX, Elem = A>
-        + Hx<Elem = A>
-        + Mean<Elem = A>
-        + crate::Add<Elem = A>
-        + crate::Subtract<Elem = A>,
-    FNSZ: Mean<Elem = A> + crate::Subtract<Elem = A>,
+    FNSX: Fx<ARGSFX, Elem = A> + Hx<Elem = A> + Mean<A> + crate::Add<A> + crate::Subtract<A>,
+    FNSZ: Mean<A> + crate::Subtract<A>,
     A: Copy
         + num_traits::float::FloatConst
         + num_traits::float::Float
@@ -208,8 +202,8 @@ where
 impl<'a, FP, FNSX, ARGSFX, FNSZ, A, Sz> UKF<'a, FP, FNSX, ARGSFX, FNSZ, A, Sz>
 where
     FP: crate::sigma_points::SigmaPoints<Elem = A>,
-    FNSX: Fx<ARGSFX, Elem = A> + Mean<Elem = A> + crate::Add<Elem = A> + crate::Subtract<Elem = A>,
-    FNSZ: Mean<Elem = A> + crate::Subtract<Elem = A>,
+    FNSX: Fx<ARGSFX, Elem = A> + Mean<A> + crate::Add<A> + crate::Subtract<A>,
+    FNSZ: Mean<A> + crate::Subtract<A>,
     A: Copy
         + num_traits::float::FloatConst
         + num_traits::float::Float

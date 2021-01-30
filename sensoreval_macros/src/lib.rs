@@ -265,42 +265,36 @@ pub fn derive_kalman_math(input: TokenStream) -> TokenStream {
     });
 
     TokenStream::from(quote! {
-        impl kalman::Normalize for #fnstruct {
-            type Elem = f64;
-
-            fn normalize(&self, mut x: ndarray::Array1<Self::Elem>) -> ndarray::Array1<Self::Elem> {
+        impl<A: num_traits::Float + num_traits::FloatConst + std::ops::SubAssign> kalman::Normalize<A> for #fnstruct {
+            fn normalize(&self, mut x: ndarray::Array1<A>) -> ndarray::Array1<A> {
                 #(#normalize_impls)*
                 x
             }
         }
 
-        impl kalman::Subtract for #fnstruct {
-            type Elem = f64;
-
+        impl<A: num_traits::Float + num_traits::FloatConst + std::ops::SubAssign> kalman::Subtract<A> for #fnstruct {
             fn subtract<Sa, Sb>(
                 &self,
                 a: &ndarray::ArrayBase<Sa, ndarray::Ix1>,
                 b: &ndarray::ArrayBase<Sb, ndarray::Ix1>,
-            ) -> ndarray::Array1<Self::Elem>
+            ) -> ndarray::Array1<A>
             where
-                Sa: ndarray::Data<Elem = Self::Elem>,
-                Sb: ndarray::Data<Elem = Self::Elem>,
+                Sa: ndarray::Data<Elem = A>,
+                Sb: ndarray::Data<Elem = A>,
             {
                 self.normalize(a - b)
             }
         }
 
-        impl kalman::Add for #fnstruct {
-            type Elem = f64;
-
+        impl<A: num_traits::Float + num_traits::FloatConst + std::ops::SubAssign> kalman::Add<A> for #fnstruct {
             fn add<Sa, Sb>(
                 &self,
                 a: &ndarray::ArrayBase<Sa, ndarray::Ix1>,
                 b: &ndarray::ArrayBase<Sb, ndarray::Ix1>,
-            ) -> ndarray::Array1<Self::Elem>
+            ) -> ndarray::Array1<A>
             where
-                Sa: ndarray::Data<Elem = Self::Elem>,
-                Sb: ndarray::Data<Elem = Self::Elem>,
+                Sa: ndarray::Data<Elem = A>,
+                Sb: ndarray::Data<Elem = A>,
             {
                 self.normalize(a + b)
             }
@@ -331,7 +325,7 @@ pub fn derive_ukf_math(input: TokenStream) -> TokenStream {
         let sum = proc_macro2::Ident::new(&format!("sum_{}", i), proc_macro2::Span::call_site());
         if *is_angle {
             quote! {
-                assert!(sp[#i] >= -std::f64::consts::PI && sp[#i] <= std::f64::consts::PI);
+                assert!(sp[#i] >= -A::PI() && sp[#i] <= A::PI());
                 #sum.add(sp[#i], *w);
             }
         } else {
@@ -348,18 +342,16 @@ pub fn derive_ukf_math(input: TokenStream) -> TokenStream {
     });
 
     TokenStream::from(quote! {
-        impl kalman::ukf::Mean for #fnstruct {
-            type Elem = f64;
-
+        impl<A: 'static + num_traits::Float + num_traits::FloatConst + std::ops::AddAssign + Default> kalman::ukf::Mean<A> for #fnstruct {
             #[allow(non_snake_case)]
             fn mean<Ss, Swm>(
                 &self,
                 sigmas: &ndarray::ArrayBase<Ss, ndarray::Ix2>,
                 Wm: &ndarray::ArrayBase<Swm, ndarray::Ix1>,
-            ) -> ndarray::Array1<Self::Elem>
+            ) -> ndarray::Array1<A>
             where
-                Ss: ndarray::Data<Elem = Self::Elem>,
-                Swm: ndarray::Data<Elem = Self::Elem>,
+                Ss: ndarray::Data<Elem = A>,
+                Swm: ndarray::Data<Elem = A>,
             {
                 let mut ret = Wm.dot(sigmas);
 
