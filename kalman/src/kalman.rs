@@ -55,7 +55,7 @@ where
         let ll = self.log_likelihood()?;
         let mut l = ll.exp();
         if l.is_zero() {
-            l = A::min_value();
+            l = A::min_positive_value();
         }
 
         Ok(l)
