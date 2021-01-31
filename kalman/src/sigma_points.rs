@@ -188,6 +188,20 @@ pub(crate) mod tests {
     #[derive(Default)]
     pub struct LinFns;
 
+    impl<A: num_traits::Float> crate::Add<A> for LinFns {
+        fn add<Sa, Sb>(
+            &self,
+            a: &ndarray::ArrayBase<Sa, ndarray::Ix1>,
+            b: &ndarray::ArrayBase<Sb, ndarray::Ix1>,
+        ) -> ndarray::Array1<A>
+        where
+            Sa: ndarray::Data<Elem = A>,
+            Sb: ndarray::Data<Elem = A>,
+        {
+            a + b
+        }
+    }
+
     impl<A: num_traits::Float> crate::Subtract<A> for LinFns {
         fn subtract<Sa, Sb>(
             &self,
