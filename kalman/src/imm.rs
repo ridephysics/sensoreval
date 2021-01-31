@@ -2,7 +2,9 @@
 use std::ops::DivAssign;
 
 #[derive(Debug)]
-pub struct IMM<'a, A, F, MU, M, Sz> {
+pub struct IMM<'a, FNS, A, F, MU, M, Sz> {
+    fns: FNS,
+
     /// List of N filters. filters[i] is the ith Kalman filter in the IMM
     /// estimator
     filters: &'a mut [F],
@@ -40,9 +42,10 @@ pub struct IMM<'a, A, F, MU, M, Sz> {
     pd_Sz: std::marker::PhantomData<Sz>,
 }
 
-impl<'a, A, F, Smu, SM, Sz> crate::Filter<A, ndarray::ArrayBase<Sz, ndarray::Ix1>>
+impl<'a, FNS, A, F, Smu, SM, Sz> crate::Filter<A, ndarray::ArrayBase<Sz, ndarray::Ix1>>
     for IMM<
         'a,
+        FNS,
         A,
         F,
         ndarray::ArrayBase<Smu, ndarray::Ix1>,
@@ -50,6 +53,7 @@ impl<'a, A, F, Smu, SM, Sz> crate::Filter<A, ndarray::ArrayBase<Sz, ndarray::Ix1
         Sz,
     >
 where
+    FNS: crate::Add<A> + crate::Subtract<A>,
     F: crate::Filter<A, ndarray::ArrayBase<Sz, ndarray::Ix1>>,
     Smu: ndarray::DataMut<Elem = A>,
     SM: ndarray::Data<Elem = A>,
@@ -70,12 +74,12 @@ where
         for w in self.omega.t().genrows() {
             let mut x = ndarray::Array1::<A>::zeros(self.x.dim());
             ndarray::azip!((kf in &*self.filters, &wj in &w) {
-                x += &(kf.x() * wj);
+                x = self.fns.add(&x, &(kf.x() * wj));
             });
 
             let mut P = ndarray::Array2::<A>::zeros(self.P.dim());
             ndarray::azip!((kf in &*self.filters, &wj in &w) {
-                let y = kf.x() - &x;
+                let y = self.fns.subtract(kf.x(), &x);
                 P += &((math::outer_product(&y, &y) + kf.P()) * wj);
             });
 
@@ -136,9 +140,18 @@ where
     }
 }
 
-impl<'a, A, F, Smu, SM, Sz>
-    IMM<'a, A, F, ndarray::ArrayBase<Smu, ndarray::Ix1>, ndarray::ArrayBase<SM, ndarray::Ix2>, Sz>
+impl<'a, FNS, A, F, Smu, SM, Sz>
+    IMM<
+        'a,
+        FNS,
+        A,
+        F,
+        ndarray::ArrayBase<Smu, ndarray::Ix1>,
+        ndarray::ArrayBase<SM, ndarray::Ix2>,
+        Sz,
+    >
 where
+    FNS: crate::Add<A> + crate::Subtract<A>,
     F: crate::Filter<A, ndarray::ArrayBase<Sz, ndarray::Ix1>>,
     Smu: ndarray::DataMut<Elem = A>,
     SM: ndarray::Data<Elem = A>,
@@ -152,6 +165,7 @@ where
         filters: &'a mut [F],
         mu: &'a mut ndarray::ArrayBase<Smu, ndarray::Ix1>,
         M: &'a ndarray::ArrayBase<SM, ndarray::Ix2>,
+        fns: FNS,
     ) -> Result<Self, crate::Error> {
         if filters.len() < 2 {
             return Err(crate::Error::NotEnoughFilters);
@@ -167,6 +181,7 @@ where
         let N = filters.len();
         let P_dim = filters[0].P().dim();
         let mut o = Self {
+            fns,
             filters,
             mu,
             M,
@@ -190,13 +205,13 @@ where
     fn compute_state_estimate(&mut self) {
         let mut x = ndarray::Array::zeros(self.x.dim());
         ndarray::azip!((f in &*self.filters, mu in &*self.mu) {
-            x += &(f.x() * *mu);
+            x = self.fns.add(&x, &(f.x() * *mu));
         });
         self.x = x;
 
         let mut P = ndarray::Array::zeros(self.P.dim());
         ndarray::azip!((f in &*self.filters, mu in &*self.mu) {
-            let y = f.x() - &self.x;
+            let y = self.fns.subtract(f.x(), &self.x);
             P += &((math::outer_product(&y, &y) + f.P()) * *mu);
         });
         self.P = P;
@@ -322,7 +337,8 @@ mod test {
         let mut filters = vec![ca, cano];
         let M = ndarray::array![[0.97, 0.03], [0.03, 0.97]];
         let mut mu = ndarray::array![0.5, 0.5];
-        let mut bank = super::IMM::new(&mut filters, &mut mu, &M).unwrap();
+        let fns = super::super::sigma_points::tests::LinFns::default();
+        let mut bank = super::IMM::new(&mut filters, &mut mu, &M, fns).unwrap();
 
         let mut xs = Vec::with_capacity(zs.len());
         let mut probs = Vec::with_capacity(zs.len());
