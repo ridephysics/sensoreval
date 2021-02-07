@@ -1,6 +1,5 @@
 #![allow(non_snake_case)]
 
-use crate::ApplyDt;
 use crate::Error;
 use crate::Filter;
 use crate::SetDt;
@@ -30,6 +29,10 @@ pub trait Fx<A> {
     ) -> ndarray::Array1<Self::Elem>
     where
         S: ndarray::Data<Elem = Self::Elem>;
+}
+
+pub trait ApplyDt<A> {
+    fn apply_dt(&self, Q: &mut ndarray::Array2<A>);
 }
 
 pub trait Hx {
@@ -71,18 +74,17 @@ pub struct UKF<'a, FP, FNSX, ARGSFX, FNSZ, A, Sz> {
     pd_Sz: std::marker::PhantomData<Sz>,
 }
 
-impl<'a, FP, FNSX, ARGSFX, FNSZ, A, Sz, T> SetDt<T> for UKF<'a, FP, FNSX, ARGSFX, FNSZ, A, Sz>
+impl<'a, FP, FNSX, ARGSFX, FNSZ, A, Sz> SetDt<A> for UKF<'a, FP, FNSX, ARGSFX, FNSZ, A, Sz>
 where
-    ARGSFX: SetDt<T> + ApplyDt<T, Self>,
+    ARGSFX: SetDt<A> + ApplyDt<A>,
 {
-    fn set_dt(&mut self, dt: &T) {
+    fn set_dt(&mut self, dt: &A) {
         self.args_fx.set_dt(dt);
-        ARGSFX::apply_dt(dt, self);
+        self.args_fx.apply_dt(&mut self.Q);
     }
 }
 
-impl<'a, FP, FNSX, ARGSFX, FNSZ, A, Sz> Filter<A, ndarray::ArrayBase<Sz, ndarray::Ix1>>
-    for UKF<'a, FP, FNSX, ARGSFX, FNSZ, A, Sz>
+impl<'a, FP, FNSX, ARGSFX, FNSZ, A, Sz> Filter for UKF<'a, FP, FNSX, ARGSFX, FNSZ, A, Sz>
 where
     FP: crate::sigma_points::SigmaPoints<Elem = A>,
     FNSX: Fx<ARGSFX, Elem = A> + Hx<Elem = A> + Mean<A> + crate::Add<A> + crate::Subtract<A>,
@@ -96,6 +98,9 @@ where
     <A as ndarray_linalg::Scalar>::Real: std::convert::From<f32>,
     Sz: ndarray::Data<Elem = A>,
 {
+    type Elem = A;
+    type Meas = ndarray::ArrayBase<Sz, ndarray::Ix1>;
+
     fn predict(&mut self) -> Result<(), crate::Error> {
         // calculate sigma points for given mean and covariance
         let sigmas = self.points_fn.sigma_points(&self.x, &self.P)?;
@@ -196,6 +201,30 @@ where
 
     fn P_mut(&mut self) -> &mut ndarray::Array2<A> {
         &mut self.P
+    }
+}
+
+impl<'a, FP, FNSX, ARGSFX, FNSZ, A, Sz> crate::Q for UKF<'a, FP, FNSX, ARGSFX, FNSZ, A, Sz> {
+    type Elem = A;
+
+    fn Q(&self) -> &ndarray::Array2<A> {
+        &self.Q
+    }
+
+    fn Q_mut(&mut self) -> &mut ndarray::Array2<A> {
+        &mut self.Q
+    }
+}
+
+impl<'a, FP, FNSX, ARGSFX, FNSZ, A, Sz> crate::R for UKF<'a, FP, FNSX, ARGSFX, FNSZ, A, Sz> {
+    type Elem = A;
+
+    fn R(&self) -> &ndarray::Array2<A> {
+        &self.R
+    }
+
+    fn R_mut(&mut self) -> &mut ndarray::Array2<A> {
+        &mut self.R
     }
 }
 

@@ -14,25 +14,40 @@ pub use unscented_transform::*;
 extern crate lapack_src;
 
 #[allow(non_snake_case)]
-pub trait Filter<A, Z> {
+pub trait Filter {
+    type Elem;
+    type Meas;
+
     fn predict(&mut self) -> Result<(), crate::Error>;
-    fn update(&mut self, z: &Z) -> Result<(), crate::Error>;
+    fn update(&mut self, z: &Self::Meas) -> Result<(), crate::Error>;
 
-    fn x(&self) -> &ndarray::Array1<A>;
-    fn x_mut(&mut self) -> &mut ndarray::Array1<A>;
+    fn x(&self) -> &ndarray::Array1<Self::Elem>;
+    fn x_mut(&mut self) -> &mut ndarray::Array1<Self::Elem>;
 
-    fn P(&self) -> &ndarray::Array2<A>;
-    fn P_mut(&mut self) -> &mut ndarray::Array2<A>;
+    fn P(&self) -> &ndarray::Array2<Self::Elem>;
+    fn P_mut(&mut self) -> &mut ndarray::Array2<Self::Elem>;
 
-    fn likelihood(&self) -> Result<A, crate::Error>;
+    fn likelihood(&self) -> Result<Self::Elem, crate::Error>;
+}
+
+#[allow(non_snake_case)]
+pub trait Q {
+    type Elem;
+
+    fn Q(&self) -> &ndarray::Array2<Self::Elem>;
+    fn Q_mut(&mut self) -> &mut ndarray::Array2<Self::Elem>;
+}
+
+#[allow(non_snake_case)]
+pub trait R {
+    type Elem;
+
+    fn R(&self) -> &ndarray::Array2<Self::Elem>;
+    fn R_mut(&mut self) -> &mut ndarray::Array2<Self::Elem>;
 }
 
 pub trait SetDt<T> {
     fn set_dt(&mut self, dt: &T);
-}
-
-pub trait ApplyDt<T, F> {
-    fn apply_dt(dt: &T, filter: &mut F);
 }
 
 pub trait Subtract<A> {

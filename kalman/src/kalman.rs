@@ -18,7 +18,7 @@ pub struct Kalman<A, Sz> {
     pd_Sz: std::marker::PhantomData<Sz>,
 }
 
-impl<A, Sz> crate::Filter<A, ndarray::ArrayBase<Sz, ndarray::Ix1>> for Kalman<A, Sz>
+impl<A, Sz> crate::Filter for Kalman<A, Sz>
 where
     A: num_traits::float::Float
         + num_traits::float::FloatConst
@@ -31,6 +31,9 @@ where
     <A as ndarray_linalg::Scalar>::Real: std::convert::From<f32>,
     Sz: ndarray::Data<Elem = A>,
 {
+    type Elem = A;
+    type Meas = ndarray::ArrayBase<Sz, ndarray::Ix1>;
+
     fn predict(&mut self) -> Result<(), crate::Error> {
         self.x = self.F.dot(&self.x);
         self.P = self.F.dot(&self.P).dot(&self.F.t()) + &self.Q;

@@ -90,19 +90,15 @@ impl kalman::SetDt<f64> for FxArgs {
     }
 }
 
-impl<FP, FNSX, FNSZ, Sz> kalman::ApplyDt<f64, kalman::ukf::UKF<'_, FP, FNSX, Self, FNSZ, f64, Sz>>
-    for FxArgs
-{
+impl kalman::ukf::ApplyDt<f64> for FxArgs {
     #[allow(non_snake_case)]
-    fn apply_dt(dt: &f64, f: &mut kalman::ukf::UKF<'_, FP, FNSX, Self, FNSZ, f64, Sz>) {
-        let Q = &mut f.Q;
-
+    fn apply_dt(&self, Q: &mut ndarray::Array2<f64>) {
         Q.slice_mut(s![0..2, 0..2])
-            .assign(&kalman::discretization::Q_discrete_white_noise(2, *dt, 0.001).unwrap());
+            .assign(&kalman::discretization::Q_discrete_white_noise(2, self.dt, 0.001).unwrap());
         Q[[2, 2]] = 0.0;
         Q[[3, 3]] = 0.0;
         Q.slice_mut(s![4..7, 4..7])
-            .assign(&kalman::discretization::Q_discrete_white_noise(3, *dt, 0.001).unwrap());
+            .assign(&kalman::discretization::Q_discrete_white_noise(3, self.dt, 0.001).unwrap());
     }
 }
 

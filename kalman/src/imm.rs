@@ -2,12 +2,12 @@
 use std::ops::DivAssign;
 
 #[derive(Debug)]
-pub struct IMM<'a, FNS, A, F, MU, M, Sz> {
+pub struct IMM<'a, FNS, A, FR, F: ?Sized, MU, M, Sz> {
     fns: FNS,
 
     /// List of N filters. filters[i] is the ith Kalman filter in the IMM
     /// estimator
-    filters: &'a mut [F],
+    filters: &'a mut [FR],
 
     /// mode probability: mu[i] is the probability that filter i is the correct
     /// one
@@ -40,13 +40,27 @@ pub struct IMM<'a, FNS, A, F, MU, M, Sz> {
     cbar: ndarray::Array1<A>,
 
     pd_Sz: std::marker::PhantomData<Sz>,
+    pd_F: std::marker::PhantomData<F>,
 }
 
-impl<'a, FNS, A, F, Smu, SM, Sz> crate::Filter<A, ndarray::ArrayBase<Sz, ndarray::Ix1>>
+impl<'a, FNS, A, FR, F, MU, M, Sz, T> crate::SetDt<T> for IMM<'a, FNS, A, FR, F, MU, M, Sz>
+where
+    FR: AsMut<F>,
+    F: crate::SetDt<T> + ?Sized,
+{
+    fn set_dt(&mut self, dt: &T) {
+        for filter in &mut *self.filters {
+            filter.as_mut().set_dt(dt);
+        }
+    }
+}
+
+impl<'a, FNS, A, FR, F, Smu, SM, Sz> crate::Filter
     for IMM<
         'a,
         FNS,
         A,
+        FR,
         F,
         ndarray::ArrayBase<Smu, ndarray::Ix1>,
         ndarray::ArrayBase<SM, ndarray::Ix2>,
@@ -54,7 +68,8 @@ impl<'a, FNS, A, F, Smu, SM, Sz> crate::Filter<A, ndarray::ArrayBase<Sz, ndarray
     >
 where
     FNS: crate::Add<A> + crate::Subtract<A>,
-    F: crate::Filter<A, ndarray::ArrayBase<Sz, ndarray::Ix1>>,
+    FR: std::borrow::Borrow<F> + std::borrow::BorrowMut<F>,
+    F: crate::Filter<Elem = A, Meas = ndarray::ArrayBase<Sz, ndarray::Ix1>> + ?Sized,
     Smu: ndarray::DataMut<Elem = A>,
     SM: ndarray::Data<Elem = A>,
     A: num_traits::float::Float
@@ -65,6 +80,9 @@ where
         + std::fmt::Display,
     Sz: ndarray::Data<Elem = A>,
 {
+    type Elem = A;
+    type Meas = ndarray::ArrayBase<Sz, ndarray::Ix1>;
+
     fn predict(&mut self) -> Result<(), crate::Error> {
         let N = self.filters.len();
 
@@ -74,11 +92,13 @@ where
         for w in self.omega.t().genrows() {
             let mut x = ndarray::Array1::<A>::zeros(self.x.dim());
             ndarray::azip!((kf in &*self.filters, &wj in &w) {
-                x = self.fns.add(&x, &(kf.x() * wj));
+                x = self.fns.add(&x, &(kf.borrow().x() * wj));
             });
 
             let mut P = ndarray::Array2::<A>::zeros(self.P.dim());
             ndarray::azip!((kf in &*self.filters, &wj in &w) {
+                let kf = kf.borrow();
+
                 let y = self.fns.subtract(kf.x(), &x);
                 P += &((math::outer_product(&y, &y) + kf.P()) * wj);
             });
@@ -89,6 +109,8 @@ where
 
         // compute each filter's prior using the mixed initial conditions
         for (i, f) in self.filters.iter_mut().enumerate() {
+            let f = f.borrow_mut();
+
             // propagate using the mixed state estimate and covariance
             f.x_mut().assign(&xs[i]);
             f.P_mut().assign(&Ps[i]);
@@ -103,6 +125,8 @@ where
     fn update(&mut self, z: &ndarray::ArrayBase<Sz, ndarray::Ix1>) -> Result<(), crate::Error> {
         // run update on each filter, and save the likelihood
         for (i, f) in self.filters.iter_mut().enumerate() {
+            let f = f.borrow_mut();
+
             f.update(z)?;
             self.likelihood[i] = f.likelihood()?;
             println!("[{}] LH={}", i, self.likelihood[i]);
@@ -140,11 +164,12 @@ where
     }
 }
 
-impl<'a, FNS, A, F, Smu, SM, Sz>
+impl<'a, FNS, A, FR, F, Smu, SM, Sz>
     IMM<
         'a,
         FNS,
         A,
+        FR,
         F,
         ndarray::ArrayBase<Smu, ndarray::Ix1>,
         ndarray::ArrayBase<SM, ndarray::Ix2>,
@@ -152,7 +177,8 @@ impl<'a, FNS, A, F, Smu, SM, Sz>
     >
 where
     FNS: crate::Add<A> + crate::Subtract<A>,
-    F: crate::Filter<A, ndarray::ArrayBase<Sz, ndarray::Ix1>>,
+    FR: std::borrow::Borrow<F> + std::borrow::BorrowMut<F>,
+    F: crate::Filter<Elem = A, Meas = ndarray::ArrayBase<Sz, ndarray::Ix1>> + ?Sized,
     Smu: ndarray::DataMut<Elem = A>,
     SM: ndarray::Data<Elem = A>,
     A: num_traits::float::Float
@@ -162,7 +188,7 @@ where
     Sz: ndarray::Data<Elem = A>,
 {
     pub fn new(
-        filters: &'a mut [F],
+        filters: &'a mut [FR],
         mu: &'a mut ndarray::ArrayBase<Smu, ndarray::Ix1>,
         M: &'a ndarray::ArrayBase<SM, ndarray::Ix2>,
         fns: FNS,
@@ -171,15 +197,15 @@ where
             return Err(crate::Error::NotEnoughFilters);
         }
 
-        let x_dim = filters[0].x().dim();
+        let x_dim = filters[0].borrow().x().dim();
         for f in &*filters {
-            if f.x().dim() != x_dim {
+            if f.borrow().x().dim() != x_dim {
                 return Err(crate::Error::DifferentFilterShapes);
             }
         }
 
         let N = filters.len();
-        let P_dim = filters[0].P().dim();
+        let P_dim = filters[0].borrow().P().dim();
         let mut o = Self {
             fns,
             filters,
@@ -191,6 +217,7 @@ where
             omega: ndarray::Array::zeros((N, N)),
             cbar: ndarray::Array::zeros(N),
             pd_Sz: std::marker::PhantomData,
+            pd_F: std::marker::PhantomData,
         };
         o.compute_mixing_probabilities();
 
@@ -205,12 +232,14 @@ where
     fn compute_state_estimate(&mut self) {
         let mut x = ndarray::Array::zeros(self.x.dim());
         ndarray::azip!((f in &*self.filters, mu in &*self.mu) {
-            x = self.fns.add(&x, &(f.x() * *mu));
+            x = self.fns.add(&x, &(f.borrow().x() * *mu));
         });
         self.x = x;
 
         let mut P = ndarray::Array::zeros(self.P.dim());
         ndarray::azip!((f in &*self.filters, mu in &*self.mu) {
+            let f = f.borrow();
+
             let y = self.fns.subtract(f.x(), &self.x);
             P += &((math::outer_product(&y, &y) + f.P()) * *mu);
         });
@@ -228,11 +257,11 @@ where
         }
     }
 
-    pub fn filters(&mut self) -> &[F] {
+    pub fn filters(&mut self) -> &[FR] {
         self.filters
     }
 
-    pub fn filters_mut(&mut self) -> &mut [F] {
+    pub fn filters_mut(&mut self) -> &mut [FR] {
         self.filters
     }
 
