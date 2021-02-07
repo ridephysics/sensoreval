@@ -131,6 +131,7 @@ pub fn derive_state_index(input: TokenStream) -> TokenStream {
 #[derive(Debug)]
 enum Attribute {
     FnStruct(String),
+    Lifetimes(usize),
     Angle,
 }
 
@@ -165,6 +166,13 @@ where
                         match &nv.lit {
                             syn::Lit::Str(s) => Attribute::FnStruct(s.value()),
                             _ => abort!(nv.path, "unsupported value for fnstruct"),
+                        }
+                    } else if nv.path.is_ident("lifetimes") {
+                        match &nv.lit {
+                            syn::Lit::Int(i) => Attribute::Lifetimes(
+                                i.base10_parse().expect_or_abort("invalid number"),
+                            ),
+                            _ => abort!(nv.path, "unsupported value for lifetimes"),
                         }
                     } else {
                         abort!(nv.path, "unsupported nv path ident");
@@ -231,18 +239,39 @@ fn gen_angle_map(data: &syn::DataEnum) -> Vec<bool> {
     is_angle_map
 }
 
-fn find_fnstruct(input: &DeriveInput) -> proc_macro2::Ident {
+fn find_fnstruct(
+    input: &DeriveInput,
+) -> (
+    proc_macro2::Ident,
+    proc_macro2::TokenStream,
+    proc_macro2::TokenStream,
+) {
     let mut fnstruct = None;
+    let mut num_lifetimes = 0;
     for attr in AttributeIter::new(input.attrs.iter()) {
-        if let Attribute::FnStruct(s) = attr {
-            fnstruct = Some(s);
-            break;
+        match attr {
+            Attribute::FnStruct(s) => fnstruct = Some(s),
+            Attribute::Lifetimes(n) => num_lifetimes = n,
+            _ => (),
         }
     }
-    match fnstruct {
+    let fnstruct = match fnstruct {
         Some(v) => proc_macro2::Ident::new(&v, proc_macro2::Span::call_site()),
         None => abort!(input, "can't find fnstruct"),
-    }
+    };
+
+    let lifetimes_iter = (0..num_lifetimes)
+        .map(|i| syn::Lifetime::new(&format!("'lt_{}", i), proc_macro2::Span::call_site()));
+    let generics = quote! {
+        #(#lifetimes_iter),*
+    };
+    let comma = if num_lifetimes > 0 {
+        quote! {,}
+    } else {
+        quote! {}
+    };
+
+    (fnstruct, generics, comma)
 }
 
 #[proc_macro_derive(KalmanMath, attributes(state))]
@@ -253,7 +282,7 @@ pub fn derive_kalman_math(input: TokenStream) -> TokenStream {
         syn::Data::Enum(d) => d,
         _ => abort!(input, "not an enum"),
     };
-    let fnstruct = find_fnstruct(&input);
+    let (fnstruct, generics, generics_comma) = find_fnstruct(&input);
     let is_angle_map = gen_angle_map(&data);
 
     let normalize_impls = is_angle_map.iter().enumerate().map(|(i, is_angle)| {
@@ -265,14 +294,20 @@ pub fn derive_kalman_math(input: TokenStream) -> TokenStream {
     });
 
     TokenStream::from(quote! {
-        impl<A: num_traits::Float + num_traits::FloatConst + std::ops::SubAssign> kalman::Normalize<A> for #fnstruct {
+        impl<#generics #generics_comma A> kalman::Normalize<A> for #fnstruct<#generics>
+        where
+            A: num_traits::Float + num_traits::FloatConst + std::ops::SubAssign,
+        {
             fn normalize(&self, mut x: ndarray::Array1<A>) -> ndarray::Array1<A> {
                 #(#normalize_impls)*
                 x
             }
         }
 
-        impl<A: num_traits::Float + num_traits::FloatConst + std::ops::SubAssign> kalman::Subtract<A> for #fnstruct {
+        impl<#generics #generics_comma A> kalman::Subtract<A> for #fnstruct<#generics>
+        where
+            A: num_traits::Float + num_traits::FloatConst + std::ops::SubAssign,
+        {
             fn subtract<Sa, Sb>(
                 &self,
                 a: &ndarray::ArrayBase<Sa, ndarray::Ix1>,
@@ -286,7 +321,10 @@ pub fn derive_kalman_math(input: TokenStream) -> TokenStream {
             }
         }
 
-        impl<A: num_traits::Float + num_traits::FloatConst + std::ops::SubAssign> kalman::Add<A> for #fnstruct {
+        impl<#generics #generics_comma A> kalman::Add<A> for #fnstruct<#generics>
+        where
+            A: num_traits::Float + num_traits::FloatConst + std::ops::SubAssign,
+        {
             fn add<Sa, Sb>(
                 &self,
                 a: &ndarray::ArrayBase<Sa, ndarray::Ix1>,
@@ -310,7 +348,7 @@ pub fn derive_ukf_math(input: TokenStream) -> TokenStream {
         syn::Data::Enum(d) => d,
         _ => abort!(input, "not an enum"),
     };
-    let fnstruct = find_fnstruct(&input);
+    let (fnstruct, generics, generics_comma) = find_fnstruct(&input);
     let is_angle_map = gen_angle_map(&data);
 
     let mean_decls = is_angle_map.iter().enumerate().map(|(i, is_angle)| {
@@ -342,7 +380,10 @@ pub fn derive_ukf_math(input: TokenStream) -> TokenStream {
     });
 
     TokenStream::from(quote! {
-        impl<A: 'static + num_traits::Float + num_traits::FloatConst + std::ops::AddAssign + Default> kalman::ukf::Mean<A> for #fnstruct {
+        impl<#generics #generics_comma A> kalman::ukf::Mean<A> for #fnstruct<#generics>
+        where
+            A: 'static + num_traits::Float + num_traits::FloatConst + std::ops::AddAssign + Default,
+        {
             #[allow(non_snake_case)]
             fn mean<Ss, Swm>(
                 &self,
