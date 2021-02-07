@@ -68,12 +68,12 @@ where
         &self.x
     }
 
-    fn P(&self) -> &ndarray::Array2<A> {
-        &self.P
-    }
-
     fn x_mut(&mut self) -> &mut ndarray::Array1<A> {
         &mut self.x
+    }
+
+    fn P(&self) -> &ndarray::Array2<A> {
+        &self.P
     }
 
     fn P_mut(&mut self) -> &mut ndarray::Array2<A> {
