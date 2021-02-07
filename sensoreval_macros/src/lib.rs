@@ -48,9 +48,9 @@ pub fn derive_state_index(input: TokenStream) -> TokenStream {
 
     TokenStream::from(quote! {
         #[automatically_derived]
-        impl<S, A> std::ops::Index<#ident> for ndarray::ArrayBase<S, ndarray::Ix1>
+        impl<S, A> ::std::ops::Index<#ident> for ::ndarray::ArrayBase<S, ::ndarray::Ix1>
         where
-            S: ndarray::Data<Elem = A>,
+            S: ::ndarray::Data<Elem = A>,
         {
             type Output = A;
 
@@ -64,9 +64,9 @@ pub fn derive_state_index(input: TokenStream) -> TokenStream {
         }
 
         #[automatically_derived]
-        impl<S, A> std::ops::IndexMut<#ident> for ndarray::ArrayBase<S, ndarray::Ix1>
+        impl<S, A> ::std::ops::IndexMut<#ident> for ::ndarray::ArrayBase<S, ::ndarray::Ix1>
         where
-            S: ndarray::DataMut<Elem = A>,
+            S: ::ndarray::DataMut<Elem = A>,
         {
             fn index_mut(&mut self, idx: #ident) -> &mut A {
                 match idx {
@@ -86,7 +86,7 @@ pub fn derive_state_index(input: TokenStream) -> TokenStream {
         }
 
         #[automatically_derived]
-        impl<A> From<#ident_args<A>> for ::ndarray::Array1<A>
+        impl<A> ::std::convert::From<#ident_args<A>> for ::ndarray::Array1<A>
         {
             fn from(args: #ident_args<A>) -> Self {
                 ::ndarray::array![
@@ -294,46 +294,48 @@ pub fn derive_kalman_math(input: TokenStream) -> TokenStream {
     });
 
     TokenStream::from(quote! {
-        impl<#generics #generics_comma A> kalman::Normalize<A> for #fnstruct<#generics>
+        impl<#generics #generics_comma A> ::kalman::Normalize<A> for #fnstruct<#generics>
         where
-            A: num_traits::Float + num_traits::FloatConst + std::ops::SubAssign,
+            A: ::num_traits::Float + ::num_traits::FloatConst + ::std::ops::SubAssign,
         {
-            fn normalize(&self, mut x: ndarray::Array1<A>) -> ndarray::Array1<A> {
+            fn normalize(&self, mut x: ::ndarray::Array1<A>) -> ::ndarray::Array1<A> {
                 #(#normalize_impls)*
                 x
             }
         }
 
-        impl<#generics #generics_comma A> kalman::Subtract<A> for #fnstruct<#generics>
+        impl<#generics #generics_comma A> ::kalman::Subtract<A> for #fnstruct<#generics>
         where
-            A: num_traits::Float + num_traits::FloatConst + std::ops::SubAssign,
+            A: ::num_traits::Float + ::num_traits::FloatConst + ::std::ops::SubAssign,
         {
             fn subtract<Sa, Sb>(
                 &self,
-                a: &ndarray::ArrayBase<Sa, ndarray::Ix1>,
-                b: &ndarray::ArrayBase<Sb, ndarray::Ix1>,
-            ) -> ndarray::Array1<A>
+                a: &::ndarray::ArrayBase<Sa, ::ndarray::Ix1>,
+                b: &::ndarray::ArrayBase<Sb, ::ndarray::Ix1>,
+            ) -> ::ndarray::Array1<A>
             where
-                Sa: ndarray::Data<Elem = A>,
-                Sb: ndarray::Data<Elem = A>,
+                Sa: ::ndarray::Data<Elem = A>,
+                Sb: ::ndarray::Data<Elem = A>,
             {
+                use ::kalman::Normalize;
                 self.normalize(a - b)
             }
         }
 
-        impl<#generics #generics_comma A> kalman::Add<A> for #fnstruct<#generics>
+        impl<#generics #generics_comma A> ::kalman::Add<A> for #fnstruct<#generics>
         where
-            A: num_traits::Float + num_traits::FloatConst + std::ops::SubAssign,
+            A: ::num_traits::Float + ::num_traits::FloatConst + ::std::ops::SubAssign,
         {
             fn add<Sa, Sb>(
                 &self,
-                a: &ndarray::ArrayBase<Sa, ndarray::Ix1>,
-                b: &ndarray::ArrayBase<Sb, ndarray::Ix1>,
-            ) -> ndarray::Array1<A>
+                a: &::ndarray::ArrayBase<Sa, ::ndarray::Ix1>,
+                b: &::ndarray::ArrayBase<Sb, ::ndarray::Ix1>,
+            ) -> ::ndarray::Array1<A>
             where
-                Sa: ndarray::Data<Elem = A>,
-                Sb: ndarray::Data<Elem = A>,
+                Sa: ::ndarray::Data<Elem = A>,
+                Sb: ::ndarray::Data<Elem = A>,
             {
+                use ::kalman::Normalize;
                 self.normalize(a + b)
             }
         }
@@ -380,25 +382,25 @@ pub fn derive_ukf_math(input: TokenStream) -> TokenStream {
     });
 
     TokenStream::from(quote! {
-        impl<#generics #generics_comma A> kalman::ukf::Mean<A> for #fnstruct<#generics>
+        impl<#generics #generics_comma A> ::kalman::ukf::Mean<A> for #fnstruct<#generics>
         where
-            A: 'static + num_traits::Float + num_traits::FloatConst + std::ops::AddAssign + Default,
+            A: 'static + ::num_traits::Float + ::num_traits::FloatConst + ::std::ops::AddAssign + ::std::default::Default,
         {
             #[allow(non_snake_case)]
             fn mean<Ss, Swm>(
                 &self,
-                sigmas: &ndarray::ArrayBase<Ss, ndarray::Ix2>,
-                Wm: &ndarray::ArrayBase<Swm, ndarray::Ix1>,
-            ) -> ndarray::Array1<A>
+                sigmas: &::ndarray::ArrayBase<Ss, ::ndarray::Ix2>,
+                Wm: &::ndarray::ArrayBase<Swm, ::ndarray::Ix1>,
+            ) -> ::ndarray::Array1<A>
             where
-                Ss: ndarray::Data<Elem = A>,
-                Swm: ndarray::Data<Elem = A>,
+                Ss: ::ndarray::Data<Elem = A>,
+                Swm: ::ndarray::Data<Elem = A>,
             {
                 let mut ret = Wm.dot(sigmas);
 
                 #(#mean_decls)*
 
-                azip!((sp in sigmas.genrows(), w in Wm) {
+                ::ndarray::azip!((sp in sigmas.genrows(), w in Wm) {
                     #(#mean_impls)*
                 });
 
