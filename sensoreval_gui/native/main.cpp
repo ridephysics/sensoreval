@@ -35,6 +35,8 @@ extern "C" int sensorevalgui_native_create(struct context **pctx,
 {
     struct context *ctx = (struct context *)calloc(1, sizeof(*ctx));
 
+    assert(ctx);
+
     init_rscs();
     QCoreApplication::setAttribute(Qt::AA_DisableHighDpiScaling);
 
