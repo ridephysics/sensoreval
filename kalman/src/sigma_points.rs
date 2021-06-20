@@ -78,8 +78,7 @@ where
         assert_eq!(P.dim(), (self.n, self.n));
 
         let lambda = self.lambda();
-        let U = (((self.n as Self::Elem) + lambda) * P)
-            .cholesky(ndarray_linalg::lapack::UPLO::Upper)?;
+        let U = (((self.n as Self::Elem) + lambda) * P).cholesky(ndarray_linalg::UPLO::Upper)?;
 
         let mut sigmas = ndarray::Array2::<Self::Elem>::zeros((2 * self.n + 1, self.n));
         sigmas.index_axis_mut(ndarray::Axis(0), 0).assign(&x);
@@ -148,8 +147,8 @@ where
         assert_eq!(x.dim(), self.n);
         assert_eq!(P.dim(), (self.n, self.n));
 
-        let U = (((self.n as Self::Elem) + self.kappa) * P)
-            .cholesky(ndarray_linalg::lapack::UPLO::Upper)?;
+        let U =
+            (((self.n as Self::Elem) + self.kappa) * P).cholesky(ndarray_linalg::UPLO::Upper)?;
 
         let mut sigmas = ndarray::Array2::<Self::Elem>::zeros((2 * self.n + 1, self.n));
         sigmas.index_axis_mut(ndarray::Axis(0), 0).assign(&x);

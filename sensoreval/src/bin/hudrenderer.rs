@@ -154,7 +154,7 @@ impl<'a, 'b, 'c> sensoreval_gui::Callback for GuiCallback<'a, 'b, 'c> {
         }
     }
 
-    fn render(&mut self, _ctx: &mut sensoreval_gui::RuntimeContext, cr: &mut cairo::Context) {
+    fn render(&mut self, _ctx: &mut sensoreval_gui::RuntimeContext, cr: &cairo::Context) {
         self.renderctx.render(cr).unwrap();
     }
 }

@@ -5,12 +5,12 @@ authors = ["Michael Zimmermann <sigmaepsilon92@gmail.com>"]
 edition = "2018"
 
 [dependencies]
-ndarray = "0.13"
-ndarray-linalg = "0.12"
+ndarray = "0.14"
+ndarray-linalg = { version = "0.13" }
 num-traits = "*"
 thiserror = "1.0"
 
 [dev-dependencies]
 testlib = { path = "../testlib" }
-blas-src = { version = "*", features = ["openblas"] }
-approx = "0.3"
+blas-src = { version = "0.6", features = ["openblas"] }
+approx = "0.5"

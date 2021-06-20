@@ -10,12 +10,12 @@ sensoreval = { path = "../../sensoreval" }
 sensoreval_psim = { path = "../../sensoreval_psim" }
 sensoreval_utils = { path = "../../sensoreval_utils" }
 
-argmin = {version="0.3", features=["ndarrayl"]}
+argmin = {version="0.4", features=["ndarrayl"]}
 argmin_testfunctions = "*"
-itertools = "0.9"
+itertools = "0.10"
 median = "^0.3"
 structopt = "^0.3"
-ndarray = "0.13"
-ndarray-linalg = "0.12"
+ndarray = "0.14"
+ndarray-linalg = { version = "0.13" }
 serde = "1.0"
 toml = "0.5"

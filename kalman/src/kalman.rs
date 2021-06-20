@@ -56,7 +56,7 @@ where
 
     fn likelihood(&self) -> Result<A, crate::Error> {
         let ll = self.log_likelihood()?;
-        let mut l = ll.exp();
+        let mut l = num_traits::Float::exp(ll);
         if l.is_zero() {
             l = A::min_positive_value();
         }

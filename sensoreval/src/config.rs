@@ -281,15 +281,15 @@ impl Config {
         R: rand::Rng,
     {
         if let Some(n) = &cfg.x {
-            arr[0] += rng.gen_range(n.start, n.end);
+            arr[0] += rng.gen_range(n.start..n.end);
         }
 
         if let Some(n) = &cfg.y {
-            arr[1] += rng.gen_range(n.start, n.end);
+            arr[1] += rng.gen_range(n.start..n.end);
         }
 
         if let Some(n) = &cfg.z {
-            arr[2] += rng.gen_range(n.start, n.end);
+            arr[2] += rng.gen_range(n.start..n.end);
         }
     }
 

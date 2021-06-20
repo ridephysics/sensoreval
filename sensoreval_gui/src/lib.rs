@@ -39,7 +39,7 @@ impl<'a> RuntimeContext<'a> {
 
 pub trait Callback {
     fn set_ts(&mut self, _ctx: &mut RuntimeContext, _ts: u64) {}
-    fn render(&mut self, _ctx: &mut RuntimeContext, _cr: &mut cairo::Context) {}
+    fn render(&mut self, _ctx: &mut RuntimeContext, _cr: &cairo::Context) {}
 }
 
 pub struct InnerContext<'a, 'b> {
@@ -62,8 +62,8 @@ unsafe extern "C" fn native_set_ts(ts: u64, ctx: *mut ::std::os::raw::c_void) {
 unsafe extern "C" fn native_render(cr_ptr: *mut native::cairo_t, ctx: *mut ::std::os::raw::c_void) {
     let ctx = unwrap_opt_or!((ctx as *mut InnerContext).as_mut(), return);
     let callback = unwrap_opt_or!(ctx.callback.as_mut(), return);
-    let mut cr = cairo::Context::from_raw_borrow(cr_ptr as *mut cairo_sys::cairo_t);
-    callback.render(&mut ctx.rtctx, &mut cr);
+    let cr = cairo::Context::from_raw_borrow(cr_ptr as *mut cairo_sys::cairo_t);
+    callback.render(&mut ctx.rtctx, &cr);
 }
 
 impl<'a, 'b> Default for Context<'a, 'b> {

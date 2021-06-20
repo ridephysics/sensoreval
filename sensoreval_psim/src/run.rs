@@ -9,7 +9,7 @@ struct GuiCallback<F> {
     render_state: F,
 }
 
-impl<F: Fn(&mut cairo::Context, &State)> GuiCallback<F> {
+impl<F: Fn(&cairo::Context, &State)> GuiCallback<F> {
     pub fn new<M: 'static + Model + Send + Sync>(
         mut model: M,
         initial: ndarray::Array1<f64>,
@@ -52,8 +52,8 @@ impl<F: Fn(&mut cairo::Context, &State)> GuiCallback<F> {
     }
 }
 
-impl<F: Fn(&mut cairo::Context, &State)> sensoreval_gui::Callback for GuiCallback<F> {
-    fn render(&mut self, _ctx: &mut sensoreval_gui::RuntimeContext, cr: &mut cairo::Context) {
+impl<F: Fn(&cairo::Context, &State)> sensoreval_gui::Callback for GuiCallback<F> {
+    fn render(&mut self, _ctx: &mut sensoreval_gui::RuntimeContext, cr: &cairo::Context) {
         // clear
         cr.set_source_rgba_u32(0x00000000);
         cr.clear();

@@ -5,5 +5,5 @@ authors = ["Michael Zimmermann <sigmaepsilon92@gmail.com>"]
 edition = "2018"
 
 [dependencies]
-approx = "0.3"
-ndarray = "0.13"
+approx = "0.5"
+ndarray = "0.14"

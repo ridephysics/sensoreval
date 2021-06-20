@@ -10,14 +10,14 @@ sensoreval_gui = { path = "../sensoreval_gui" }
 sensoreval_graphics = { path = "../sensoreval_graphics" }
 sensoreval_utils = { path = "../sensoreval_utils" }
 
-cairo-rs = "0.8"
+cairo-rs = "0.9"
 clap = "2.33"
 enum_dispatch = "0.3"
 eom = { git = "https://github.com/M1cha/eom", branch = "master" }
 lapack-src = { version = "*", features = ["openblas"] }
-nalgebra = "0.22"
-ndarray = { version = "0.13" }
-ndarray-linalg = "0.12"
-pango = "0.8"
+nalgebra = "0.27"
+ndarray = { version = "0.14" }
+ndarray-linalg = { version = "0.13" }
+pango = "0.9"
 serde = { version = "1.0", features = ["derive"] }
 toml = "0.5"
