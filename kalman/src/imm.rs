@@ -277,7 +277,6 @@ mod test {
 
     /// simulate a moving target
     fn turning_target(N: usize, turn_start: usize) -> ndarray::Array3<f64> {
-        let r = 1.0f64;
         let dt = 1.0f64;
         let phi_sim = ndarray::array![
             [1.0, dt, 0.0, 0.0],
@@ -371,7 +370,7 @@ mod test {
 
         let mut xs = Vec::with_capacity(zs.len());
         let mut probs = Vec::with_capacity(zs.len());
-        for (i, z) in zs.genrows().into_iter().enumerate() {
+        for z in zs.genrows().into_iter() {
             bank.predict().unwrap();
             bank.update(&z).unwrap();
 
