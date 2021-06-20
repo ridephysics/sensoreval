@@ -16,6 +16,7 @@ extern "C" {
 
 struct context
 {
+    int argc;
     char *arg0;
     char *argv[2];
     QGuiApplication *app;
@@ -33,10 +34,11 @@ extern "C" int sensorevalgui_native_create(struct context **pctx,
                                            const struct sensorevalgui_cfg *cfg)
 {
     struct context *ctx = (struct context *)calloc(1, sizeof(*ctx));
-    int argc = 1;
 
     init_rscs();
     QCoreApplication::setAttribute(Qt::AA_DisableHighDpiScaling);
+
+    ctx->argc = 1;
 
     ctx->arg0 = strdup("native");
     assert(ctx->arg0);
@@ -44,7 +46,7 @@ extern "C" int sensorevalgui_native_create(struct context **pctx,
     ctx->argv[0] = ctx->arg0;
     ctx->argv[1] = NULL;
 
-    ctx->app = new QGuiApplication(argc, ctx->argv);
+    ctx->app = new QGuiApplication(ctx->argc, ctx->argv);
     assert(ctx->app);
 
     ctx->engine = new QQmlApplicationEngine();
