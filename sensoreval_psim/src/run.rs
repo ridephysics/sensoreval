@@ -70,7 +70,7 @@ pub fn run_sim(dt: f64, params: &crate::models::Params, state: ndarray::Array1<f
     let mut font = pango::FontDescription::new();
     font.set_family("Archivo Black");
     font.set_absolute_size(30.0 * f64::from(pango::SCALE));
-    let _font = font.to_utilfont();
+    let _font = font.into_utilfont();
 
     let mut gui = sensoreval_gui::Context::default();
     gui.set_callback(Some(GuiCallback::new(model, state, move |cr, state| {

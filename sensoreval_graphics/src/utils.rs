@@ -153,12 +153,12 @@ impl<'a> Font<'a> {
 }
 
 pub trait ToUtilFont {
-    fn to_utilfont<'a>(self) -> Font<'a>;
+    fn into_utilfont<'a>(self) -> Font<'a>;
     fn utilfont(&self) -> Font;
 }
 
 impl ToUtilFont for pango::FontDescription {
-    fn to_utilfont<'a>(self) -> Font<'a> {
+    fn into_utilfont<'a>(self) -> Font<'a> {
         Font::new(std::borrow::Cow::Owned(self))
     }
 

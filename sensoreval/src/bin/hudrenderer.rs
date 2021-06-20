@@ -408,8 +408,7 @@ fn main() {
             }
             println!("start:{} end:{}", t_start, t_end);
 
-            let mut args = Vec::new();
-            args.push("-y");
+            let mut args = vec!["-y"];
 
             // video
             let arg_ss = format!("{}", t_start as f64 / 1000.0);

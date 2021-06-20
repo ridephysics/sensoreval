@@ -51,10 +51,7 @@ impl<'b> HudContext<'b> {
         match &self.src {
             DataSrc::None => None,
             DataSrc::Data(_) => None,
-            DataSrc::Array { id } => match self.dataset {
-                None => None,
-                Some(_) => Some(*id),
-            },
+            DataSrc::Array { id } => self.dataset.map(|_| *id),
         }
     }
 

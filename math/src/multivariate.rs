@@ -71,21 +71,21 @@ where
 
 #[allow(non_snake_case)]
 #[derive(Debug)]
-struct PSD<A> {
+struct Psd<A> {
     rank: usize,
     U: ndarray::Array2<A>,
     log_pdet: A,
 }
 
 #[allow(non_snake_case)]
-impl<A> PSD<A> {
+impl<A> Psd<A> {
     pub fn new<S>(
         M: &ndarray::ArrayBase<S, ndarray::Ix2>,
         cond: Option<<A as ndarray_linalg::Scalar>::Real>,
         rcond: Option<<A as ndarray_linalg::Scalar>::Real>,
         uplo: ndarray_linalg::UPLO,
         allow_singular: bool,
-    ) -> Result<PSD<A>, Error>
+    ) -> Result<Psd<A>, Error>
     where
         A: ndarray_linalg::Scalar + ndarray_linalg::Lapack,
         S: ndarray::Data<Elem = A>,
@@ -111,7 +111,7 @@ impl<A> PSD<A> {
         let s_pinv = pinv_1d(s.iter(), &eps);
         let U = u * s_pinv.map(|v| A::from_real(v.sqrt()));
 
-        Ok(PSD {
+        Ok(Psd {
             rank: d.len(),
             U,
             log_pdet: d.map(|v| A::from_real(v.ln())).sum(),
@@ -122,7 +122,7 @@ impl<A> PSD<A> {
 fn _logpdf<Sx, Sm, A>(
     x: &ndarray::ArrayBase<Sx, ndarray::Ix1>,
     mean: &ndarray::ArrayBase<Sm, ndarray::Ix1>,
-    psd: &PSD<A>,
+    psd: &Psd<A>,
 ) -> A
 where
     Sx: ndarray::Data<Elem = A>,
@@ -157,7 +157,7 @@ where
     <A as ndarray_linalg::Scalar>::Real: std::convert::From<f32>,
 {
     let _dim = check_parameters(None, mean, cov)?;
-    let psd = PSD::new(cov, None, None, ndarray_linalg::UPLO::Lower, allow_singular)?;
+    let psd = Psd::new(cov, None, None, ndarray_linalg::UPLO::Lower, allow_singular)?;
     let out = _logpdf(x, mean, &psd);
 
     Ok(out)

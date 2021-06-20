@@ -191,11 +191,8 @@ fn time_imu2video(cfg: &config::SensorData, us: u64) -> Option<u64> {
         }
         x if x < 0 => {
             let off: u64 = (-x).try_into().unwrap();
-            match us.checked_sub(off) {
-                Some(v) => Some(v),
-                // just skip samples which came before T0
-                None => None,
-            }
+            // just skip samples which came before T0
+            us.checked_sub(off)
         }
         _ => Some(us),
     }
@@ -277,12 +274,7 @@ pub fn read_all_samples_input<S: std::io::Read>(
 
 /// run usfs_reader with the supplied config
 fn run_usfs_reader(cfg: &config::SensorData) -> std::process::Child {
-    let mut args: Vec<&str> = Vec::new();
-
-    args.push("--infmt");
-    args.push(&cfg.format);
-    args.push("--outfmt");
-    args.push("processed");
+    let mut args: Vec<&str> = vec!["--infmt", &cfg.format, "--outfmt", "processed"];
 
     if let Some(v) = &cfg.mag_cal {
         args.push("--cal_mag");
