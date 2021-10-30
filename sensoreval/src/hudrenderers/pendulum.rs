@@ -300,7 +300,7 @@ impl render::HudRenderer for Pendulum {
             -4.0,
             XFunctions::default(),
         );
-        let mut ukf = kalman::ukf::UKF::new(
+        let mut ukf = kalman::ukf::Ukf::new(
             7,
             6,
             &points_fn,
@@ -430,7 +430,7 @@ impl render::HudRenderer for Pendulum {
             &mut estslice
                 .iter()
                 .rev()
-                .map(|data| Self::est_acceleration(&data) / math::GRAVITY),
+                .map(|data| Self::est_acceleration(data) / math::GRAVITY),
         );
 
         // velocity
@@ -446,7 +446,7 @@ impl render::HudRenderer for Pendulum {
             &mut estslice
                 .iter()
                 .rev()
-                .map(|data| Self::est_velocity(&data).abs() * 3.6),
+                .map(|data| Self::est_velocity(data).abs() * 3.6),
         );
 
         // altitude
@@ -462,7 +462,7 @@ impl render::HudRenderer for Pendulum {
         graph_at.draw(
             cr,
             &mut dataslice.iter().rev().map(|data| data.time),
-            &mut estslice.iter().rev().map(|data| Self::est_altitude(&data)),
+            &mut estslice.iter().rev().map(|data| Self::est_altitude(data)),
         );
 
         Ok(())
@@ -496,7 +496,7 @@ impl render::HudRenderer for Pendulum {
             None => false,
         };
 
-        plot.add_measurements(&samples, &x)?;
+        plot.add_measurements(samples, &x)?;
 
         let mut add_row = |rowname: &str,
                            linename: &str,
@@ -505,7 +505,7 @@ impl render::HudRenderer for Pendulum {
                            y: &[f64]|
          -> Result<(), Error> {
             let mut t = sensoreval_utils::Plot::default_line();
-            t.x(&x).y(&y).name(linename);
+            t.x(&x).y(y).name(linename);
             t.line().color(color);
 
             plot.add_trace_to_rowname(
@@ -517,7 +517,7 @@ impl render::HudRenderer for Pendulum {
         };
 
         for i in 0..3 {
-            let y: Vec<f64> = self.est.iter().map(|x| fns.hx(&x)[i]).collect();
+            let y: Vec<f64> = self.est.iter().map(|x| fns.hx(x)[i]).collect();
             add_row("acc", "estimation", sensoreval_utils::COLOR_E, i, &y)?;
 
             if has_actual {
@@ -530,7 +530,7 @@ impl render::HudRenderer for Pendulum {
         }
 
         for i in 0..3 {
-            let y: Vec<f64> = self.est.iter().map(|x| fns.hx(&x)[3 + i]).collect();
+            let y: Vec<f64> = self.est.iter().map(|x| fns.hx(x)[3 + i]).collect();
             add_row("gyr", "estimation", sensoreval_utils::COLOR_E, i, &y)?;
 
             if has_actual {
@@ -600,8 +600,8 @@ impl render::HudRenderer for Pendulum {
             .serialize_into(&mut file, &TIMESTEP)?;
 
         let mut us = cfg.video.startoff * 1000;
-        while let Some(dataid) = crate::id_for_time(&dataset, 0, us) {
-            let est = self.est(us, &dataset, dataid);
+        while let Some(dataid) = crate::id_for_time(dataset, 0, us) {
+            let est = self.est(us, dataset, dataid);
             bincode::options().with_big_endian().serialize_into(
                 &mut file,
                 &[

@@ -38,7 +38,7 @@ impl<'b> HudContext<'b> {
     pub fn current_data(&self) -> Option<&Data> {
         match &self.src {
             DataSrc::None => None,
-            DataSrc::Data(data) => Some(&data),
+            DataSrc::Data(data) => Some(data),
             DataSrc::Array { id } => match self.dataset {
                 None => None,
                 Some(arr) => Some(&arr[*id]),
@@ -304,7 +304,7 @@ impl<'a, 'b, 'c> Context<'a, 'b, 'c> {
 
     pub fn serialize_forweb(&self, path: &std::path::Path) -> Result<(), Error> {
         if let Some(renderer) = &self.hudrenderer {
-            renderer.serialize_forweb(&self.hudctx, &self.cfg, &path)
+            renderer.serialize_forweb(&self.hudctx, self.cfg, path)
         } else {
             Err(Error::NoHudRenderer)
         }

@@ -133,12 +133,12 @@ impl<'a> Font<'a> {
         cr.save();
 
         cr.set_source_rgba_u32(self.color_fill);
-        pangocairo::functions::update_layout(cr, &layout);
-        pangocairo::functions::show_layout(cr, &layout);
+        pangocairo::functions::update_layout(cr, layout);
+        pangocairo::functions::show_layout(cr, layout);
 
         cr.set_line_width(self.line_width);
         cr.set_source_rgba_u32(self.color_border);
-        pangocairo::functions::layout_path(cr, &layout);
+        pangocairo::functions::layout_path(cr, layout);
         cr.stroke();
 
         cr.restore();

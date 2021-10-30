@@ -11,7 +11,7 @@ impl<'a> PlotUtils for sensoreval_utils::Plot<'a> {
         let mut t = Self::default_line();
         t.line().color(sensoreval_utils::COLOR_M);
         t.name("measurement");
-        t.x(&x);
+        t.x(x);
 
         for i in 0..3 {
             let y: Vec<f64> = samples.iter().map(|s| s.accel[i]).collect();
@@ -80,7 +80,7 @@ impl<'a> PlotUtils for sensoreval_utils::Plot<'a> {
                     .collect();
 
                 let mut trace = Self::default_line();
-                trace.x(&x).y(&y).name("actual");
+                trace.x(x).y(&y).name("actual");
                 trace.line().color(sensoreval_utils::COLOR_A);
 
                 let rowid = self.ensure_row(format!("x{}", i))?;

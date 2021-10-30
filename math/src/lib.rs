@@ -208,12 +208,12 @@ pub fn xy2rt(x: f64, y: f64) -> (f64, f64) {
     (xy2r(x, y), xy2t(x, y))
 }
 
-pub struct IIR<T> {
+pub struct Iir<T> {
     coeff: T,
     prev: Option<T>,
 }
 
-impl<T> IIR<T>
+impl<T> Iir<T>
 where
     T: std::ops::Sub<Output = T>
         + std::ops::Mul<Output = T>
@@ -369,7 +369,7 @@ mod tests {
         assert_abs_diff_eq!(super::agm(1.0, 2.0), 1.456791031046907, epsilon = 1.0e-15);
         assert_abs_diff_eq!(
             super::agm(12.345, 98.765),
-            44.638129792342220,
+            44.638_129_792_342_22,
             epsilon = 1.0e-15
         );
     }
@@ -383,12 +383,12 @@ mod tests {
         );
         assert_abs_diff_eq!(
             super::pendulum_period(1.0, (10.0f64).to_radians(), 9.807),
-            2.010200020835200,
+            2.010_200_020_835_2,
             epsilon = 1.0e-15
         );
         assert_abs_diff_eq!(
             super::pendulum_period(1.0, (30.0f64).to_radians(), 9.807),
-            2.041302039079650,
+            2.041_302_039_079_65,
             epsilon = 1.0e-15
         );
         assert_abs_diff_eq!(

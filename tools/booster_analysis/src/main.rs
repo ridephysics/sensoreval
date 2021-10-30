@@ -419,7 +419,7 @@ fn plot(plotopt: &PlotOpt) {
             trace.x(&x).name(names[i]);
             trace.line().color(colors[i]);
 
-            trace.y(&y_theta0x);
+            trace.y(y_theta0x);
             plot.add_trace_to_rowname_ensure(&mut trace, "t0x").unwrap();
         }
     }
@@ -438,7 +438,7 @@ fn plot(plotopt: &PlotOpt) {
         trace.x(&x).name(names[i]);
         trace.line().color(colors[i]);
 
-        trace.y(&y_theta0);
+        trace.y(y_theta0);
         plot.add_trace_to_rowname_ensure(&mut trace, &name_theta0)
             .unwrap();
 

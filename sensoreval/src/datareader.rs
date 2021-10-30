@@ -107,7 +107,7 @@ impl Context {
             let ret = source.read(&mut self.buf[self.bufpos..buflen]);
             let nbytes = match ret {
                 Ok(0) => match self.bufpos {
-                    0 => return Err(Error::EOF),
+                    0 => return Err(Error::Eof),
                     _ => {
                         return Err(Error::from(std::io::Error::new(
                             std::io::ErrorKind::UnexpectedEof,
@@ -212,13 +212,13 @@ pub fn read_all_samples_input<S: std::io::Read>(
     let mut samples: Vec<Data> = Vec::new();
     let mut readctx = Context::new();
     if let Some(calfile) = &datacfg.calibration {
-        readctx.set_calibration(Some(Calibration::load(&calfile)?));
+        readctx.set_calibration(Some(Calibration::load(calfile)?));
     }
 
     loop {
         let sample = match readctx.read_sample(source, datacfg) {
             Err(e) => match &e {
-                Error::EOF => break,
+                Error::Eof => break,
                 Error::Io(eio) => match eio.kind() {
                     std::io::ErrorKind::WouldBlock => {
                         // this could cause some cpu load but it's the best we can do here
@@ -278,12 +278,12 @@ fn run_usfs_reader(cfg: &config::SensorData) -> std::process::Child {
 
     if let Some(v) = &cfg.mag_cal {
         args.push("--cal_mag");
-        args.push(&v);
+        args.push(v);
     }
 
     if let Some(v) = &cfg.bias_ag {
         args.push("--bias_ag");
-        args.push(&v);
+        args.push(v);
     }
     args.push(&cfg.filename);
 

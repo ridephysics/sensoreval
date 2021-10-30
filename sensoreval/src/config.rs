@@ -411,23 +411,23 @@ pub fn load<P: AsRef<std::path::Path>>(filename: P) -> Result<Config, Error> {
     // make all paths absolute
 
     if let DataSource::SensorData(sd) = &mut cfg.data.source {
-        sd.filename = path2abs(&cfgdir, &sd.filename);
+        sd.filename = path2abs(cfgdir, &sd.filename);
         if let Some(v) = &sd.mag_cal {
-            sd.mag_cal = Some(path2abs(&cfgdir, &v));
+            sd.mag_cal = Some(path2abs(cfgdir, v));
         }
         if let Some(v) = &sd.bias_ag {
-            sd.bias_ag = Some(path2abs(&cfgdir, &v));
+            sd.bias_ag = Some(path2abs(cfgdir, v));
         }
         if let Some(v) = &sd.calibration {
-            sd.calibration = Some(path2abs(&cfgdir, &v));
+            sd.calibration = Some(path2abs(cfgdir, v));
         }
     }
 
     if let Some(v) = cfg.video.filename {
-        cfg.video.filename = Some(path2abs(&cfgdir, &v));
+        cfg.video.filename = Some(path2abs(cfgdir, &v));
     }
     if let Some(v) = cfg.video.blurmask {
-        cfg.video.blurmask = Some(path2abs(&cfgdir, &v));
+        cfg.video.blurmask = Some(path2abs(cfgdir, &v));
     }
 
     Ok(cfg)

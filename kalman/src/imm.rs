@@ -2,7 +2,7 @@
 use std::ops::DivAssign;
 
 #[derive(Debug)]
-pub struct IMM<'a, FNS, A, FR, F: ?Sized, MU, M, Sz> {
+pub struct Imm<'a, FNS, A, FR, F: ?Sized, MU, M, Sz> {
     fns: FNS,
 
     /// List of N filters. filters[i] is the ith Kalman filter in the IMM
@@ -43,7 +43,7 @@ pub struct IMM<'a, FNS, A, FR, F: ?Sized, MU, M, Sz> {
     pd_F: std::marker::PhantomData<F>,
 }
 
-impl<'a, FNS, A, FR, F, MU, M, Sz, T> crate::SetDt<T> for IMM<'a, FNS, A, FR, F, MU, M, Sz>
+impl<'a, FNS, A, FR, F, MU, M, Sz, T> crate::SetDt<T> for Imm<'a, FNS, A, FR, F, MU, M, Sz>
 where
     FR: AsMut<F>,
     F: crate::SetDt<T> + ?Sized,
@@ -56,7 +56,7 @@ where
 }
 
 impl<'a, FNS, A, FR, F, Smu, SM, Sz> crate::Filter
-    for IMM<
+    for Imm<
         'a,
         FNS,
         A,
@@ -165,7 +165,7 @@ where
 }
 
 impl<'a, FNS, A, FR, F, Smu, SM, Sz>
-    IMM<
+    Imm<
         'a,
         FNS,
         A,
@@ -366,7 +366,7 @@ mod test {
         let M = ndarray::array![[0.97, 0.03], [0.03, 0.97]];
         let mut mu = ndarray::array![0.5, 0.5];
         let fns = super::super::sigma_points::tests::LinFns::default();
-        let mut bank = super::IMM::new(&mut filters, &mut mu, &M, fns).unwrap();
+        let mut bank = super::Imm::new(&mut filters, &mut mu, &M, fns).unwrap();
 
         let mut xs = Vec::with_capacity(zs.len());
         let mut probs = Vec::with_capacity(zs.len());

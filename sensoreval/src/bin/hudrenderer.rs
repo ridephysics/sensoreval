@@ -235,7 +235,7 @@ fn main() {
 
     // give videosz to renderctx
     if let Some(video_filename) = &cfg.video.filename {
-        let stream_info = get_video_stream_info(&video_filename);
+        let stream_info = get_video_stream_info(video_filename);
         renderctx.set_videosz(Some((stream_info.width, stream_info.height)));
     }
 
@@ -309,7 +309,7 @@ fn main() {
         }
         "webdata" => {
             let outdir = outdir.expect("no output file specified.");
-            renderctx.serialize_forweb(&outdir).unwrap();
+            renderctx.serialize_forweb(outdir).unwrap();
         }
         "blender" => {
             let blenderscenes = std::path::Path::new(

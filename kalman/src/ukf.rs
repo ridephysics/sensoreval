@@ -44,7 +44,7 @@ pub trait Hx {
 }
 
 #[derive(Clone, Debug)]
-pub struct UKF<'a, FP, FNSX, ARGSFX, FNSZ, A, Sz> {
+pub struct Ukf<'a, FP, FNSX, ARGSFX, FNSZ, A, Sz> {
     fns_x: FNSX,
     args_fx: ARGSFX,
     fns_z: FNSZ,
@@ -74,7 +74,7 @@ pub struct UKF<'a, FP, FNSX, ARGSFX, FNSZ, A, Sz> {
     pd_Sz: std::marker::PhantomData<Sz>,
 }
 
-impl<'a, FP, FNSX, ARGSFX, FNSZ, A, Sz> SetDt<A> for UKF<'a, FP, FNSX, ARGSFX, FNSZ, A, Sz>
+impl<'a, FP, FNSX, ARGSFX, FNSZ, A, Sz> SetDt<A> for Ukf<'a, FP, FNSX, ARGSFX, FNSZ, A, Sz>
 where
     ARGSFX: SetDt<A> + ApplyDt<A>,
 {
@@ -84,7 +84,7 @@ where
     }
 }
 
-impl<'a, FP, FNSX, ARGSFX, FNSZ, A, Sz> Filter for UKF<'a, FP, FNSX, ARGSFX, FNSZ, A, Sz>
+impl<'a, FP, FNSX, ARGSFX, FNSZ, A, Sz> Filter for Ukf<'a, FP, FNSX, ARGSFX, FNSZ, A, Sz>
 where
     FP: crate::sigma_points::SigmaPoints<Elem = A>,
     FNSX: Fx<ARGSFX, Elem = A> + Hx<Elem = A> + Mean<A> + crate::Add<A> + crate::Subtract<A>,
@@ -153,7 +153,7 @@ where
         );
 
         // residual of z
-        let y = self.fns_z.subtract(&z, &zp);
+        let y = self.fns_z.subtract(z, &zp);
 
         // compute cross variance of the state and the measurements
         let Pxz = self.cross_variance(&self.x, &zp, &self.sigmas_f, &self.sigmas_h);
@@ -204,7 +204,7 @@ where
     }
 }
 
-impl<'a, FP, FNSX, ARGSFX, FNSZ, A, Sz> crate::Q for UKF<'a, FP, FNSX, ARGSFX, FNSZ, A, Sz> {
+impl<'a, FP, FNSX, ARGSFX, FNSZ, A, Sz> crate::Q for Ukf<'a, FP, FNSX, ARGSFX, FNSZ, A, Sz> {
     type Elem = A;
 
     fn Q(&self) -> &ndarray::Array2<A> {
@@ -216,7 +216,7 @@ impl<'a, FP, FNSX, ARGSFX, FNSZ, A, Sz> crate::Q for UKF<'a, FP, FNSX, ARGSFX, F
     }
 }
 
-impl<'a, FP, FNSX, ARGSFX, FNSZ, A, Sz> crate::R for UKF<'a, FP, FNSX, ARGSFX, FNSZ, A, Sz> {
+impl<'a, FP, FNSX, ARGSFX, FNSZ, A, Sz> crate::R for Ukf<'a, FP, FNSX, ARGSFX, FNSZ, A, Sz> {
     type Elem = A;
 
     fn R(&self) -> &ndarray::Array2<A> {
@@ -228,7 +228,7 @@ impl<'a, FP, FNSX, ARGSFX, FNSZ, A, Sz> crate::R for UKF<'a, FP, FNSX, ARGSFX, F
     }
 }
 
-impl<'a, FP, FNSX, ARGSFX, FNSZ, A, Sz> UKF<'a, FP, FNSX, ARGSFX, FNSZ, A, Sz>
+impl<'a, FP, FNSX, ARGSFX, FNSZ, A, Sz> Ukf<'a, FP, FNSX, ARGSFX, FNSZ, A, Sz>
 where
     FP: crate::sigma_points::SigmaPoints<Elem = A>,
     FNSX: Fx<ARGSFX, Elem = A> + Mean<A> + crate::Add<A> + crate::Subtract<A>,
@@ -368,10 +368,10 @@ where
             let K = Pxb.dot(&Pb.inv()?);
 
             // residual
-            let residual = self.fns_x.subtract(&xss.last().unwrap(), &xb);
+            let residual = self.fns_x.subtract(xss.last().unwrap(), &xb);
 
             // update the smoothed estimates
-            xss.push(self.fns_x.add(&x, &K.dot(&residual)));
+            xss.push(self.fns_x.add(x, &K.dot(&residual)));
             Pss.push(P + &K.dot(&(Pss.last().unwrap() - &Pb)).dot(&K.t()));
         }
 

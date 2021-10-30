@@ -283,7 +283,7 @@ pub fn derive_kalman_math(input: TokenStream) -> TokenStream {
         _ => abort!(input, "not an enum"),
     };
     let (fnstruct, generics, generics_comma) = find_fnstruct(&input);
-    let is_angle_map = gen_angle_map(&data);
+    let is_angle_map = gen_angle_map(data);
 
     let normalize_impls = is_angle_map.iter().enumerate().map(|(i, is_angle)| {
         if *is_angle {
@@ -351,7 +351,7 @@ pub fn derive_ukf_math(input: TokenStream) -> TokenStream {
         _ => abort!(input, "not an enum"),
     };
     let (fnstruct, generics, generics_comma) = find_fnstruct(&input);
-    let is_angle_map = gen_angle_map(&data);
+    let is_angle_map = gen_angle_map(data);
 
     let mean_decls = is_angle_map.iter().enumerate().map(|(i, is_angle)| {
         let sum = proc_macro2::Ident::new(&format!("sum_{}", i), proc_macro2::Span::call_site());

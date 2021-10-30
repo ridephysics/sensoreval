@@ -95,7 +95,7 @@ impl render::HudRenderer for Generic {
         let samples = ctx.get_dataset().ok_or(Error::NoDataSet)?;
         let x: Vec<f64> = samples.iter().map(|s| s.time_seconds()).collect();
 
-        plot.add_measurements(&samples, &x)?;
+        plot.add_measurements(samples, &x)?;
 
         Ok(())
     }

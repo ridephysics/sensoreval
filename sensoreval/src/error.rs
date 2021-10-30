@@ -16,7 +16,7 @@ pub enum Error {
     #[error("blender render not found")]
     BlenderRenderNotFound,
     #[error("EOF")]
-    EOF,
+    Eof,
     #[error("no dataset")]
     NoDataSet,
     #[error("no HUD renderer")]

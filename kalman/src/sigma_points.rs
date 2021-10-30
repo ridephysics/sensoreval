@@ -81,7 +81,7 @@ where
         let U = (((self.n as Self::Elem) + lambda) * P).cholesky(ndarray_linalg::UPLO::Upper)?;
 
         let mut sigmas = ndarray::Array2::<Self::Elem>::zeros((2 * self.n + 1, self.n));
-        sigmas.index_axis_mut(ndarray::Axis(0), 0).assign(&x);
+        sigmas.index_axis_mut(ndarray::Axis(0), 0).assign(x);
 
         for k in 0..self.n {
             let Uk = U.index_axis(ndarray::Axis(0), k);
@@ -151,7 +151,7 @@ where
             (((self.n as Self::Elem) + self.kappa) * P).cholesky(ndarray_linalg::UPLO::Upper)?;
 
         let mut sigmas = ndarray::Array2::<Self::Elem>::zeros((2 * self.n + 1, self.n));
-        sigmas.index_axis_mut(ndarray::Axis(0), 0).assign(&x);
+        sigmas.index_axis_mut(ndarray::Axis(0), 0).assign(x);
 
         for k in 0..self.n {
             let Uk = U.index_axis(ndarray::Axis(0), k);

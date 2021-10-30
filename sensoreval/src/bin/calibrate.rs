@@ -48,12 +48,12 @@ fn main() {
     let outpath = &args[2];
     let calibdir = std::path::Path::new(&calibdir_str);
 
-    let xpos = load_samples(&calibdir, "x_pos.imu");
-    let xneg = load_samples(&calibdir, "x_neg.imu");
-    let ypos = load_samples(&calibdir, "y_pos.imu");
-    let yneg = load_samples(&calibdir, "y_neg.imu");
-    let zpos = load_samples(&calibdir, "z_pos.imu");
-    let zneg = load_samples(&calibdir, "z_neg.imu");
+    let xpos = load_samples(calibdir, "x_pos.imu");
+    let xneg = load_samples(calibdir, "x_neg.imu");
+    let ypos = load_samples(calibdir, "y_pos.imu");
+    let yneg = load_samples(calibdir, "y_neg.imu");
+    let zpos = load_samples(calibdir, "z_pos.imu");
+    let zneg = load_samples(calibdir, "z_neg.imu");
 
     let mut accel_ref = ndarray::Array2::<f64>::zeros((6, 3));
     accel_ref
