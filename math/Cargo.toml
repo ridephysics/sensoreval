@@ -11,6 +11,6 @@ num-traits = "*"
 thiserror = "1.0"
 
 [dev-dependencies]
-testlib = { path = "../testlib" }
-blas-src = { version = "0.6", features = ["openblas"] }
 approx = "0.5"
+blas-src = { version = "0.6", features = ["openblas"] }
+testlib = { path = "../testlib" }

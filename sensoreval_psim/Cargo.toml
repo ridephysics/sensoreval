@@ -5,19 +5,19 @@ authors = ["Michael Zimmermann <sigmaepsilon92@gmail.com>"]
 edition = "2018"
 
 [dependencies]
-math = { path = "../math" }
-sensoreval_gui = { path = "../sensoreval_gui" }
-sensoreval_graphics = { path = "../sensoreval_graphics" }
-sensoreval_utils = { path = "../sensoreval_utils" }
 
 cairo-rs = "0.9"
 clap = "2.33"
 enum_dispatch = "0.3"
 eom = { git = "https://github.com/M1cha/eom", branch = "master" }
 lapack-src = { version = "*", features = ["openblas"] }
+math = { path = "../math" }
 nalgebra = "0.27"
 ndarray = { version = "0.14" }
 ndarray-linalg = { version = "0.13" }
 pango = "0.9"
+sensoreval_graphics = { path = "../sensoreval_graphics" }
+sensoreval_gui = { path = "../sensoreval_gui" }
+sensoreval_utils = { path = "../sensoreval_utils" }
 serde = { version = "1.0", features = ["derive"] }
 toml = "0.5"

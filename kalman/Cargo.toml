@@ -12,6 +12,6 @@ num-traits = "*"
 thiserror = "1.0"
 
 [dev-dependencies]
+lapack-src = { version = "*", features = ["openblas"] }
 rand = "^0.8"
 testlib = { path = "../testlib" }
-lapack-src = { version = "*", features = ["openblas"] }
