@@ -31,5 +31,9 @@ jobs:
       run: cargo test --verbose
     - name: Run clippy
       run: cargo clippy -- -D warnings
-    - name: Check codestyle
+    - name: Check codestyle (rust)
       run: cargo fmt -- --check
+    - name: Check codestyle (cargo)
+      run: |
+        cargo install cargo-sort
+        cargo sort -w --check
