@@ -1,0 +1,4 @@
+[submodule "bmp2-sys/native"]
+	path = bmp2-sys/native
+	url = https://github.com/ridephysics/BMP2-Sensor-API.git
+	branch = main

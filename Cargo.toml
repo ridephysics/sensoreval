@@ -1,5 +1,6 @@
 [workspace]
 members = [
+    "bmp2-sys",
     "kalman",
     "math",
     "sensoreval",
