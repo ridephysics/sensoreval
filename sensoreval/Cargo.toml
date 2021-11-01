@@ -5,18 +5,21 @@ authors = ["Michael Zimmermann <sigmaepsilon92@gmail.com>"]
 edition = "2021"
 
 [dependencies]
-
+anyhow = "1.0"
 approx = "0.5"
 bincode = "1.3"
 blas-src = { version = "0.6", features = ["openblas"] }
+bmp2-sys = { path = "../bmp2-sys" }
 cairo-rs = "0.9"
 clap = "2.33"
 enum_dispatch = "0.3"
+env_logger = "0.9"
 eom = { git = "https://github.com/M1cha/eom", branch = "master" }
 half = { version = "1.6", features = ["serde"] }
 kalman = { path = "../kalman" }
 lapack-src = { version = "*", features = ["openblas"] }
 librsvg = { git = "https://gitlab.gnome.org/GNOME/librsvg", version = "2.51" }
+log = "0.4"
 math = { path = "../math" }
 nalgebra = "0.27"
 ndarray = { version = "0.14", features = ["serde"] }
@@ -34,5 +37,6 @@ serde = { version = "1.0", features = ["derive"] }
 serde-pickle = "0.6"
 serde_ignored = "0.1"
 serde_json = "1.0"
+serde_yaml = "0.8"
 thiserror = "1.0"
 toml = "0.5"
