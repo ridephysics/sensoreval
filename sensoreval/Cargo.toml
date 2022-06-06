@@ -25,7 +25,7 @@ num-traits = "0.2"
 openblas-src = { version = "*", features = ["static"] }
 pango = "0.9"
 rand = "0.8"
-regex = "1.3"
+regex = "1.5"
 sensoreval_graphics = { path = "../sensoreval_graphics" }
 sensoreval_gui = { path = "../sensoreval_gui" }
 sensoreval_psim = { path = "../sensoreval_psim" }
