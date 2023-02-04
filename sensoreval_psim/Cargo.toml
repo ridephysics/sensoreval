@@ -7,7 +7,7 @@ edition = "2021"
 [dependencies]
 
 cairo-rs = "0.16"
-clap = "2.33"
+clap = "4.1"
 enum_dispatch = "0.3"
 eom = { git = "https://github.com/M1cha/eom", branch = "main" }
 lapack-src = { version = "*", features = ["openblas"] }

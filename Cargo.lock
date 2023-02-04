@@ -2832,7 +2832,7 @@ dependencies = [
  "bincode",
  "blas-src",
  "cairo-rs",
- "clap 2.34.0",
+ "clap 4.1.4",
  "enum_dispatch",
  "eom",
  "half",
@@ -2904,7 +2904,7 @@ name = "sensoreval_psim"
 version = "0.1.0"
 dependencies = [
  "cairo-rs",
- "clap 2.34.0",
+ "clap 4.1.4",
  "enum_dispatch",
  "eom",
  "lapack-src",

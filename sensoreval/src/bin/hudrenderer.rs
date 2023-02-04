@@ -1,3 +1,4 @@
+use clap::Parser as _;
 use sensoreval::*;
 use sensoreval_utils::IntoIteratorMap;
 use serde::Deserialize;
@@ -59,17 +60,6 @@ fn get_video_stream_info(filename: &str) -> FFProbeStream {
     wait_for_child(&mut child);
 
     probe_info.streams[0].clone()
-}
-
-fn get_check_outdir<'a>(matches: &'a clap::ArgMatches) -> Option<&'a std::path::Path> {
-    let outdir = matches.value_of("output")?;
-
-    let outdir = std::path::Path::new(outdir);
-    if !outdir.is_dir() {
-        panic!("{} is not a directory", outdir.to_str().unwrap());
-    }
-
-    Some(outdir)
 }
 
 fn svg2png(png: &str, svg: &str) {
@@ -159,70 +149,60 @@ impl<'a, 'b, 'c> sensoreval_gui::Callback for GuiCallback<'a, 'b, 'c> {
     }
 }
 
-fn main() {
-    // parse args
-    let matches = clap::App::new("hudrenderer")
-        .version("0.1")
-        .arg(
-            clap::Arg::with_name("CONFIG")
-                .help("config file to use")
-                .required(true)
-                .index(1),
-        )
-        .arg(
-            clap::Arg::with_name("MODE")
-                .help("render mode")
-                .required(true)
-                .index(2),
-        )
-        .arg(
-            clap::Arg::with_name("output")
-                .short("o")
-                .long("output")
-                .value_name("OUTPUT")
-                .help("output directory"),
-        )
-        .arg(
-            clap::Arg::with_name("blenderscenes")
-                .short("b")
-                .long("blenderscenes")
-                .value_name("BLENDERSCENES")
-                .help("blender scene directory"),
-        )
-        .arg(
-            clap::Arg::with_name("range")
-                .short("r")
-                .long("range")
-                .value_name("RANGE")
-                .help("render range"),
-        )
-        .arg(
-            clap::Arg::with_name("trange")
-                .long("trange")
-                .value_name("TRANGE")
-                .help("time range in seconds"),
-        )
-        .arg(
-            clap::Arg::with_name("simcfg")
-                .long("simcfg")
-                .value_name("SIMCFG")
-                .help("simulation config"),
-        )
-        .arg(
-            clap::Arg::with_name("force_generic")
-                .long("force-generic")
-                .required(false)
-                .takes_value(false)
-                .help("force using generic hudrenderer"),
-        )
-        .get_matches();
+#[derive(Clone, clap::ValueEnum)]
+enum Mode {
+    Average,
+    Plot,
+    #[value(name = "dataviewer")]
+    DataViewer,
+    #[value(name = "webdata")]
+    WebData,
+    Blender,
+    Video,
+    Psim,
+}
 
-    let cfgname = matches.value_of("CONFIG").unwrap();
-    let force_generic = matches.is_present("force_generic");
+#[derive(clap::Parser)]
+#[command(author, version, about, long_about = None)]
+struct Cli {
+    /// Config file to use
+    config: std::path::PathBuf,
+
+    /// Render mode
+    #[arg(value_enum)]
+    mode: Mode,
+
+    /// Output directory
+    #[arg(short, long)]
+    output: Option<std::path::PathBuf>,
+
+    /// Blender scene directory
+    #[arg(short, long)]
+    blenderscenes: Option<std::path::PathBuf>,
+
+    /// Render range
+    #[arg(short, long)]
+    range: Option<String>,
+
+    /// Time range in seconds
+    #[arg(long)]
+    trange: Option<String>,
+
+    /// Simulation config
+    #[arg(long)]
+    simcfg: Option<std::path::PathBuf>,
+
+    /// Force using generic hudrenderer
+    #[arg(long)]
+    force_generic: bool,
+}
+
+fn main() {
+    let cli = Cli::parse();
 
     // load config
-    let mut cfg = config::load(cfgname).expect("can't load config");
-    if force_generic {
+    let mut cfg = config::load(&cli.config).expect("can't load config");
+    if cli.force_generic {
         cfg.hud.renderer = config::HudRenderer::Generic;
     }
     println!("config: {cfg:#?}");
@@ -240,15 +220,17 @@ fn main() {
     }
 
     // give blenderdir to renderctx
-    let outdir = get_check_outdir(&matches);
-    if let Some(outdir) = &outdir {
-        renderctx.set_blenderdir(Some(outdir));
+    if let Some(output) = &cli.output {
+        if !output.is_dir() {
+            panic!("{} is not a directory", output.display());
+        }
+        renderctx.set_blenderdir(Some(output));
     }
 
-    match matches.value_of("MODE").unwrap() {
-        "average" => {
-            let trange: Vec<f64> = matches
-                .value_of("trange")
+    match &cli.mode {
+        Mode::Average => {
+            let trange: Vec<f64> = cli
+                .trange
                 .unwrap()
                 .split(',')
                 .map(|s| s.parse::<f64>().unwrap())
@@ -270,15 +252,15 @@ fn main() {
 
             println!("avg = {:#?}", sum / n);
         }
-        "plot" => {
+        Mode::Plot => {
             let mut plot = sensoreval_utils::Plot::new("/tmp/sensoreval-plot.html").unwrap();
 
             // plot
             renderctx.plot(&mut plot).expect("can't plot");
 
-            if let Some(simcfgname) = matches.value_of("simcfg") {
+            if let Some(simcfgname) = &cli.simcfg {
                 let mut simcfg = config::load(simcfgname).expect("can't load sim config");
-                if force_generic {
+                if cli.force_generic {
                     simcfg.hud.renderer = config::HudRenderer::Generic;
                 }
 
@@ -292,7 +274,7 @@ fn main() {
 
             plot.finish().unwrap();
         }
-        "dataviewer" => {
+        Mode::DataViewer => {
             renderctx.set_allow_missing_renders(true);
 
             let mut gui = sensoreval_gui::Context::default();
@@ -307,17 +289,16 @@ fn main() {
             gui.set_videopath(cfg.video.filename.as_ref());
             gui.start().unwrap();
         }
-        "webdata" => {
-            let outdir = outdir.expect("no output file specified.");
-            renderctx.serialize_forweb(outdir).unwrap();
+        Mode::WebData => {
+            let output = cli.output.as_ref().expect("no output file specified.");
+            renderctx.serialize_forweb(output).unwrap();
         }
-        "blender" => {
-            let blenderscenes = std::path::Path::new(
-                matches
-                    .value_of("blenderscenes")
-                    .expect("no blenderscenes specified"),
-            );
-            let outdir = outdir.expect("no output file specified.");
+        Mode::Blender => {
+            let blenderscenes = cli
+                .blenderscenes
+                .as_ref()
+                .expect("no blenderscenes specified");
+            let outdir = cli.output.as_ref().expect("no output file specified.");
             let video_file = cfg.video.filename.clone().expect("no video URL");
             let stream_info = get_video_stream_info(&video_file);
             let mut orientations = Vec::new();
@@ -333,7 +314,7 @@ fn main() {
 
             let mut id_start = 0;
             let mut id_end = orientations.len();
-            if let Some(range) = matches.value_of("range") {
+            if let Some(range) = &cli.range {
                 let range: Vec<&str> = range.split(':').collect();
                 if range.len() != 2 {
                     panic!("invalid range");
@@ -379,8 +360,8 @@ fn main() {
                 .unwrap();
             blender.wait().unwrap();
         }
-        "video" => {
-            let outdir = outdir.expect("no output file specified.");
+        Mode::Video => {
+            let outdir = cli.output.as_ref().expect("no output file specified.");
             let out_video = outdir.join("final.mkv");
             let video_file = cfg.video.filename.clone().expect("no video URL");
             let stream_info = get_video_stream_info(&video_file);
@@ -394,7 +375,7 @@ fn main() {
 
             let mut t_start: u64 = cfg.video.startoff;
             let mut t_end: u64 = cfg.video.endoff.unwrap();
-            if let Some(range) = matches.value_of("range") {
+            if let Some(range) = &cli.range {
                 let range: Vec<&str> = range.split(':').collect();
                 if range.len() != 2 {
                     panic!("invalid range");
@@ -510,7 +491,7 @@ fn main() {
             println!("DONE RENDERING");
             wait_for_child(&mut child);
         }
-        "psim" => {
+        Mode::Psim => {
             let sd = match &cfg.data.source {
                 crate::config::DataSource::SimulatorData(d) => d,
                 _ => panic!("psim works with a simulator data source only"),
@@ -523,9 +504,6 @@ fn main() {
                 &sd.model,
                 ndarray::Array::from(sd.initial.clone()),
             );
-        }
-        mode => {
-            eprintln!("invalid mode: {mode}");
         }
     }
 }

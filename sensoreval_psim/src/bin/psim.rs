@@ -1,5 +1,7 @@
 extern crate lapack_src;
 
+use clap::Parser as _;
+
 #[derive(serde::Deserialize)]
 struct SimConfig {
     state: Vec<f64>,
@@ -11,33 +13,22 @@ struct Config {
     sim: SimConfig,
 }
 
-fn main() {
-    let app_m = clap::App::new("psim")
-        .setting(clap::AppSettings::AllowLeadingHyphen)
-        .arg(
-            clap::Arg::with_name("dt")
-                .default_value("0.001")
-                .long("dt")
-                .takes_value(true)
-                .help("integration time step in seconds"),
-        )
-        .arg(
-            clap::Arg::with_name("CONFIG")
-                .help("config file to use")
-                .required(true)
-                .index(1),
-        )
-        .get_matches();
-    let dt: f64 = app_m
-        .value_of("dt")
-        .unwrap()
-        .parse()
-        .expect("can't parse dt");
-    let cfgname = app_m.value_of("CONFIG").unwrap();
+#[derive(clap::Parser)]
+#[command(author, version, about, long_about = None)]
+struct Cli {
+    /// Config file to use
+    config: std::path::PathBuf,
 
-    let cfgstr = std::fs::read_to_string(cfgname).unwrap();
+    /// Integration time step in seconds
+    #[arg(default_value_t = 0.001)]
+    dt: f64,
+}
+
+fn main() {
+    let cli = Cli::parse();
+    let cfgstr = std::fs::read_to_string(&cli.config).unwrap();
     let cfg: Config = toml::from_str(&cfgstr).unwrap();
     let state = ndarray::Array::from(cfg.sim.state);
 
-    sensoreval_psim::run::run_sim(dt, &cfg.sim.params, state);
+    sensoreval_psim::run::run_sim(cli.dt, &cfg.sim.params, state);
 }

@@ -1,5 +1,6 @@
 use sensoreval::*;
 
+use clap::Parser as _;
 use sensoreval::PlotUtils;
 use std::io::Write;
 
@@ -7,30 +8,23 @@ use std::io::Write;
 extern crate blas_src;
 extern crate lapack_src;
 
+#[derive(clap::Parser)]
+#[command(author, version, about, long_about = None)]
+struct Cli {
+    /// Config file to use
+    config: std::path::PathBuf,
+
+    /// Use seconds instead of indices for the x-axis
+    #[arg(short, long)]
+    seconds: bool,
+}
+
 #[allow(clippy::many_single_char_names)]
 fn main() {
-    // parse args
-    let matches = clap::App::new("synctool")
-        .version("0.1")
-        .arg(
-            clap::Arg::with_name("CONFIG")
-                .help("config file to use")
-                .required(true)
-                .index(1),
-        )
-        .arg(
-            clap::Arg::with_name("seconds")
-                .long("seconds")
-                .required(false)
-                .takes_value(false)
-                .help("use seconds instead of indices for the x-axis"),
-        )
-        .get_matches();
-    let cfgname = matches.value_of("CONFIG").unwrap();
-    let seconds = matches.is_present("seconds");
+    let cli = Cli::parse();
 
     // load config
-    let mut cfg = config::load(cfgname).expect("can't load config");
+    let mut cfg = config::load(&cli.config).expect("can't load config");
     cfg.video.startoff = 0;
     cfg.video.endoff = None;
     if let config::DataSource::SensorData(sd) = &mut cfg.data.source {
@@ -56,7 +50,7 @@ fn main() {
         .iter()
         .enumerate()
         .map(|(i, sample)| {
-            if seconds {
+            if cli.seconds {
                 sample.time_seconds()
             } else {
                 i as f64
