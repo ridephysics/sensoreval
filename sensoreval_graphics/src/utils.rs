@@ -22,10 +22,10 @@ pub trait CairoEx {
 
 impl CairoEx for cairo::Context {
     fn clear(&self) {
-        self.save();
+        self.save().unwrap();
         self.set_operator(cairo::Operator::Source);
-        self.paint();
-        self.restore();
+        self.paint().unwrap();
+        self.restore().unwrap();
     }
 
     fn set_source_rgba_u32(&self, rgba: u32) {
@@ -44,7 +44,7 @@ impl CairoEx for cairo::Context {
 
     fn clip_bottom(&self, h: f64) {
         let ssz = self.surface_sz_user();
-        let p = self.device_to_user(0., 0.);
+        let p = self.device_to_user(0., 0.).unwrap();
         let sz = (ssz.0, -p.1 + h);
 
         self.rectangle(p.0, p.1, sz.0, sz.1);
@@ -74,29 +74,29 @@ impl CairoEx for cairo::Context {
         border_width: f64,
         border_color: u32,
     ) {
-        let (cx, cy) = self.get_current_point();
+        let (cx, cy) = self.current_point().unwrap();
 
-        self.save();
-        self.set_line_width(self.get_line_width() + border_width);
+        self.save().unwrap();
+        self.set_line_width(self.line_width() + border_width);
         self.set_source_rgba_u32(border_color);
         self.rel_move_to_circle(r, angle_mid + angle_sides);
         self.line_to(cx, cy);
         self.line_to_circle(r, angle_mid - angle_sides);
-        self.stroke_preserve();
-        self.restore();
+        self.stroke_preserve().unwrap();
+        self.restore().unwrap();
 
-        self.save();
+        self.save().unwrap();
         self.set_operator(cairo::Operator::Source);
-        self.stroke();
-        self.restore();
+        self.stroke().unwrap();
+        self.restore().unwrap();
     }
 
     fn surface_sz_user(&self) -> (f64, f64) {
-        let surface = cairo::ImageSurface::try_from(self.get_target()).unwrap();
-        let sw = f64::from(surface.get_width());
-        let sh = f64::from(surface.get_height());
+        let surface = cairo::ImageSurface::try_from(self.target()).unwrap();
+        let sw = f64::from(surface.width());
+        let sh = f64::from(surface.height());
 
-        self.device_to_user_distance(sw, sh)
+        self.device_to_user_distance(sw, sh).unwrap()
     }
 }
 
@@ -122,7 +122,7 @@ impl<'a> Font<'a> {
     }
 
     pub fn layout(&self, cr: &cairo::Context, text: &str) -> pango::Layout {
-        let layout = pangocairo::functions::create_layout(cr).unwrap();
+        let layout = pangocairo::functions::create_layout(cr);
         layout.set_font_description(Some(self.pgfont.as_ref()));
         layout.set_text(text);
 
@@ -130,7 +130,7 @@ impl<'a> Font<'a> {
     }
 
     pub fn draw_layout(&self, cr: &cairo::Context, layout: &pango::Layout) {
-        cr.save();
+        cr.save().unwrap();
 
         cr.set_source_rgba_u32(self.color_fill);
         pangocairo::functions::update_layout(cr, layout);
@@ -139,16 +139,16 @@ impl<'a> Font<'a> {
         cr.set_line_width(self.line_width);
         cr.set_source_rgba_u32(self.color_border);
         pangocairo::functions::layout_path(cr, layout);
-        cr.stroke();
+        cr.stroke().unwrap();
 
-        cr.restore();
+        cr.restore().unwrap();
     }
 
     pub fn draw(&self, cr: &cairo::Context, text: &str) -> (i32, i32) {
         let layout = self.layout(cr, text);
         self.draw_layout(cr, &layout);
 
-        layout.get_pixel_size()
+        layout.pixel_size()
     }
 }
 
@@ -200,9 +200,9 @@ impl Graph {
         iter_time: &mut T,
         iter_data: &mut D,
     ) -> f64 {
-        let (cx, cy) = cr.get_current_point();
+        let (cx, cy) = cr.current_point().unwrap();
 
-        cr.save();
+        cr.save().unwrap();
         cr.rectangle(cx, cy, self.width, self.height);
         cr.clip();
 
@@ -217,7 +217,7 @@ impl Graph {
         pat.add_color_stop_rgb(0.0, 1.0, 0.0, 0.0);
         pat.add_color_stop_rgb(0.5, 1.0, 1.0, 0.0);
         pat.add_color_stop_rgb(1.0, 0.0, 1.0, 0.0);
-        cr.set_source(&pat);
+        cr.set_source(&pat).unwrap();
 
         let mut tnow: u64 = 0;
         let mut tstart: u64 = 0;
@@ -246,18 +246,18 @@ impl Graph {
             }
         }
 
-        cr.stroke();
-        cr.restore();
+        cr.stroke().unwrap();
+        cr.restore().unwrap();
 
         // border
-        cr.save();
+        cr.save().unwrap();
         cr.set_source_rgba_u32(self.border_color);
         cr.set_line_width(self.border_width);
         cr.move_to(cx, cy);
         cr.rel_line_to(0.0, self.height);
         cr.rel_line_to(self.width, 0.0);
-        cr.stroke();
-        cr.restore();
+        cr.stroke().unwrap();
+        cr.restore().unwrap();
 
         data_now
     }
@@ -290,7 +290,7 @@ impl<'a, 'b, 'c> GraphAndText<'a, 'b, 'c> {
         iter_time: &mut T,
         iter_data: &mut D,
     ) {
-        let (cx, cy) = cr.get_current_point();
+        let (cx, cy) = cr.current_point().unwrap();
 
         cr.move_to(cx + self.graph_x, cy);
         let value_now = self.graph.draw(cr, iter_time, iter_data);
@@ -308,12 +308,12 @@ impl<'a, 'b, 'c> GraphAndText<'a, 'b, 'c> {
             svg_renderer
                 .render_document(
                     cr,
-                    &cairo::Rectangle {
-                        x: current_x,
-                        y: current_y,
-                        width: self.graph.height,
-                        height: self.graph.height,
-                    },
+                    &cairo::Rectangle::new(
+                        current_x,
+                        current_y,
+                        self.graph.height,
+                        self.graph.height,
+                    ),
                 )
                 .unwrap();
 
@@ -322,7 +322,7 @@ impl<'a, 'b, 'c> GraphAndText<'a, 'b, 'c> {
 
         cr.move_to(
             current_x,
-            current_y + (self.graph.height - layout.get_pixel_size().1 as f64) / 2.0,
+            current_y + (self.graph.height - layout.pixel_size().1 as f64) / 2.0,
         );
         self.font.draw_layout(cr, &layout);
     }

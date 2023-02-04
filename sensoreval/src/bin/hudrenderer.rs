@@ -489,14 +489,14 @@ fn main() {
                         _ => ret.unwrap(),
                     }
 
-                    let cr = cairo::Context::new(&surface);
+                    let cr = cairo::Context::new(&surface).unwrap();
                     cr.set_antialias(cairo::Antialias::Best);
                     surface.flush();
                     renderctx.render(&cr).unwrap();
                 }
 
                 // write frame
-                let data = surface.get_data().unwrap();
+                let data = surface.data().unwrap();
                 let ret = child_stdin.write_all(&data);
                 match &ret {
                     Err(e) if e.kind() == std::io::ErrorKind::BrokenPipe => {

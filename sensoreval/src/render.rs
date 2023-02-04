@@ -249,13 +249,13 @@ impl<'a, 'b, 'c> Context<'a, 'b, 'c> {
                 renderer.scale_changed(&self.hudctx);
             }
 
-            cr.save();
+            cr.save().unwrap();
             let hudret = renderer.render(&self.hudctx, cr);
-            cr.restore();
+            cr.restore().unwrap();
             hudret?;
 
             if let Some(blenderdir) = &self.blenderdir {
-                cr.save();
+                cr.save().unwrap();
 
                 // scale blender graphics if the cairo surface size doesn't match the video resolution
                 if let Some(videosz) = self.videosz {
@@ -273,13 +273,14 @@ impl<'a, 'b, 'c> Context<'a, 'b, 'c> {
                 let path = blenderdir.join(format!("mannequin/mannequin_{fid}.png"));
 
                 if let Ok(surface) = sensoreval_graphics::utils::png_to_surface(&path) {
-                    cr.set_source_surface(&surface, 0.0, ssz.1 - surface.get_height() as f64);
-                    cr.paint();
+                    cr.set_source_surface(&surface, 0.0, ssz.1 - surface.height() as f64)
+                        .unwrap();
+                    cr.paint().unwrap();
                 } else if !self.allow_missing_renders {
                     return Err(Error::BlenderRenderNotFound);
                 }
 
-                cr.restore();
+                cr.restore().unwrap();
             }
         }
 

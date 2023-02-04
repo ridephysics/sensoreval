@@ -22,5 +22,5 @@ pub fn assert_arr2_eq<Sa, Sb>(
 {
     assert_eq!(a.dim(), b.dim());
 
-    azip!((a in a.gencolumns(), b in b.gencolumns()) assert_arr1_eq(&a, &b));
+    azip!((a in a.columns(), b in b.columns()) assert_arr1_eq(&a, &b));
 }

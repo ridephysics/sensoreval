@@ -89,7 +89,7 @@ where
         // compute mixed initial conditions
         let mut xs = Vec::with_capacity(N);
         let mut Ps = Vec::with_capacity(N);
-        for w in self.omega.t().genrows() {
+        for w in self.omega.t().rows() {
             let mut x = ndarray::Array1::<A>::zeros(self.x.dim());
             ndarray::azip!((kf in &*self.filters, &wj in &w) {
                 x = self.fns.add(&x, &(kf.borrow().x() * wj));
@@ -370,7 +370,7 @@ mod test {
 
         let mut xs = Vec::with_capacity(zs.len());
         let mut probs = Vec::with_capacity(zs.len());
-        for z in zs.genrows().into_iter() {
+        for z in zs.rows().into_iter() {
             bank.predict().unwrap();
             bank.update(&z).unwrap();
 

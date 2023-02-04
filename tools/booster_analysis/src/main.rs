@@ -1,3 +1,6 @@
+// this forces them to get linked into the binaries
+extern crate blas_src;
+
 use itertools::Itertools;
 use sensoreval::PlotUtils;
 use sensoreval_psim::models::booster::State;

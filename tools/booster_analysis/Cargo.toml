@@ -6,16 +6,17 @@ edition = "2021"
 
 [dependencies]
 
-argmin = { version = "0.4", features = ["ndarrayl"] }
+argmin = { version = "0.8", features = [] }
 argmin_testfunctions = "*"
+blas-src = { version = "0.8", features = ["openblas"] }
 itertools = "0.10"
 math = { path = "../../math" }
 median = "^0.3"
-ndarray = "0.14"
-ndarray-linalg = { version = "0.13" }
+ndarray = "0.15"
+ndarray-linalg = { version = "0.16" }
 sensoreval = { path = "../../sensoreval" }
 sensoreval_psim = { path = "../../sensoreval_psim" }
 sensoreval_utils = { path = "../../sensoreval_utils" }
 serde = "1.0"
 structopt = "^0.3"
-toml = "0.5"
+toml = "0.7"

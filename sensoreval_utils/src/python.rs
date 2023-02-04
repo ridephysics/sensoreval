@@ -19,14 +19,14 @@ impl Python {
             .spawn()?;
 
         let stdin = child.stdin.as_mut().unwrap();
-        serde_pickle::to_writer(stdin, &code, true)?;
+        serde_pickle::to_writer(stdin, &code, serde_pickle::SerOptions::new())?;
 
         Ok(Self { child })
     }
 
     pub fn write<T: serde::ser::Serialize>(&mut self, value: &T) -> Result<(), Error> {
         let stdin = self.child.stdin.as_mut().unwrap();
-        serde_pickle::to_writer(stdin, value, true)?;
+        serde_pickle::to_writer(stdin, value, serde_pickle::SerOptions::new())?;
 
         Ok(())
     }

@@ -5,11 +5,11 @@ authors = ["Michael Zimmermann <sigmaepsilon92@gmail.com>"]
 edition = "2021"
 
 [dependencies]
-cairo-rs = { version = "0.9", features = ["png"] }
+cairo-rs = { version = "0.16", features = ["png"] }
 gio = "*"
 glib = "*"
-librsvg = { git = "https://gitlab.gnome.org/GNOME/librsvg", version = "2.51" }
+librsvg = { git = "https://gitlab.gnome.org/GNOME/librsvg", version = "2.55" }
 math = { path = "../math" }
-pango = "0.9"
-pangocairo = "0.10"
+pango = "0.16"
+pangocairo = "0.16"
 thiserror = "1.0"

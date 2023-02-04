@@ -387,8 +387,8 @@ pub fn load<P: AsRef<std::path::Path>>(filename: P) -> Result<Config, Error> {
         .expect("can't get parent dir of config");
 
     let buffer = std::fs::read_to_string(filename.as_ref())?;
-    let mut parser = toml::de::Deserializer::new(&buffer);
-    let value = toml::Value::deserialize(&mut parser)?;
+    let parser = toml::de::Deserializer::new(&buffer);
+    let value = toml::Value::deserialize(parser)?;
     let mut has_unsupported: bool = false;
     let mut cfg: Config = serde_ignored::deserialize(value, |path| {
         println!("unsupported config: {:?}", path.to_string());

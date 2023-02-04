@@ -55,12 +55,12 @@ pub fn draw(cr: &cairo::Context, gondola_rotation: f64, active_row: usize) {
     let border_width: f64 = 0.1;
     let border_color: u32 = 0x0000_00ff;
 
-    let (cx, cy) = cr.get_current_point();
+    let (cx, cy) = cr.current_point().unwrap();
 
-    cr.save();
+    cr.save().unwrap();
     cr.translate(cx, cy);
 
-    cr.save();
+    cr.save().unwrap();
     cr.rotate(gondola_rotation);
 
     // gondola-frame
@@ -86,7 +86,7 @@ pub fn draw(cr: &cairo::Context, gondola_rotation: f64, active_row: usize) {
     // gondola
     {
         // the boat itself
-        cr.save();
+        cr.save().unwrap();
 
         let angle_middle = std::f64::consts::FRAC_PI_2;
         let angle_left = angle_middle + gondola_angle / 2.0;
@@ -130,17 +130,17 @@ pub fn draw(cr: &cairo::Context, gondola_rotation: f64, active_row: usize) {
 
         cr.set_line_width(gondola_line_width + border_width);
         cr.set_source_rgba_u32(border_color);
-        cr.stroke_preserve();
+        cr.stroke_preserve().unwrap();
 
         cr.set_source_rgba_u32(gondola_color);
         cr.set_line_width(gondola_line_width);
-        cr.stroke_preserve();
+        cr.stroke_preserve().unwrap();
 
-        cr.fill();
-        cr.restore();
+        cr.fill().unwrap();
+        cr.restore().unwrap();
 
         // sections
-        cr.save();
+        cr.save().unwrap();
         cr.set_source_rgba_u32(section_dark_color);
         cr.set_line_width(gondola_thickness + gondola_line_width);
 
@@ -152,7 +152,7 @@ pub fn draw(cr: &cairo::Context, gondola_rotation: f64, active_row: usize) {
             angle_left - section_width_ang,
             angle_left,
         );
-        cr.stroke();
+        cr.stroke().unwrap();
 
         // middle
         cr.arc(
@@ -162,7 +162,7 @@ pub fn draw(cr: &cairo::Context, gondola_rotation: f64, active_row: usize) {
             angle_middle - section_width_ang / 2.0,
             angle_middle + section_width_ang / 2.0,
         );
-        cr.stroke();
+        cr.stroke().unwrap();
 
         // right
         cr.arc(
@@ -172,7 +172,7 @@ pub fn draw(cr: &cairo::Context, gondola_rotation: f64, active_row: usize) {
             angle_right,
             angle_right + section_width_ang,
         );
-        cr.stroke();
+        cr.stroke().unwrap();
 
         // active row
         let active_row_left = angle_left - active_row as f64 * section_width_ang / 2.0;
@@ -185,15 +185,15 @@ pub fn draw(cr: &cairo::Context, gondola_rotation: f64, active_row: usize) {
             active_row_left,
             active_row_left - section_width_ang / 2.0,
         );
-        cr.stroke();
+        cr.stroke().unwrap();
 
-        cr.restore();
+        cr.restore().unwrap();
 
         // section dividers
         let radius_divider_inner = radius_ship_inner - gondola_line_width / 2.0;
         let radius_divider_outer = radius_ship_outer + gondola_line_width / 2.0;
 
-        cr.save();
+        cr.save().unwrap();
         cr.set_line_width(section_divider_width);
 
         for i in 0..gondola_num_sections {
@@ -204,16 +204,16 @@ pub fn draw(cr: &cairo::Context, gondola_rotation: f64, active_row: usize) {
 
             cr.set_source_rgba_u32(section_divider_color);
             cr.set_operator(cairo::Operator::Source);
-            cr.stroke();
+            cr.stroke().unwrap();
         }
 
-        cr.restore();
+        cr.restore().unwrap();
     }
 
-    cr.restore();
+    cr.restore().unwrap();
 
     // frame
-    cr.save();
+    cr.save().unwrap();
     cr.clip_bottom(frame_radius);
     cr.set_source_rgba_u32(frame_color);
     cr.set_line_width(frame_thickness);
@@ -225,16 +225,16 @@ pub fn draw(cr: &cairo::Context, gondola_rotation: f64, active_row: usize) {
         border_width,
         border_color,
     );
-    cr.restore();
+    cr.restore().unwrap();
 
     // top
     cr.set_operator(cairo::Operator::Source);
     cr.set_source_rgba_u32(frame_color);
     cr.set_line_width(0.2);
     cr.arc(0., 0., 1.0, 0., 2.0 * std::f64::consts::PI);
-    cr.fill_preserve();
+    cr.fill_preserve().unwrap();
     cr.set_source_rgba_u32(frame_top_color);
-    cr.stroke();
+    cr.stroke().unwrap();
 
-    cr.restore();
+    cr.restore().unwrap();
 }

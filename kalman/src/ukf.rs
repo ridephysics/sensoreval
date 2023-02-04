@@ -288,7 +288,7 @@ where
         Sh: ndarray::Data<Elem = A>,
     {
         let mut Pxz = ndarray::Array2::<A>::zeros((self.x.dim(), self.z.dim()));
-        azip!((&Wci in &self.Wc, sfi in sigmas_f.genrows(), shi in sigmas_h.genrows()) {
+        azip!((&Wci in &self.Wc, sfi in sigmas_f.rows(), shi in sigmas_h.rows()) {
             let dx = self.fns_x.subtract(&sfi, x);
             let dz = self.fns_z.subtract(&shi, z);
             Pxz += &(math::outer_product(&dx, &dz) * Wci);
@@ -358,7 +358,7 @@ where
 
             // compute cross variance
             let mut Pxb = ndarray::Array2::<A>::zeros((self.x.dim(), self.x.dim()));
-            azip!((&Wci in &self.Wc, sfi in self.sigmas_f.genrows(), si in sigmas.genrows()) {
+            azip!((&Wci in &self.Wc, sfi in self.sigmas_f.rows(), si in sigmas.rows()) {
                 let y = self.fns_x.subtract(&sfi, &xb);
                 let z = self.fns_x.subtract(&si, x);
                 Pxb += &(math::outer_product(&z, &y) * Wci);

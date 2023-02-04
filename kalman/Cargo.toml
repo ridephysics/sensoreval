@@ -6,8 +6,8 @@ edition = "2021"
 
 [dependencies]
 math = { path = "../math" }
-ndarray = "0.14"
-ndarray-linalg = { version = "0.13" }
+ndarray = "0.15"
+ndarray-linalg = { version = "0.16" }
 num-traits = "*"
 thiserror = "1.0"
 

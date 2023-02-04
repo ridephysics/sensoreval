@@ -400,11 +400,11 @@ impl render::HudRenderer for Pendulum {
         let ppm = 30.0;
         cr.move_to(ssz.0 - ctx.dp2px(16.0 * ppm), ssz.1 - ctx.dp2px(16.5 * ppm));
 
-        cr.save();
+        cr.save().unwrap();
         cr.scale(ctx.dpi / 160.0, ctx.dpi / 160.0);
         cr.scale(ppm, ppm);
         sensoreval_graphics::pendulum_nessy::draw(cr, est[0], self.cfg.active_row);
-        cr.restore();
+        cr.restore().unwrap();
 
         let dataslice = &dataset[0..dataid];
         let estslice = &self.est[0..dataid];

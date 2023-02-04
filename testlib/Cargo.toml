@@ -6,4 +6,4 @@ edition = "2021"
 
 [dependencies]
 approx = "0.5"
-ndarray = "0.14"
+ndarray = "0.15"
