@@ -24,7 +24,7 @@ jobs:
     - name: apt update
       run: sudo apt-get update
     - name: Install Dependencies
-      run: sudo apt-get install libpango1.0-dev qt5-default qtdeclarative5-dev qtmultimedia5-dev
+      run: sudo apt-get install libpango1.0-dev qtbase5-dev qtdeclarative5-dev qtmultimedia5-dev
     - name: Build
       run: cargo build --verbose
     - name: Run tests
