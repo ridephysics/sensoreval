@@ -25,8 +25,6 @@ pub struct Video {
     pub blurmask: Option<String>,
 }
 
-
-
 /// map sensor axes. index: destination, value: source + 1, can be negative
 #[derive(Deserialize, Debug)]
 #[serde(deny_unknown_fields)]
