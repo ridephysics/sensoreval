@@ -3,8 +3,10 @@
 use ndarray_linalg::solve::Inverse;
 
 #[derive(Clone, Debug)]
+#[allow(dead_code)]
 pub struct Kalman<A, Sz> {
     dim_x: usize,
+    // TODO: why is this unused?
     dim_z: usize,
     pub x: ndarray::Array1<A>,
     pub P: ndarray::Array2<A>,
