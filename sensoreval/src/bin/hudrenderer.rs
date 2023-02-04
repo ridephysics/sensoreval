@@ -74,7 +74,7 @@ fn get_check_outdir<'a>(matches: &'a clap::ArgMatches) -> Option<&'a std::path::
 
 fn svg2png(png: &str, svg: &str) {
     std::process::Command::new("inkscape")
-        .args(&["-z", "-e", png, svg])
+        .args(["-z", "-e", png, svg])
         .output()
         .expect("inkscape failed");
 }
@@ -85,7 +85,7 @@ fn run_blender<T: serde::ser::Serialize>(
 ) -> Result<sensoreval_utils::Python, Error> {
     Ok(sensoreval_utils::Python::new_args(
         "blender",
-        &[
+        [
             "-b",
             "--factory-startup",
             "--python-exit-code",
@@ -221,11 +221,11 @@ fn main() {
     let force_generic = matches.is_present("force_generic");
 
     // load config
-    let mut cfg = config::load(&cfgname).expect("can't load config");
+    let mut cfg = config::load(cfgname).expect("can't load config");
     if force_generic {
         cfg.hud.renderer = config::HudRenderer::Generic;
     }
-    println!("config: {:#?}", cfg);
+    println!("config: {cfg:#?}");
 
     // load data
     let samples = cfg.load_data().expect("can't read samples");
@@ -277,7 +277,7 @@ fn main() {
             renderctx.plot(&mut plot).expect("can't plot");
 
             if let Some(simcfgname) = matches.value_of("simcfg") {
-                let mut simcfg = config::load(&simcfgname).expect("can't load sim config");
+                let mut simcfg = config::load(simcfgname).expect("can't load sim config");
                 if force_generic {
                     simcfg.hud.renderer = config::HudRenderer::Generic;
                 }
@@ -406,7 +406,7 @@ fn main() {
                 let x: u64 = range[0].parse().unwrap();
                 t_start += x;
             }
-            println!("start:{} end:{}", t_start, t_end);
+            println!("start:{t_start} end:{t_end}");
 
             let mut args = vec!["-y"];
 
@@ -525,7 +525,7 @@ fn main() {
             );
         }
         mode => {
-            eprintln!("invalid mode: {}", mode);
+            eprintln!("invalid mode: {mode}");
         }
     }
 }

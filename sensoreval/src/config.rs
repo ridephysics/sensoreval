@@ -9,6 +9,7 @@ use serde::Deserialize;
 /// video source information
 #[derive(Deserialize, Debug)]
 #[serde(deny_unknown_fields)]
+#[derive(Default)]
 pub struct Video {
     /// start offset in milli seconds
     #[serde(default)]
@@ -24,16 +25,7 @@ pub struct Video {
     pub blurmask: Option<String>,
 }
 
-impl Default for Video {
-    fn default() -> Self {
-        Self {
-            startoff: 0,
-            endoff: None,
-            filename: None,
-            blurmask: None,
-        }
-    }
-}
+
 
 /// map sensor axes. index: destination, value: source + 1, can be negative
 #[derive(Deserialize, Debug)]
@@ -54,7 +46,7 @@ impl AxisMap {
         A: std::ops::IndexMut<usize, Output = T>,
         T: Copy + std::ops::Neg<Output = T>,
     {
-        let mut srcidx = self.0[dstidx].abs() as usize;
+        let mut srcidx = self.0[dstidx].unsigned_abs();
         assert!(srcidx != 0);
         srcidx -= 1;
 
@@ -353,8 +345,8 @@ impl Config {
         if let Ok(samples) = &mut ret {
             let mut rng = rand::thread_rng();
 
-            for mut sample in samples {
-                self.rotate_sample(&mut sample);
+            for sample in samples {
+                self.rotate_sample(sample);
                 Self::add_noise(&mut sample.accel, &self.data.noise.accel, &mut rng);
                 Self::add_noise(&mut sample.gyro, &self.data.noise.gyro, &mut rng);
                 Self::add_noise(&mut sample.mag, &self.data.noise.mag, &mut rng);

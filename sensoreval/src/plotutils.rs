@@ -15,51 +15,42 @@ impl<'a> PlotUtils for sensoreval_utils::Plot<'a> {
 
         for i in 0..3 {
             let y: Vec<f64> = samples.iter().map(|s| s.accel[i]).collect();
-            self.add_trace_to_rowname_ensure(
-                &mut t.clone().y(&y),
-                Self::axisid_to_rowname("acc", i),
-            )?;
+            self.add_trace_to_rowname_ensure(t.clone().y(&y), Self::axisid_to_rowname("acc", i))?;
         }
 
         for i in 0..3 {
             let y: Vec<f64> = samples.iter().map(|s| s.gyro[i]).collect();
-            self.add_trace_to_rowname_ensure(
-                &mut t.clone().y(&y),
-                Self::axisid_to_rowname("gyr", i),
-            )?;
+            self.add_trace_to_rowname_ensure(t.clone().y(&y), Self::axisid_to_rowname("gyr", i))?;
         }
 
         for i in 0..3 {
             let y: Vec<f64> = samples.iter().map(|s| s.mag[i]).collect();
-            self.add_trace_to_rowname_ensure(
-                &mut t.clone().y(&y),
-                Self::axisid_to_rowname("mag", i),
-            )?;
+            self.add_trace_to_rowname_ensure(t.clone().y(&y), Self::axisid_to_rowname("mag", i))?;
         }
 
         {
             let y: Vec<f64> = samples.iter().map(|s| s.accel.norm_l2()).collect();
-            self.add_trace_to_rowname_ensure(&mut t.clone().y(&y), "norm-a")?;
+            self.add_trace_to_rowname_ensure(t.clone().y(&y), "norm-a")?;
         }
 
         {
             let y: Vec<f64> = samples.iter().map(|s| s.gyro.norm_l2()).collect();
-            self.add_trace_to_rowname_ensure(&mut t.clone().y(&y), "norm-g")?;
+            self.add_trace_to_rowname_ensure(t.clone().y(&y), "norm-g")?;
         }
 
         {
             let y: Vec<f64> = samples.iter().map(|s| s.mag.norm_l2()).collect();
-            self.add_trace_to_rowname_ensure(&mut t.clone().y(&y), "mag-g")?;
+            self.add_trace_to_rowname_ensure(t.clone().y(&y), "mag-g")?;
         }
 
         {
             let y: Vec<f64> = samples.iter().map(|s| s.pressure).collect();
-            self.add_trace_to_rowname_ensure(&mut t.clone().y(&y), "baro")?;
+            self.add_trace_to_rowname_ensure(t.clone().y(&y), "baro")?;
         }
 
         {
             let y: Vec<f64> = samples.iter().map(|s| s.temperature).collect();
-            self.add_trace_to_rowname_ensure(&mut t.clone().y(&y), "temp")?;
+            self.add_trace_to_rowname_ensure(t.clone().y(&y), "temp")?;
         }
 
         let (has_actual, actual_len) = match samples.first() {
@@ -83,7 +74,7 @@ impl<'a> PlotUtils for sensoreval_utils::Plot<'a> {
                 trace.x(x).y(&y).name("actual");
                 trace.line().color(sensoreval_utils::COLOR_A);
 
-                let rowid = self.ensure_row(format!("x{}", i))?;
+                let rowid = self.ensure_row(format!("x{i}"))?;
                 self.add_trace_to_rowid(&mut trace, rowid)?;
             }
         }

@@ -9,7 +9,7 @@ pub fn derive_state_index(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
     let ident = input.ident;
     let ident_args =
-        proc_macro2::Ident::new(&format!("{}Args", ident), proc_macro2::Span::call_site());
+        proc_macro2::Ident::new(&format!("{ident}Args"), proc_macro2::Span::call_site());
 
     let data = match &input.data {
         syn::Data::Enum(d) => d,
@@ -261,7 +261,7 @@ fn find_fnstruct(
     };
 
     let lifetimes_iter = (0..num_lifetimes)
-        .map(|i| syn::Lifetime::new(&format!("'lt_{}", i), proc_macro2::Span::call_site()));
+        .map(|i| syn::Lifetime::new(&format!("'lt_{i}"), proc_macro2::Span::call_site()));
     let generics = quote! {
         #(#lifetimes_iter),*
     };
@@ -354,7 +354,7 @@ pub fn derive_ukf_math(input: TokenStream) -> TokenStream {
     let is_angle_map = gen_angle_map(data);
 
     let mean_decls = is_angle_map.iter().enumerate().map(|(i, is_angle)| {
-        let sum = proc_macro2::Ident::new(&format!("sum_{}", i), proc_macro2::Span::call_site());
+        let sum = proc_macro2::Ident::new(&format!("sum_{i}"), proc_macro2::Span::call_site());
         if *is_angle {
             quote! {let mut #sum = math::SinCosSum::default();}
         } else {
@@ -362,7 +362,7 @@ pub fn derive_ukf_math(input: TokenStream) -> TokenStream {
         }
     });
     let mean_impls = is_angle_map.iter().enumerate().map(|(i, is_angle)| {
-        let sum = proc_macro2::Ident::new(&format!("sum_{}", i), proc_macro2::Span::call_site());
+        let sum = proc_macro2::Ident::new(&format!("sum_{i}"), proc_macro2::Span::call_site());
         if *is_angle {
             quote! {
                 assert!(sp[#i] >= -A::PI() && sp[#i] <= A::PI());
@@ -373,7 +373,7 @@ pub fn derive_ukf_math(input: TokenStream) -> TokenStream {
         }
     });
     let mean_assignments = is_angle_map.iter().enumerate().map(|(i, is_angle)| {
-        let sum = proc_macro2::Ident::new(&format!("sum_{}", i), proc_macro2::Span::call_site());
+        let sum = proc_macro2::Ident::new(&format!("sum_{i}"), proc_macro2::Span::call_site());
         if *is_angle {
             quote! {ret[#i] = #sum.avg();}
         } else {

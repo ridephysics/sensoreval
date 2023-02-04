@@ -270,7 +270,7 @@ impl<'a, 'b, 'c> Context<'a, 'b, 'c> {
 
                 let q = self.orientation()?;
                 let fid = quat_to_fid(&q);
-                let path = blenderdir.join(format!("mannequin/mannequin_{}.png", fid));
+                let path = blenderdir.join(format!("mannequin/mannequin_{fid}.png"));
 
                 if let Ok(surface) = sensoreval_graphics::utils::png_to_surface(&path) {
                     cr.set_source_surface(&surface, 0.0, ssz.1 - surface.get_height() as f64);

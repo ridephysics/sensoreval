@@ -30,14 +30,14 @@ fn main() {
     let seconds = matches.is_present("seconds");
 
     // load config
-    let mut cfg = config::load(&cfgname).expect("can't load config");
+    let mut cfg = config::load(cfgname).expect("can't load config");
     cfg.video.startoff = 0;
     cfg.video.endoff = None;
     if let config::DataSource::SensorData(sd) = &mut cfg.data.source {
         sd.video_off = 0;
     }
     cfg.hud.renderer = config::HudRenderer::Generic;
-    println!("config: {:#?}", cfg);
+    println!("config: {cfg:#?}");
 
     // load data
     let samples = cfg.load_data().expect("can't read samples");

@@ -379,12 +379,12 @@ impl render::HudRenderer for Pendulum {
         }
         avg /= self.est.len() as f64;
 
-        println!("avg x: {:.8}", avg);
-        println!("min x: {:.8}", min);
-        println!("max x: {:.8}", max);
-        println!("max h_ang: {}", max_ang);
-        println!("max h_acc: {}", max_acc);
-        println!("max vel: {}", max_vel);
+        println!("avg x: {avg:.8}");
+        println!("min x: {min:.8}");
+        println!("max x: {max:.8}");
+        println!("max h_ang: {max_ang}");
+        println!("max h_acc: {max_acc}");
+        println!("max vel: {max_vel}");
     }
 
     fn render(&self, ctx: &render::HudContext, cr: &cairo::Context) -> Result<(), Error> {
@@ -462,7 +462,7 @@ impl render::HudRenderer for Pendulum {
         graph_at.draw(
             cr,
             &mut dataslice.iter().rev().map(|data| data.time),
-            &mut estslice.iter().rev().map(|data| Self::est_altitude(data)),
+            &mut estslice.iter().rev().map(Self::est_altitude),
         );
 
         Ok(())
@@ -547,7 +547,7 @@ impl render::HudRenderer for Pendulum {
             let rowid = plot.ensure_row(
                 xnames
                     .get(i)
-                    .map_or(format!("x{}", i), |s| format!("x{}-{}", i, s)),
+                    .map_or(format!("x{i}"), |s| format!("x{i}-{s}")),
             )?;
 
             let mut t = sensoreval_utils::Plot::default_line();

@@ -155,8 +155,7 @@ impl<'a> Plot<'a> {
         f.write_all(b"</script>")?;
         write!(
             &mut f,
-            "<div id=\"plotly-div\" style=\"width:100%;height:{}vh;\"></div>",
-            height
+            "<div id=\"plotly-div\" style=\"width:100%;height:{height}vh;\"></div>"
         )?;
         f.write_all(b"<script type=\"text/javascript\">")?;
         f.write_all(include_bytes!("js/plot.js"))?;

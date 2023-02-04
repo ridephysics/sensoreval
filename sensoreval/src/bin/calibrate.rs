@@ -101,8 +101,8 @@ fn main() {
     let gyro_offs = calib_gyro(&xpos);
 
     println!("accel_offs = {}", &accel_offs);
-    println!("accel_T = {}", accel_T);
-    println!("gyro_offs = {}", gyro_offs);
+    println!("accel_T = {accel_T}");
+    println!("gyro_offs = {gyro_offs}");
 
     let calibration = datareader::Calibration::new(gyro_offs, accel_offs, accel_T);
     let mut file = std::fs::File::create(outpath).expect("can't create outfile");

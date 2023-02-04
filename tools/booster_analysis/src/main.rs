@@ -33,7 +33,7 @@ fn pendulum_period(opt: &PendulumPeriodOpt) {
             continue;
         }
 
-        println!("r={} period={}", r, period);
+        println!("r={r} period={period}");
     }
 }
 
@@ -432,7 +432,7 @@ fn plot(plotopt: &PlotOpt) {
 
     for (i, y_theta0) in y_theta0_lh.iter().enumerate() {
         println!();
-        println!("[y_theta0_{}]", i);
+        println!("[y_theta0_{i}]");
 
         let mut trace = sensoreval_utils::Plot::default_line();
         trace.x(&x).name(names[i]);
@@ -443,7 +443,7 @@ fn plot(plotopt: &PlotOpt) {
             .unwrap();
 
         let avg_theta0 = y_theta0.iter().sum::<f64>() / y_theta0.len() as f64;
-        println!("avg_theta0: {}", avg_theta0);
+        println!("avg_theta0: {avg_theta0}");
 
         if let Some(thetac) = opt.thetac {
             // rc
@@ -556,10 +556,7 @@ fn plot(plotopt: &PlotOpt) {
             .sum::<f64>()
             / samples.len() as f64;
         let avg_theta0 = (avg_theta0x + avg_theta0y) / 2.0;
-        println!(
-            "avg_theta0x={} avg_theta0y={} avg_theta0={}",
-            avg_theta0x, avg_theta0y, avg_theta0
-        );
+        println!("avg_theta0x={avg_theta0x} avg_theta0y={avg_theta0y} avg_theta0={avg_theta0}");
 
         // actual: accel data
         let mut trace = sensoreval_utils::Plot::default_line();

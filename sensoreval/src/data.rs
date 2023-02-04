@@ -81,7 +81,7 @@ pub fn id_for_time(dataset: &[Data], startid: usize, us: u64) -> Option<usize> {
         return None;
     }
 
-    for (i, sample) in (&dataset[startid..]).iter().enumerate() {
+    for (i, sample) in dataset[startid..].iter().enumerate() {
         match sample.time.cmp(&us) {
             std::cmp::Ordering::Equal => return Some(i),
             std::cmp::Ordering::Greater => {
